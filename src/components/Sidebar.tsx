@@ -35,21 +35,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, canCreate }) =>
     const [isExpanded, setIsExpanded] = useState(true);
 
     return (
-        <aside className={`bg-sidebar text-white flex flex-col p-4 transition-all duration-300 ease-in-out relative ${isExpanded ? 'w-64' : 'w-20'}`}>
+        <aside className={`bg-sidebar text-white flex flex-col p-4 transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}>
             <div className="flex items-center justify-between p-3 mb-6">
                 <div className="flex items-center gap-3 overflow-hidden">
                     <LogoIcon className="h-8 w-8 text-white flex-shrink-0" />
                     {isExpanded && <span className="text-2xl font-bold whitespace-nowrap">DataScope</span>}
                 </div>
             </div>
-            
-            <button 
-                onClick={() => setIsExpanded(!isExpanded)} 
-                className="absolute -right-3 top-9 z-10 p-1.5 bg-sidebar-hover rounded-full text-white hover:bg-primary focus:outline-none transition-transform duration-300"
-                aria-label={isExpanded ? 'Recolher menu' : 'Expandir menu'}
-            >
-                <ChevronLeftIcon className={`h-5 w-5 transition-transform duration-300 ${!isExpanded && 'rotate-180'}`} />
-            </button>
 
             <nav className="flex-1">
                 <ul>
@@ -71,6 +63,17 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, canCreate }) =>
                     )}
                 </ul>
             </nav>
+
+            <div className="border-t border-gray-700 pt-2">
+                <button 
+                    onClick={() => setIsExpanded(!isExpanded)} 
+                    className={`flex items-center w-full p-3 rounded-lg cursor-pointer transition-colors text-gray-300 hover:bg-sidebar-hover hover:text-white ${!isExpanded ? 'justify-center' : ''}`}
+                    aria-label={isExpanded ? 'Recolher menu' : 'Expandir menu'}
+                >
+                    <ChevronLeftIcon className={`h-6 w-6 flex-shrink-0 transition-transform duration-300 ${!isExpanded ? 'rotate-180' : ''}`} />
+                    {isExpanded && <span className="ml-3 font-medium whitespace-nowrap">Recolher</span>}
+                </button>
+            </div>
         </aside>
     );
 };
