@@ -36,37 +36,40 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, canCreate }) =>
     const [isExpanded, setIsExpanded] = useState(true);
 
     return (
-        <aside className={`bg-sidebar text-white flex flex-col justify-between p-4 transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}>
-            <div> {/* Top section */}
+        <aside className={`bg-sidebar text-white flex flex-col p-4 transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}>
+            {/* Top section: Logo */}
+            <div className="flex-shrink-0">
                 <div className="flex items-center gap-3 p-3 mb-6">
                     <LogoIcon className="h-8 w-8 text-white flex-shrink-0" />
                     {isExpanded && <span className="text-2xl font-bold whitespace-nowrap">DataScope</span>}
                 </div>
-
-                <nav>
-                    <ul>
-                        <NavItem
-                            icon={<SurveyIcon className="h-6 w-6 flex-shrink-0" />}
-                            label="Pesquisas"
-                            isActive={currentView === View.SURVEY_LIST || currentView === View.DASHBOARD}
-                            onClick={() => setView(View.SURVEY_LIST)}
-                            isExpanded={isExpanded}
-                        />
-                        {canCreate && (
-                            <NavItem
-                                icon={<CreateIcon className="h-6 w-6 flex-shrink-0" />}
-                                label="Criar Pesquisa"
-                                isActive={currentView === View.CREATE_SURVEY}
-                                onClick={() => setView(View.CREATE_SURVEY)}
-                                isExpanded={isExpanded}
-                            />
-                        )}
-                    </ul>
-                </nav>
             </div>
 
-            <div> {/* Bottom section */}
-                <div className="border-t border-gray-700 pt-4">
+            {/* Middle section: Navigation (takes up remaining space) */}
+            <nav className="flex-1">
+                <ul>
+                    <NavItem
+                        icon={<SurveyIcon className="h-6 w-6 flex-shrink-0" />}
+                        label="Pesquisas"
+                        isActive={currentView === View.SURVEY_LIST || currentView === View.DASHBOARD}
+                        onClick={() => setView(View.SURVEY_LIST)}
+                        isExpanded={isExpanded}
+                    />
+                    {canCreate && (
+                        <NavItem
+                            icon={<CreateIcon className="h-6 w-6 flex-shrink-0" />}
+                            label="Criar Pesquisa"
+                            isActive={currentView === View.CREATE_SURVEY}
+                            onClick={() => setView(View.CREATE_SURVEY)}
+                            isExpanded={isExpanded}
+                        />
+                    )}
+                </ul>
+            </nav>
+
+            {/* Bottom section: Collapse button */}
+            <div className="flex-shrink-0">
+                <div className="border-t border-gray-700 pt-4 mt-4">
                     <button 
                         onClick={() => setIsExpanded(!isExpanded)} 
                         className={`flex items-center w-full p-3 rounded-lg cursor-pointer text-gray-300 hover:bg-sidebar-hover hover:text-white ${!isExpanded ? 'justify-center' : ''}`}
