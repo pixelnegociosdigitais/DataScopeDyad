@@ -25,6 +25,7 @@ const NavItem: React.FC<{
                 ? 'bg-primary text-white'
                 : 'text-gray-300 hover:bg-sidebar-hover hover:text-white'
         } ${!isExpanded ? 'justify-center' : ''}`}
+        title={!isExpanded ? label : undefined}
     >
         {icon}
         {isExpanded && <span className="ml-3 font-medium whitespace-nowrap">{label}</span>}
@@ -36,11 +37,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, canCreate }) =>
 
     return (
         <aside className={`bg-sidebar text-white flex flex-col p-4 transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}>
-            <div className="flex items-center justify-between p-3 mb-6">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <LogoIcon className="h-8 w-8 text-white flex-shrink-0" />
-                    {isExpanded && <span className="text-2xl font-bold whitespace-nowrap">DataScope</span>}
-                </div>
+            
+            <div className="flex items-center gap-3 p-3 mb-6">
+                <LogoIcon className="h-8 w-8 text-white flex-shrink-0" />
+                {isExpanded && <span className="text-2xl font-bold whitespace-nowrap">DataScope</span>}
             </div>
 
             <nav className="flex-1">
@@ -64,10 +64,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, canCreate }) =>
                 </ul>
             </nav>
 
-            <div className="border-t border-gray-700 pt-2">
+            <div className="border-t border-gray-700 pt-4 mt-4">
                 <button 
                     onClick={() => setIsExpanded(!isExpanded)} 
-                    className={`flex items-center w-full p-3 rounded-lg cursor-pointer transition-colors text-gray-300 hover:bg-sidebar-hover hover:text-white ${!isExpanded ? 'justify-center' : ''}`}
+                    className={`flex items-center w-full p-3 rounded-lg cursor-pointer text-gray-300 hover:bg-sidebar-hover hover:text-white ${!isExpanded ? 'justify-center' : ''}`}
                     aria-label={isExpanded ? 'Recolher menu' : 'Expandir menu'}
                 >
                     <ChevronLeftIcon className={`h-6 w-6 flex-shrink-0 transition-transform duration-300 ${!isExpanded ? 'rotate-180' : ''}`} />
