@@ -23,7 +23,7 @@ const NavItem: React.FC<{
         className={`flex items-center p-3 my-1 rounded-lg cursor-pointer transition-colors ${
             isActive
                 ? 'bg-primary text-white'
-                : 'text-sidebar-text-dark hover:bg-sidebar-hover-light hover:text-sidebar-text-dark'
+                : 'text-gray-300 hover:bg-sidebar-hover hover:text-white'
         } ${!isExpanded ? 'justify-center' : ''}`}
         title={!isExpanded ? label : undefined}
     >
@@ -36,11 +36,11 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, canCreate }) =>
     const [isExpanded, setIsExpanded] = useState(true);
 
     return (
-        <aside className={`relative h-full bg-sidebar-bg-light text-sidebar-text-dark flex flex-col p-4 transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}>
+        <aside className={`bg-sidebar text-white flex flex-col h-full justify-between p-4 transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}>
             {/* Seção superior: Logo e Navegação */}
-            <div className="flex-1"> {/* flex-1 faz esta div crescer e empurrar o conteúdo para baixo */}
+            <div>
                 <div className="flex items-center gap-3 p-3 mb-6">
-                    <LogoIcon className="h-8 w-8 text-sidebar-text-dark flex-shrink-0" />
+                    <LogoIcon className="h-8 w-8 text-white flex-shrink-0" />
                     {isExpanded && <span className="text-2xl font-bold whitespace-nowrap">DataScope</span>}
                 </div>
 
@@ -66,14 +66,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, canCreate }) =>
                 </nav>
             </div>
 
-            {/* Seção inferior: Botão de recolher - Posicionamento absoluto */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-sidebar-bg-light border-t border-gray-300">
+            {/* Seção inferior: Botão de recolher */}
+            <div className="border-t border-gray-700 pt-4"> {/* Removido mt-4 */}
                 <button 
                     onClick={() => setIsExpanded(!isExpanded)} 
                     className={`flex items-center w-full p-3 rounded-lg cursor-pointer transition-colors 
                                 ${isExpanded 
-                                    ? 'text-sidebar-text-dark hover:bg-sidebar-hover-light hover:text-sidebar-text-dark' 
-                                    : 'bg-white text-primary justify-center shadow-md'}`}
+                                    ? 'text-gray-300 hover:bg-sidebar-hover hover:text-white' 
+                                    : 'bg-sidebar-hover text-white justify-center'}`} {/* Estilo distinto quando recolhido */}
                     aria-label={isExpanded ? 'Recolher menu' : 'Expandir menu'}
                 >
                     <ChevronLeftIcon className={`h-6 w-6 flex-shrink-0 transition-transform duration-300 ${!isExpanded ? 'rotate-180' : ''}`} />
