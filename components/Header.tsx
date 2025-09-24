@@ -3,19 +3,57 @@ import { User, Company, View } from '../types';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
+import { SurveyIcon } from './icons/SurveyIcon'; // Novo import
+import { CreateIcon } from './icons/CreateIcon'; // Novo import
+import { LogoIcon } from './icons/LogoIcon'; // Novo import para o logo
 
 interface HeaderProps {
     user: User;
     company: Company;
     onLogout: () => void;
-    setView: (view: View) => void; // Mantido para o botão de perfil
-    currentView: View; // Mantido para o botão de perfil
-    canCreate: boolean; // Não usado diretamente no Header, mas mantido para compatibilidade se necessário
+    setView: (view: View) => void;
+    currentView: View;
+    canCreate: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, currentView, canCreate }) => {
     return (
-        <header className="bg-white shadow-sm p-4 flex justify-end items-center"> {/* Alinhado à direita */}
+        <header className="bg-white shadow-sm p-4 flex justify-between items-center">
+            <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3">
+                    <LogoIcon className="h-8 w-8 text-primary" />
+                    <h1 className="text-xl font-bold text-text-main">DataScope</h1>
+                </div>
+                
+                {/* Botões de Navegação */}
+                <nav className="ml-8 flex gap-4">
+                    <button
+                        onClick={() => setView(View.SURVEY_LIST)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors 
+                                    ${currentView === View.SURVEY_LIST || currentView === View.DASHBOARD 
+                                        ? 'bg-primary text-white' 
+                                        : 'text-text-light hover:bg-gray-100'}`}
+                        aria-label="Ver Pesquisas"
+                    >
+                        <SurveyIcon className="h-5 w-5" />
+                        <span>Pesquisas</span>
+                    </button>
+                    {canCreate && (
+                        <button
+                            onClick={() => setView(View.CREATE_SURVEY)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors 
+                                        ${currentView === View.CREATE_SURVEY 
+                                            ? 'bg-primary text-white' 
+                                            : 'text-text-light hover:bg-gray-100'}`}
+                            aria-label="Criar Nova Pesquisa"
+                        >
+                            <CreateIcon className="h-5 w-5" />
+                            <span>Criar Pesquisa</span>
+                        </button>
+                    )}
+                </nav>
+            </div>
+
             <div className="flex items-center gap-6">
                  <div className="flex items-center gap-2 text-sm text-text-light">
                     <BuildingIcon className="h-5 w-5" />
