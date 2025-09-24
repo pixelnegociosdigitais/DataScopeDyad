@@ -2,7 +2,6 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { User, Company, View, Survey, UserRole } from './types';
 import { MOCK_USERS, MOCK_COMPANIES, MOCK_SURVEYS, MOCK_RESPONSES } from './data/mockData';
 import Login from './components/Login';
-import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import SurveyList from './components/SurveyList';
 import SurveyCreator from './components/SurveyCreator';
@@ -81,14 +80,18 @@ const App: React.FC = () => {
     const canCreate = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
 
     return (
-        <div className="flex h-screen bg-background text-text-main">
-            <Sidebar currentView={currentView} setView={setCurrentView} canCreate={canCreate} />
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <Header user={currentUser} company={currentCompany} onLogout={handleLogout} setView={setCurrentView} />
-                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
-                    {renderContent()}
-                </main>
-            </div>
+        <div className="flex flex-col h-screen bg-background text-text-main">
+            <Header 
+                user={currentUser} 
+                company={currentCompany} 
+                onLogout={handleLogout} 
+                setView={setCurrentView} 
+                currentView={currentView} // Pass currentView
+                canCreate={canCreate} // Pass canCreate
+            />
+            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
+                {renderContent()}
+            </main>
         </div>
     );
 };
