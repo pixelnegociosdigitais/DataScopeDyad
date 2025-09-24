@@ -3,6 +3,7 @@ import { User, Company, View, Survey, UserRole } from './types';
 import { MOCK_USERS, MOCK_COMPANIES, MOCK_SURVEYS, MOCK_RESPONSES } from './data/mockData';
 import Login from './components/Login';
 import Header from './components/Header';
+import Sidebar from './components/Sidebar'; // Importando o Sidebar
 import SurveyList from './components/SurveyList';
 import SurveyCreator from './components/SurveyCreator';
 import Dashboard from './components/Dashboard';
@@ -80,18 +81,25 @@ const App: React.FC = () => {
     const canCreate = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
 
     return (
-        <div className="flex flex-col h-screen bg-background text-text-main">
-            <Header 
-                user={currentUser} 
-                company={currentCompany} 
-                onLogout={handleLogout} 
+        <div className="flex h-screen bg-background text-text-main"> {/* Flex container para sidebar e conteúdo */}
+            <Sidebar 
+                currentView={currentView} 
                 setView={setCurrentView} 
-                currentView={currentView} // Pass currentView
-                canCreate={canCreate} // Pass canCreate
+                canCreate={canCreate} 
             />
-            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
-                {renderContent()}
-            </main>
+            <div className="flex flex-col flex-1"> {/* Conteúdo principal (header + main) */}
+                <Header 
+                    user={currentUser} 
+                    company={currentCompany} 
+                    onLogout={handleLogout} 
+                    setView={setCurrentView} 
+                    currentView={currentView} 
+                    canCreate={canCreate} 
+                />
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
+                    {renderContent()}
+                </main>
+            </div>
         </div>
     );
 };
