@@ -3,14 +3,18 @@ import { Survey } from '../types';
 import { SurveyIcon } from './icons/SurveyIcon';
 import { DashboardIcon } from './icons/DashboardIcon';
 import { PencilIcon } from './icons/PencilIcon';
+import { TrashIcon } from './icons/TrashIcon';
 
 interface SurveyListProps {
     surveys: Survey[];
     onSelectSurvey: (survey: Survey) => void;
     onStartResponse: (survey: Survey) => void;
+    onEditSurvey: (survey: Survey) => void;
+    onDeleteSurvey: (surveyId: string) => void;
+    canManage: boolean;
 }
 
-const SurveyList: React.FC<SurveyListProps> = ({ surveys, onSelectSurvey, onStartResponse }) => {
+const SurveyList: React.FC<SurveyListProps> = ({ surveys, onSelectSurvey, onStartResponse, onEditSurvey, onDeleteSurvey, canManage }) => {
     return (
         <div>
             <h2 className="text-2xl font-bold mb-6 text-text-main">Pesquisas Disponíveis</h2>
@@ -29,6 +33,16 @@ const SurveyList: React.FC<SurveyListProps> = ({ surveys, onSelectSurvey, onStar
                                     <h3 className="text-lg font-semibold text-text-main">{survey.title}</h3>
                                     <p className="text-sm text-text-light">{survey.questions.length} perguntas</p>
                                 </div>
+                                {canManage && (
+                                    <div className="flex items-center">
+                                        <button onClick={() => onEditSurvey(survey)} className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors" aria-label="Editar pesquisa">
+                                            <PencilIcon className="h-5 w-5" />
+                                        </button>
+                                        <button onClick={() => onDeleteSurvey(survey.id)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors" aria-label="Excluir pesquisa">
+                                            <TrashIcon className="h-5 w-5" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                             <div className="mt-auto pt-4 border-t border-gray-100 flex gap-2">
                                 <button 

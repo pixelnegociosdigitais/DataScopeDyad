@@ -9,31 +9,35 @@ import Profile from './components/Profile';
 import SurveyForm from './components/SurveyForm';
 
 const App: React.FC = () => {
-    // Usando o primeiro usuário e empresa dos dados de demonstração como o usuário "logado"
     const [currentUser, setCurrentUser] = useState<User | null>(MOCK_USERS[0]);
     const [currentCompany, setCurrentCompany] = useState<Company | null>(MOCK_COMPANIES[0]);
-    
-    // Filtrando as pesquisas e respostas para a empresa do usuário atual
     const [surveys, setSurveys] = useState<Survey[]>(MOCK_SURVEYS.filter(s => s.companyId === currentCompany?.id));
     const [surveyResponses, setSurveyResponses] = useState<SurveyResponse[]>(MOCK_RESPONSES);
     
     const [currentView, setCurrentView] = useState<View>(View.SURVEY_LIST);
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
+    const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
 
     const handleLogout = () => {
-        // Simula um logout. Em uma aplicação real, isso limparia a sessão.
         alert("Funcionalidade de logout desativada no modo de demonstração.");
     };
 
-    const handleCreateSurvey = (newSurveyData: Omit<Survey, 'id' | 'companyId'>) => {
-        if (!currentUser || !currentCompany) return;
-        const newSurvey: Survey = {
-            ...newSurveyData,
-            id: `s${Date.now()}`, // Cria um ID único
-            companyId: currentCompany.id,
-        };
-        setSurveys(prev => [newSurvey, ...prev]);
-        alert('Pesquisa criada com sucesso! (localmente)');
+    const handleSaveSurvey = (surveyData: Survey) => {
+        if (editingSurvey) {
+            // Lógica de atualização
+            setSurveys(prev => prev.map(s => s.id === editingSurvey.id ? { ...s, ...surveyData } : s));
+            alert('Pesquisa atualizada com sucesso! (localmente)');
+            setEditingSurvey(null);
+        } else {
+            // Lógica de criação
+            const newSurvey: Survey = {
+                ...surveyData,
+                id: `s${Date.now()}`,
+                companyId: currentCompany!.id,
+            };
+            setSurveys(prev => [newSurvey, ...prev]);
+            alert('Pesquisa criada com sucesso! (localmente)');
+        }
         setCurrentView(View.SURVEY_LIST);
     };
 
@@ -65,19 +69,42 @@ const App: React.FC = () => {
         setCurrentView(View.RESPOND_SURVEY);
     }, []);
 
+    const handleEditSurvey = (survey: Survey) => {
+        setEditingSurvey(survey);
+        setCurrentView(View.EDIT_SURVEY);
+    };
+
+    const handleDeleteSurvey = (surveyId: string) => {
+        if (window.confirm('Tem certeza que deseja excluir esta pesquisa? Esta ação não pode ser desfeita.')) {
+            setSurveys(prev => prev.filter(s => s.id !== surveyId));
+            alert('Pesquisa excluída com sucesso! (localmente)');
+        }
+    };
+
     const handleBack = () => {
         setCurrentView(View.SURVEY_LIST);
         setSelectedSurvey(null);
+        setEditingSurvey(null);
     };
 
     const renderContent = () => {
         if (!currentUser || !currentCompany) return null;
+        const canCreate = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
 
         switch (currentView) {
             case View.SURVEY_LIST:
-                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} />;
+                return <SurveyList 
+                            surveys={surveys} 
+                            onSelectSurvey={handleSelectSurvey} 
+                            onStartResponse={handleStartResponse}
+                            onEditSurvey={handleEditSurvey}
+                            onDeleteSurvey={handleDeleteSurvey}
+                            canManage={canCreate}
+                        />;
             case View.CREATE_SURVEY:
-                return <SurveyCreator onSave={handleCreateSurvey} onBack={handleBack} />;
+                return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} />;
+            case View.EDIT_SURVEY:
+                return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} surveyToEdit={editingSurvey} />;
             case View.DASHBOARD:
                 if (selectedSurvey) {
                     const responsesForSurvey = surveyResponses.filter(r => r.surveyId === selectedSurvey.id);
@@ -92,7 +119,14 @@ const App: React.FC = () => {
                 }
                 return null;
             default:
-                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} />;
+                return <SurveyList 
+                            surveys={surveys} 
+                            onSelectSurvey={handleSelectSurvey} 
+                            onStartResponse={handleStartResponse}
+                            onEditSurvey={handleEditSurvey}
+                            onDeleteSurvey={handleDeleteSurvey}
+                            canManage={canCreate}
+                        />;
         }
     };
 

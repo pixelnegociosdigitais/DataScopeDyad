@@ -7,11 +7,13 @@ import { ArrowDownIcon } from './icons/ArrowDownIcon';
 interface SurveyCreatorProps {
     onSave: (survey: Survey) => void;
     onBack: () => void;
+    surveyToEdit?: Survey | null;
 }
 
-const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack }) => {
-    const [title, setTitle] = useState('');
-    const [questions, setQuestions] = useState<Question[]>([]);
+const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToEdit }) => {
+    const isEditing = !!surveyToEdit;
+    const [title, setTitle] = useState(surveyToEdit?.title || '');
+    const [questions, setQuestions] = useState<Question[]>(surveyToEdit?.questions || []);
 
     const addQuestion = (type: QuestionType) => {
         const newQuestion: Question = {
@@ -66,7 +68,6 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack }) => {
         const newQuestions = [...questions];
         const targetIndex = direction === 'up' ? index - 1 : index + 1;
         
-        // Swap elements
         [newQuestions[index], newQuestions[targetIndex]] = [newQuestions[targetIndex], newQuestions[index]];
         
         setQuestions(newQuestions);
@@ -77,11 +78,15 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack }) => {
             alert('Por favor, forneça um título e garanta que todas as perguntas tenham texto.');
             return;
         }
-        onSave({ id: '', title, companyId: '', questions });
+        onSave({ 
+            id: surveyToEdit?.id || '', 
+            title, 
+            companyId: surveyToEdit?.companyId || '', 
+            questions 
+        });
     };
 
     const renderQuestionInput = (q: Question, qIndex: number) => {
-        // ... (o resto da função permanece o mesmo)
         switch (q.type) {
             case QuestionType.LONG_TEXT:
                 return (
@@ -112,7 +117,7 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack }) => {
                 <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Voltar">
                     <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
                 </button>
-                <h2 className="text-2xl font-bold text-text-main">Criar Nova Pesquisa</h2>
+                <h2 className="text-2xl font-bold text-text-main">{isEditing ? 'Editar Pesquisa' : 'Criar Nova Pesquisa'}</h2>
             </div>
             <div className="bg-white p-8 rounded-lg shadow-md mb-6">
                 <label htmlFor="survey-title" className="block text-sm font-medium text-gray-700">Título da Pesquisa</label>
@@ -181,7 +186,9 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack }) => {
             </div>
 
             <div className="mt-8 flex justify-end">
-                <button onClick={handleSave} className="px-6 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark shadow-sm">Salvar Pesquisa</button>
+                <button onClick={handleSave} className="px-6 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark shadow-sm">
+                    {isEditing ? 'Salvar Alterações' : 'Salvar Pesquisa'}
+                </button>
             </div>
         </div>
     );

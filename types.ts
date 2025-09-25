@@ -57,6 +57,7 @@ export interface SurveyResponse {
 export enum View {
     SURVEY_LIST = 'SURVEY_LIST',
     CREATE_SURVEY = 'CREATE_SURVEY',
+    EDIT_SURVEY = 'EDIT_SURVEY',
     DASHBOARD = 'DASHBOARD',
     PROFILE = 'PROFILE',
     RESPOND_SURVEY = 'RESPOND_SURVEY',
