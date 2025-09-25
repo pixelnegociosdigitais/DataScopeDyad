@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { User, Company, View, Survey, UserRole, Answer, SurveyResponse } from './types';
-import { supabase } from '@/src/integrations/supabase/client';
-import { Session } from '@supabase/supabase-js';
-import Login from './components/Login';
+import { MOCK_USERS, MOCK_COMPANIES, MOCK_SURVEYS, MOCK_RESPONSES } from './data/mockData';
 import Header from './components/Header';
-import Sidebar from './components/Sidebar';
 import SurveyList from './components/SurveyList';
 import SurveyCreator from './components/SurveyCreator';
 import Dashboard from './components/Dashboard';
@@ -12,207 +9,58 @@ import Profile from './components/Profile';
 import SurveyForm from './components/SurveyForm';
 
 const App: React.FC = () => {
-    const [session, setSession] = useState<Session | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
-    
-    const [surveys, setSurveys] = useState<Survey[]>([]);
-    const [surveyResponses, setSurveyResponses] = useState<SurveyResponse[]>([]);
+    const [currentUser, setCurrentUser] = useState<User | null>(MOCK_USERS[0]);
+    const [currentCompany, setCurrentCompany] = useState<Company | null>(MOCK_COMPANIES[0]);
+    const [surveys, setSurveys] = useState<Survey[]>(MOCK_SURVEYS.filter(s => s.companyId === currentCompany?.id));
+    const [surveyResponses, setSurveyResponses] = useState<SurveyResponse[]>(MOCK_RESPONSES);
     
     const [currentView, setCurrentView] = useState<View>(View.SURVEY_LIST);
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
 
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-        });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    const fetchSurveys = useCallback(async (companyId: string) => {
-        const { data, error } = await supabase
-            .from('surveys')
-            .select(`*, questions (*)`)
-            .eq('company_id', companyId)
-            .order('created_at', { ascending: false });
-
-        if (error) {
-            console.error('Error fetching surveys:', error);
-            setSurveys([]);
-        } else {
-            const fetchedSurveys = data.map((s: any) => ({
-                ...s,
-                companyId: s.company_id,
-                questions: s.questions.sort((a: any, b: any) => a.position - b.position)
-            })) as Survey[];
-            setSurveys(fetchedSurveys);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (session?.user) {
-            const fetchUserDataAndSurveys = async () => {
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select(`*, company:companies(*)`)
-                    .eq('id', session.user.id)
-                    .single();
-
-                if (profileError || !profile || !profile.company) {
-                    console.error('Error fetching profile or profile not complete.', profileError);
-                    setCurrentUser(null);
-                    setCurrentCompany(null);
-                    setSurveys([]);
-                } else {
-                    const user: User = {
-                        id: profile.id,
-                        fullName: profile.full_name,
-                        role: profile.role as UserRole,
-                        email: session.user.email!,
-                        phone: profile.phone,
-                        address: profile.address,
-                        profilePictureUrl: profile.avatar_url,
-                    };
-                    setCurrentUser(user);
-                    const company = profile.company as Company;
-                    setCurrentCompany(company);
-                    await fetchSurveys(company.id);
-                }
-                setLoading(false);
-            };
-            fetchUserDataAndSurveys();
-        } else {
-            setCurrentUser(null);
-            setCurrentCompany(null);
-            setSurveys([]);
-            setLoading(false);
-        }
-    }, [session, fetchSurveys]);
-
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
+    const handleLogout = () => {
+        alert("Funcionalidade de logout desativada no modo de demonstração.");
     };
 
-    const handleSaveSurvey = async (surveyData: Survey) => {
-        if (!currentUser || !currentCompany) {
-            alert('Erro: Usuário ou empresa não encontrado. Por favor, faça login novamente.');
-            return;
-        }
-    
+    const handleSaveSurvey = (surveyData: Survey) => {
         if (editingSurvey) {
-            const { error: surveyUpdateError } = await supabase
-                .from('surveys')
-                .update({ title: surveyData.title })
-                .eq('id', editingSurvey.id);
-    
-            if (surveyUpdateError) {
-                alert(`Erro ao atualizar a pesquisa: ${surveyUpdateError.message}`);
-                return;
-            }
-    
-            await supabase.from('questions').delete().eq('survey_id', editingSurvey.id);
-            
-            const questionsToInsert = surveyData.questions.map((q, index) => ({
-                survey_id: editingSurvey.id, text: q.text, type: q.type, options: q.options, position: index,
-            }));
-    
-            if (questionsToInsert.length > 0) {
-                const { error: questionsInsertError } = await supabase.from('questions').insert(questionsToInsert);
-                if (questionsInsertError) {
-                    alert(`Pesquisa atualizada, mas falha ao salvar perguntas: ${questionsInsertError.message}`);
-                }
-            }
-            
-            alert('Pesquisa atualizada com sucesso!');
-    
+            // Lógica de atualização
+            setSurveys(prev => prev.map(s => s.id === editingSurvey.id ? { ...s, ...surveyData } : s));
+            alert('Pesquisa atualizada com sucesso! (localmente)');
+            setEditingSurvey(null);
         } else {
-            const { data: newSurvey, error: surveyInsertError } = await supabase
-                .from('surveys')
-                .insert({ title: surveyData.title, company_id: currentCompany.id, created_by: currentUser.id })
-                .select('id').single();
-    
-            if (surveyInsertError || !newSurvey) {
-                alert(`Erro ao criar a pesquisa: ${surveyInsertError?.message || 'Falha desconhecida.'}`);
-                return;
-            }
-    
-            const questionsToInsert = surveyData.questions.map((q, index) => ({
-                survey_id: newSurvey.id, text: q.text, type: q.type, options: q.options, position: index,
-            }));
-    
-            if (questionsToInsert.length > 0) {
-                const { error: questionsInsertError } = await supabase.from('questions').insert(questionsToInsert);
-                if (questionsInsertError) {
-                    alert(`Pesquisa criada, mas falha ao salvar perguntas: ${questionsInsertError.message}`);
-                }
-            }
-    
-            alert('Pesquisa criada com sucesso!');
+            // Lógica de criação
+            const newSurvey: Survey = {
+                ...surveyData,
+                id: `s${Date.now()}`,
+                companyId: currentCompany!.id,
+            };
+            setSurveys(prev => [newSurvey, ...prev]);
+            alert('Pesquisa criada com sucesso! (localmente)');
         }
-    
-        await fetchSurveys(currentCompany.id);
         setCurrentView(View.SURVEY_LIST);
-        setEditingSurvey(null);
     };
 
-    const handleDeleteSurvey = async (surveyId: string) => {
-        if (window.confirm('Tem certeza que deseja excluir esta pesquisa? Esta ação não pode ser desfeita.')) {
-            const { error } = await supabase.from('surveys').delete().eq('id', surveyId);
-            if (error) {
-                console.error('Error deleting survey:', error);
-            } else {
-                setSurveys(prev => prev.filter(s => s.id !== surveyId));
-            }
-        }
+    const handleUpdateProfile = (updatedUser: User) => {
+        setCurrentUser(updatedUser);
+        alert('Perfil atualizado com sucesso! (localmente)');
+        setCurrentView(View.SURVEY_LIST);
     };
 
-    const handleUpdateProfile = async (updatedUser: User) => {
-        const { error } = await supabase
-            .from('profiles')
-            .update({ full_name: updatedUser.fullName, phone: updatedUser.phone, address: updatedUser.address, avatar_url: updatedUser.profilePictureUrl })
-            .eq('id', updatedUser.id);
-        if (error) {
-            console.error('Error updating profile:', error);
-        } else {
-            setCurrentUser(prev => ({ ...prev!, ...updatedUser }));
-            setCurrentView(View.SURVEY_LIST);
-        }
-    };
-
-    const handleSaveResponse = async (answers: Answer[]) => {
+    const handleSaveResponse = (answers: Answer[]) => {
         if (!selectedSurvey) return;
-        const { data: responseData, error: responseError } = await supabase
-            .from('survey_responses').insert({ survey_id: selectedSurvey.id, respondent_id: session?.user.id })
-            .select().single();
-        if (responseError || !responseData) { console.error('Error creating response:', responseError); return; }
-
-        const answersToInsert = answers.map(answer => ({
-            response_id: responseData.id, question_id: answer.questionId, value: answer.value,
-        }));
-        const { error: answersError } = await supabase.from('answers').insert(answersToInsert);
-        if (answersError) console.error('Error saving answers:', answersError);
-        
-        alert('Resposta enviada com sucesso!');
+        const newResponse: SurveyResponse = {
+            id: `r${Date.now()}`,
+            surveyId: selectedSurvey.id,
+            answers,
+        };
+        setSurveyResponses(prev => [...prev, newResponse]);
+        alert('Resposta enviada com sucesso! (localmente)');
         setCurrentView(View.SURVEY_LIST);
     };
 
-    const handleSelectSurvey = useCallback(async (survey: Survey) => {
+    const handleSelectSurvey = useCallback((survey: Survey) => {
         setSelectedSurvey(survey);
-        const { data, error } = await supabase.from('survey_responses').select('*, answers(*)').eq('survey_id', survey.id);
-        if (error) {
-            console.error('Error fetching responses:', error);
-            setSurveyResponses([]);
-        } else {
-            const formattedResponses = data.map((r: any) => ({ ...r, surveyId: r.survey_id })) as SurveyResponse[];
-            setSurveyResponses(formattedResponses);
-        }
         setCurrentView(View.DASHBOARD);
     }, []);
 
@@ -226,6 +74,13 @@ const App: React.FC = () => {
         setCurrentView(View.EDIT_SURVEY);
     };
 
+    const handleDeleteSurvey = (surveyId: string) => {
+        if (window.confirm('Tem certeza que deseja excluir esta pesquisa? Esta ação não pode ser desfeita.')) {
+            setSurveys(prev => prev.filter(s => s.id !== surveyId));
+            alert('Pesquisa excluída com sucesso! (localmente)');
+        }
+    };
+
     const handleBack = () => {
         setCurrentView(View.SURVEY_LIST);
         setSelectedSurvey(null);
@@ -233,71 +88,67 @@ const App: React.FC = () => {
     };
 
     const renderContent = () => {
-        if (!currentUser || !currentCompany) {
-             if (session) {
-                return (
-                    <div className="text-center">
-                        <h2 className="text-xl font-bold mb-2">Ocorreu um problema ao carregar seu perfil.</h2>
-                        <p className="text-text-light mb-4">Isso pode acontecer logo após o cadastro. Por favor, tente recarregar a página.</p>
-                        <button onClick={() => window.location.reload()} className="px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark shadow-sm">
-                            Recarregar
-                        </button>
-                    </div>
-                );
-            }
-            return null;
-        }
-        const canManage = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
+        if (!currentUser || !currentCompany) return null;
+        const canCreate = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
 
         switch (currentView) {
             case View.SURVEY_LIST:
-                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurvey} canManage={canManage} />;
+                return <SurveyList 
+                            surveys={surveys} 
+                            onSelectSurvey={handleSelectSurvey} 
+                            onStartResponse={handleStartResponse}
+                            onEditSurvey={handleEditSurvey}
+                            onDeleteSurvey={handleDeleteSurvey}
+                            canManage={canCreate}
+                        />;
             case View.CREATE_SURVEY:
                 return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} />;
             case View.EDIT_SURVEY:
                 return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} surveyToEdit={editingSurvey} />;
             case View.DASHBOARD:
-                return selectedSurvey ? <Dashboard survey={selectedSurvey} responses={surveyResponses} onBack={handleBack} /> : null;
+                if (selectedSurvey) {
+                    const responsesForSurvey = surveyResponses.filter(r => r.surveyId === selectedSurvey.id);
+                    return <Dashboard survey={selectedSurvey} responses={responsesForSurvey} onBack={handleBack} />;
+                }
+                return null;
             case View.PROFILE:
                 return <Profile user={currentUser} onUpdate={handleUpdateProfile} onBack={handleBack} />;
             case View.RESPOND_SURVEY:
-                return selectedSurvey ? <SurveyForm survey={selectedSurvey} onSaveResponse={handleSaveResponse} onBack={handleBack} /> : null;
+                if (selectedSurvey) {
+                    return <SurveyForm survey={selectedSurvey} onSaveResponse={handleSaveResponse} onBack={handleBack} />;
+                }
+                return null;
             default:
-                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurvey} canManage={canManage} />;
+                return <SurveyList 
+                            surveys={surveys} 
+                            onSelectSurvey={handleSelectSurvey} 
+                            onStartResponse={handleStartResponse}
+                            onEditSurvey={handleEditSurvey}
+                            onDeleteSurvey={handleDeleteSurvey}
+                            canManage={canCreate}
+                        />;
         }
     };
 
-    if (loading) return <div className="h-screen w-screen flex items-center justify-center">Carregando...</div>;
-    if (!session) return <Login />;
-    
-    const canCreate = currentUser ? currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER : false;
+    if (!currentUser || !currentCompany) {
+        return <div className="h-screen w-screen flex items-center justify-center">Carregando dados de demonstração...</div>;
+    }
+
+    const canCreate = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
 
     return (
-        <div className="flex h-screen bg-background text-text-main">
-            {currentUser && currentCompany ? (
-                <>
-                    <Sidebar 
-                        currentView={currentView} 
-                        setView={setCurrentView} 
-                        canCreate={canCreate} 
-                    />
-                    <div className="flex flex-col flex-1">
-                        <Header 
-                            user={currentUser} 
-                            company={currentCompany} 
-                            onLogout={handleLogout}
-                            setView={setCurrentView}
-                        />
-                        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
-                            {renderContent()}
-                        </main>
-                    </div>
-                </>
-            ) : (
-                <main className="flex-1 w-full overflow-x-hidden overflow-y-auto bg-background p-8">
-                    {renderContent()}
-                </main>
-            )}
+        <div className="flex flex-col h-screen bg-background text-text-main">
+            <Header 
+                user={currentUser} 
+                company={currentCompany} 
+                onLogout={handleLogout} 
+                setView={setCurrentView} 
+                currentView={currentView} 
+                canCreate={canCreate} 
+            />
+            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
+                {renderContent()}
+            </main>
         </div>
     );
 };
