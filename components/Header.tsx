@@ -3,9 +3,9 @@ import { User, Company, View } from '../types';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
-import { SurveyIcon } from './icons/SurveyIcon'; // Novo import
-import { CreateIcon } from './icons/CreateIcon'; // Novo import
-import { LogoIcon } from './icons/LogoIcon'; // Novo import para o logo
+import { SurveyIcon } from './icons/SurveyIcon';
+import { CreateIcon } from './icons/CreateIcon';
+import { LogoIcon } from './icons/LogoIcon';
 
 interface HeaderProps {
     user: User;
@@ -14,9 +14,10 @@ interface HeaderProps {
     setView: (view: View) => void;
     currentView: View;
     canCreate: boolean;
+    canManageCompany: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, currentView, canCreate }) => {
+const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, currentView, canCreate, canManageCompany }) => {
     return (
         <header className="bg-white shadow-sm p-4 flex justify-between items-center">
             <div className="flex items-center gap-6">
@@ -25,7 +26,6 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, curre
                     <h1 className="text-xl font-bold text-text-main">DataScope</h1>
                 </div>
                 
-                {/* Botões de Navegação */}
                 <nav className="ml-8 flex gap-4">
                     <button
                         onClick={() => setView(View.SURVEY_LIST)}
@@ -55,10 +55,21 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, curre
             </div>
 
             <div className="flex items-center gap-6">
-                 <div className="flex items-center gap-2 text-sm text-text-light">
-                    <BuildingIcon className="h-5 w-5" />
-                    <span>{company.name}</span>
-                </div>
+                 {canManageCompany ? (
+                    <button 
+                        onClick={() => setView(View.COMPANY_SETTINGS)}
+                        className="flex items-center gap-2 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"
+                        aria-label="Configurações da empresa"
+                    >
+                        <BuildingIcon className="h-5 w-5" />
+                        <span>{company.name}</span>
+                    </button>
+                ) : (
+                    <div className="flex items-center gap-2 text-sm text-text-light">
+                        <BuildingIcon className="h-5 w-5" />
+                        <span>{company.name}</span>
+                    </div>
+                )}
                 <button 
                     onClick={() => setView(View.PROFILE)}
                     className="flex items-center gap-3 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"
