@@ -37,7 +37,8 @@ const Login: React.FC = () => {
                                 button_label: 'Cadastrar',
                                 link_text: 'Não tem uma conta? Cadastre-se',
                                 user_meta: {
-                                    full_name: 'Nome Completo'
+                                    full_name: 'Nome Completo',
+                                    company_name: 'Nome da Empresa'
                                 }
                             },
                             forgotten_password: {
