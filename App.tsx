@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { User, Company, View, Survey, UserRole, Answer, SurveyResponse } from './types';
-import { MOCK_SURVEYS, MOCK_RESPONSES } from './data/mockData';
+import { MOCK_RESPONSES } from './data/mockData'; // MOCK_SURVEYS será removido
 import Header from './components/Header';
 import SurveyList from './components/SurveyList';
 import SurveyCreator from './components/SurveyCreator';
@@ -9,7 +9,7 @@ import Profile from './components/Profile';
 import SurveyForm from './components/SurveyForm';
 import Login from './components/Login';
 import CompanySettings from './components/CompanySettings';
-import CompanySetup from './components/CompanySetup'; // Importar o novo componente
+import CompanySetup from './components/CompanySetup';
 import { supabase } from './src/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
@@ -19,6 +19,7 @@ const App: React.FC = () => {
     const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
     const [surveys, setSurveys] = useState<Survey[]>([]);
     const [surveyResponses, setSurveyResponses] = useState<SurveyResponse[]>(MOCK_RESPONSES);
+    const [templates, setTemplates] = useState<Survey[]>([]); // Novo estado para templates
     
     const [currentView, setCurrentView] = useState<View>(View.SURVEY_LIST);
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
@@ -26,26 +27,29 @@ const App: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchSession = async () => {
+        const fetchInitialData = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
             if (session) {
                 await fetchUserData(session.user.id, session.user.email || '');
             }
+            await fetchTemplates(); // Buscar templates
             setLoading(false);
         };
 
-        fetchSession();
+        fetchInitialData();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setSession(session);
             if (session) {
                 setLoading(true);
                 await fetchUserData(session.user.id, session.user.email || '');
+                await fetchTemplates(); // Buscar templates novamente
                 setLoading(false);
             } else {
                 setCurrentUser(null);
                 setCurrentCompany(null);
+                setTemplates([]);
             }
         });
 
@@ -79,8 +83,6 @@ const App: React.FC = () => {
 
         if (profileError) {
             console.error('Error fetching profile:', profileError);
-            // Se o perfil não for encontrado, pode ser um novo usuário sem perfil ainda
-            // Ou um problema de RLS. Por enquanto, vamos apenas retornar.
             return;
         }
 
@@ -89,7 +91,7 @@ const App: React.FC = () => {
                 id: profileData.id,
                 fullName: profileData.full_name || '',
                 role: profileData.role as UserRole,
-                email: userEmail, // Usar o email da sessão
+                email: userEmail,
                 phone: profileData.phone || undefined,
                 address: profileData.address || undefined,
                 profilePictureUrl: profileData.avatar_url || undefined,
@@ -110,18 +112,38 @@ const App: React.FC = () => {
                 };
                 setCurrentCompany(company);
                 // TODO: Fetch surveys from database for the current company
-                setSurveys(MOCK_SURVEYS); 
+                // setSurveys(MOCK_SURVEYS); // Remover esta linha quando as pesquisas forem do DB
             } else {
-                // Se o usuário tem perfil mas não tem empresa, direciona para a configuração
                 setCurrentView(View.COMPANY_SETUP);
             }
+        }
+    };
+
+    const fetchTemplates = async () => {
+        const { data, error } = await supabase
+            .from('survey_templates')
+            .select('id, title, questions');
+
+        if (error) {
+            console.error('Error fetching survey templates:', error);
+            return;
+        }
+
+        if (data) {
+            // Mapear os dados do banco para o tipo Survey
+            const fetchedTemplates: Survey[] = data.map(template => ({
+                id: template.id,
+                title: template.title,
+                companyId: '', // Templates não têm companyId, será definido ao criar a pesquisa
+                questions: template.questions,
+            }));
+            setTemplates(fetchedTemplates);
         }
     };
 
     const handleCreateCompany = async (companyName: string) => {
         if (!currentUser) return;
 
-        // 1. Inserir a nova empresa
         const { data: newCompanyData, error: companyError } = await supabase
             .from('companies')
             .insert({ name: companyName })
@@ -134,7 +156,6 @@ const App: React.FC = () => {
             return;
         }
 
-        // 2. Atualizar o perfil do usuário com a nova company_id e role de Administrador
         const { error: profileUpdateError } = await supabase
             .from('profiles')
             .update({ company_id: newCompanyData.id, role: UserRole.ADMIN })
@@ -143,17 +164,14 @@ const App: React.FC = () => {
         if (profileUpdateError) {
             alert('Erro ao vincular a empresa ao seu perfil: ' + profileUpdateError.message);
             console.error('Erro ao vincular empresa ao perfil:', profileUpdateError);
-            // Se falhar aqui, talvez seja bom tentar reverter a criação da empresa ou lidar com isso
             return;
         }
 
-        // 3. Atualizar o estado local
         setCurrentCompany(newCompanyData);
-        setCurrentUser(prev => prev ? { ...prev, role: UserRole.ADMIN } : null); // Atualiza a role localmente
+        setCurrentUser(prev => prev ? { ...prev, role: UserRole.ADMIN } : null);
         alert('Empresa criada e vinculada com sucesso!');
-        setCurrentView(View.SURVEY_LIST); // Volta para a lista de pesquisas
+        setCurrentView(View.SURVEY_LIST);
     };
-
 
     const handleSaveSurvey = (surveyData: Survey) => {
         // This logic remains local for now.
@@ -252,19 +270,17 @@ const App: React.FC = () => {
     };
 
     const renderContent = () => {
-        if (!currentUser) return null; // currentUser deve existir aqui
+        if (!currentUser) return null;
 
-        // Se o usuário está logado mas não tem empresa, mostra a tela de setup
         if (!currentCompany && currentView !== View.COMPANY_SETUP) {
-            setCurrentView(View.COMPANY_SETUP); // Garante que a view correta seja definida
-            return null; // Retorna null para que o próximo renderContent use a view atualizada
+            setCurrentView(View.COMPANY_SETUP);
+            return null;
         }
         
         if (currentView === View.COMPANY_SETUP) {
             return <CompanySetup user={currentUser} onCreateCompany={handleCreateCompany} />;
         }
 
-        // A partir daqui, currentUser e currentCompany devem existir
         const canManage = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
         const canManageCompany = currentUser.role === UserRole.ADMIN;
 
@@ -272,9 +288,9 @@ const App: React.FC = () => {
             case View.SURVEY_LIST:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurvey} canManage={canManage} />;
             case View.CREATE_SURVEY:
-                return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} />;
+                return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} templates={templates} />; {/* Passar templates */}
             case View.EDIT_SURVEY:
-                return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} surveyToEdit={editingSurvey} />;
+                return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} surveyToEdit={editingSurvey} templates={templates} />; {/* Passar templates */}
             case View.DASHBOARD:
                 if (selectedSurvey) {
                     const responsesForSurvey = surveyResponses.filter(r => r.surveyId === selectedSurvey.id);
@@ -303,17 +319,14 @@ const App: React.FC = () => {
         return <Login />;
     }
 
-    // Se o usuário está logado mas ainda não tem um perfil ou empresa carregados
     if (!currentUser || (!currentCompany && currentView !== View.COMPANY_SETUP)) {
         return <div className="h-screen w-screen flex items-center justify-center">Carregando dados do usuário...</div>;
     }
 
-    // Se o usuário está logado e tem um perfil, mas não tem empresa, mostra a tela de setup
     if (currentUser && !currentCompany && currentView === View.COMPANY_SETUP) {
         return <CompanySetup user={currentUser} onCreateCompany={handleCreateCompany} />;
     }
 
-    // A partir daqui, currentUser e currentCompany devem existir (ou a view é COMPANY_SETUP)
     const canManage = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
     const canManageCompany = currentUser.role === UserRole.ADMIN;
 
@@ -321,7 +334,7 @@ const App: React.FC = () => {
         <div className="flex flex-col h-screen bg-background text-text-main">
             <Header 
                 user={currentUser} 
-                company={currentCompany!} // currentCompany é garantido aqui ou a view é COMPANY_SETUP
+                company={currentCompany!}
                 onLogout={() => supabase.auth.signOut()} 
                 setView={setCurrentView} 
                 currentView={currentView} 

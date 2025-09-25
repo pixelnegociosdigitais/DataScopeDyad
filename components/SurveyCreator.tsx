@@ -1,23 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Question, QuestionType, Survey } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { ArrowUpIcon } from './icons/ArrowUpIcon';
 import { ArrowDownIcon } from './icons/ArrowDownIcon';
+import { TrashIcon } from './icons/TrashIcon'; // Adicionado para remover perguntas
 
 interface SurveyCreatorProps {
     onSave: (survey: Survey) => void;
     onBack: () => void;
     surveyToEdit?: Survey | null;
+    templates: Survey[]; // Novo prop para templates
 }
 
-const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToEdit }) => {
+const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToEdit, templates }) => {
     const isEditing = !!surveyToEdit;
     const [title, setTitle] = useState(surveyToEdit?.title || '');
     const [questions, setQuestions] = useState<Question[]>(surveyToEdit?.questions || []);
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+
+    useEffect(() => {
+        if (surveyToEdit) {
+            setTitle(surveyToEdit.title);
+            setQuestions(surveyToEdit.questions);
+            setSelectedTemplateId(''); // Limpa a seleção de template ao editar
+        } else {
+            setTitle('');
+            setQuestions([]);
+            setSelectedTemplateId('');
+        }
+    }, [surveyToEdit]);
+
+    const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const templateId = e.target.value;
+        setSelectedTemplateId(templateId);
+        if (templateId) {
+            const selectedTemplate = templates.find(t => t.id === templateId);
+            if (selectedTemplate) {
+                setTitle(selectedTemplate.title);
+                // Clonar as perguntas do template para que não haja referência direta
+                setQuestions(selectedTemplate.questions.map(q => ({ ...q, id: `q${Date.now()}-${Math.random().toString(36).substring(7)}` })));
+            }
+        } else {
+            setTitle('');
+            setQuestions([]);
+        }
+    };
 
     const addQuestion = (type: QuestionType) => {
         const newQuestion: Question = {
-            id: `q${Date.now()}`,
+            id: `q${Date.now()}-${Math.random().toString(36).substring(7)}`, // ID único para cada pergunta
             text: '',
             type: type,
             ...((type === QuestionType.MULTIPLE_CHOICE || type === QuestionType.CHECKBOX) && { options: [''] })
@@ -79,9 +110,9 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
             return;
         }
         onSave({ 
-            id: surveyToEdit?.id || '', 
+            id: surveyToEdit?.id || '', // ID será gerado em App.tsx se for nova pesquisa
             title, 
-            companyId: surveyToEdit?.companyId || '', 
+            companyId: surveyToEdit?.companyId || '', // companyId será definido em App.tsx
             questions 
         });
     };
@@ -119,6 +150,26 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
                 </button>
                 <h2 className="text-2xl font-bold text-text-main">{isEditing ? 'Editar Pesquisa' : 'Criar Nova Pesquisa'}</h2>
             </div>
+            
+            {!isEditing && templates.length > 0 && (
+                <div className="bg-white p-8 rounded-lg shadow-md mb-6">
+                    <label htmlFor="template-select" className="block text-sm font-medium text-gray-700 mb-2">
+                        Começar com um Template:
+                    </label>
+                    <select
+                        id="template-select"
+                        value={selectedTemplateId}
+                        onChange={handleTemplateChange}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                    >
+                        <option value="">-- Selecione um template --</option>
+                        {templates.map(template => (
+                            <option key={template.id} value={template.id}>{template.title}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
             <div className="bg-white p-8 rounded-lg shadow-md mb-6">
                 <label htmlFor="survey-title" className="block text-sm font-medium text-gray-700">Título da Pesquisa</label>
                 <input
@@ -147,7 +198,9 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Pergunta <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{q.type}</span>
                             </label>
-                            <button onClick={() => removeQuestion(qIndex)} className="text-gray-400 hover:text-red-500 text-2xl font-bold leading-none">&times;</button>
+                            <button onClick={() => removeQuestion(qIndex)} className="p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors" aria-label="Excluir pergunta">
+                                <TrashIcon className="h-5 w-5" />
+                            </button>
                         </div>
                         {renderQuestionInput(q, qIndex)}
                         {(q.type === QuestionType.MULTIPLE_CHOICE || q.type === QuestionType.CHECKBOX) && (
@@ -162,7 +215,9 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
                                             placeholder={`Opção ${oIndex + 1}`}
                                             className="block w-full sm:w-1/2 px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700 placeholder-gray-400"
                                         />
-                                        <button onClick={() => removeOption(qIndex, oIndex)} className="ml-2 text-gray-400 hover:text-red-500 text-xl" disabled={q.options?.length === 1}>&minus;</button>
+                                        <button onClick={() => removeOption(qIndex, oIndex)} className="ml-2 p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors" disabled={q.options?.length === 1} aria-label="Remover opção">
+                                            <TrashIcon className="h-4 w-4" />
+                                        </button>
                                     </div>
                                 ))}
                                 <button onClick={() => addOption(qIndex)} className="text-sm text-primary hover:text-primary-dark mt-1">+ Adicionar Opção</button>
