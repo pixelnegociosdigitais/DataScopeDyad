@@ -24,10 +24,9 @@ const App: React.FC = () => {
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
 
     useEffect(() => {
-        setLoading(true);
+        // Este efeito busca a sessão inicial e se inscreve para futuras mudanças de autenticação.
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
-            // O carregamento de dados do usuário acontecerá no próximo useEffect
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -58,9 +57,9 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
+        // Este efeito reage a mudanças na sessão para buscar os dados do usuário ou limpá-los.
         if (session?.user) {
             const fetchUserDataAndSurveys = async () => {
-                setLoading(true);
                 const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select(`*, company:companies(*)`)
@@ -87,16 +86,17 @@ const App: React.FC = () => {
                     setCurrentCompany(company);
                     await fetchSurveys(company.id);
                 }
-                setLoading(false);
+                setLoading(false); // Finaliza o carregamento, independentemente do resultado.
             };
             fetchUserDataAndSurveys();
         } else {
+            // Se não há sessão, limpa os dados e finaliza o carregamento.
             setCurrentUser(null);
             setCurrentCompany(null);
             setSurveys([]);
-            if (loading) setLoading(false);
+            setLoading(false);
         }
-    }, [session, fetchSurveys, loading]);
+    }, [session, fetchSurveys]); // A dependência de 'loading' foi removida para corrigir o loop.
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
