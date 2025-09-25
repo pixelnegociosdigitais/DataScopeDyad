@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, Company, View, Survey, UserRole, Answer, SurveyResponse } from './types';
-import { supabase } from './integrations/supabase/client';
+import { supabase } from '@/src/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import Login from './components/Login';
 import Header from './components/Header';

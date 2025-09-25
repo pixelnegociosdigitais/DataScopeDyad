@@ -1,7 +1,7 @@
 import React from 'react';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import { supabase } from '../integrations/supabase/client';
+import { supabase } from '@/src/integrations/supabase/client';
 import { LogoIcon } from './icons/LogoIcon';
 
 const Login: React.FC = () => {
