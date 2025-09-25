@@ -108,59 +108,62 @@ const App: React.FC = () => {
             return;
         }
     
-        try {
-            if (editingSurvey) {
-                // --- Lógica de Edição ---
-                const { error: surveyUpdateError } = await supabase
-                    .from('surveys')
-                    .update({ title: surveyData.title })
-                    .eq('id', editingSurvey.id);
+        if (editingSurvey) {
+            // Lógica de Edição
+            const { error: surveyUpdateError } = await supabase
+                .from('surveys')
+                .update({ title: surveyData.title })
+                .eq('id', editingSurvey.id);
     
-                if (surveyUpdateError) throw surveyUpdateError;
-    
-                const { error: deleteError } = await supabase.from('questions').delete().eq('survey_id', editingSurvey.id);
-                if (deleteError) throw deleteError;
-                
-                const questionsToInsert = surveyData.questions.map((q, index) => ({
-                    survey_id: editingSurvey.id, text: q.text, type: q.type, options: q.options, position: index,
-                }));
-    
-                if (questionsToInsert.length > 0) {
-                    const { error: questionsInsertError } = await supabase.from('questions').insert(questionsToInsert);
-                    if (questionsInsertError) throw questionsInsertError;
-                }
-                
-                alert('Pesquisa atualizada com sucesso!');
-    
-            } else {
-                // --- Lógica de Criação ---
-                const { data: newSurvey, error: surveyInsertError } = await supabase
-                    .from('surveys')
-                    .insert({ title: surveyData.title, company_id: currentCompany.id, created_by: currentUser.id })
-                    .select().single();
-    
-                if (surveyInsertError || !newSurvey) throw surveyInsertError || new Error('Falha ao criar a pesquisa.');
-    
-                const questionsToInsert = surveyData.questions.map((q, index) => ({
-                    survey_id: newSurvey.id, text: q.text, type: q.type, options: q.options, position: index,
-                }));
-    
-                if (questionsToInsert.length > 0) {
-                    const { error: questionsInsertError } = await supabase.from('questions').insert(questionsToInsert);
-                    if (questionsInsertError) throw questionsInsertError;
-                }
-    
-                alert('Pesquisa criada com sucesso!');
+            if (surveyUpdateError) {
+                alert(`Erro ao atualizar a pesquisa: ${surveyUpdateError.message}`);
+                return;
             }
     
-            await fetchSurveys(currentCompany.id);
-            setCurrentView(View.SURVEY_LIST);
-            setEditingSurvey(null);
+            await supabase.from('questions').delete().eq('survey_id', editingSurvey.id);
+            
+            const questionsToInsert = surveyData.questions.map((q, index) => ({
+                survey_id: editingSurvey.id, text: q.text, type: q.type, options: q.options, position: index,
+            }));
     
-        } catch (error: any) {
-            console.error('Falha ao salvar a pesquisa:', error);
-            alert(`Ocorreu um erro ao salvar a pesquisa: ${error.message}`);
+            if (questionsToInsert.length > 0) {
+                const { error: questionsInsertError } = await supabase.from('questions').insert(questionsToInsert);
+                if (questionsInsertError) {
+                    alert(`Pesquisa atualizada, mas falha ao salvar perguntas: ${questionsInsertError.message}`);
+                }
+            }
+            
+            alert('Pesquisa atualizada com sucesso!');
+    
+        } else {
+            // Lógica de Criação
+            const { data: newSurvey, error: surveyInsertError } = await supabase
+                .from('surveys')
+                .insert({ title: surveyData.title, company_id: currentCompany.id, created_by: currentUser.id })
+                .select('id').single();
+    
+            if (surveyInsertError || !newSurvey) {
+                alert(`Erro ao criar a pesquisa: ${surveyInsertError?.message || 'Falha desconhecida.'}`);
+                return;
+            }
+    
+            const questionsToInsert = surveyData.questions.map((q, index) => ({
+                survey_id: newSurvey.id, text: q.text, type: q.type, options: q.options, position: index,
+            }));
+    
+            if (questionsToInsert.length > 0) {
+                const { error: questionsInsertError } = await supabase.from('questions').insert(questionsToInsert);
+                if (questionsInsertError) {
+                    alert(`Pesquisa criada, mas falha ao salvar perguntas: ${questionsInsertError.message}`);
+                }
+            }
+    
+            alert('Pesquisa criada com sucesso!');
         }
+    
+        await fetchSurveys(currentCompany.id);
+        setCurrentView(View.SURVEY_LIST);
+        setEditingSurvey(null);
     };
 
     const handleDeleteSurvey = async (surveyId: string) => {
