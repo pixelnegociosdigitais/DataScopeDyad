@@ -6,6 +6,7 @@ import { UserIcon } from './icons/UserIcon';
 import { SurveyIcon } from './icons/SurveyIcon';
 import { CreateIcon } from './icons/CreateIcon';
 import { LogoIcon } from './icons/LogoIcon';
+import { GiftIcon } from './icons/GiftIcon'; // Importar o novo ícone
 
 interface HeaderProps {
     user: User;
@@ -49,6 +50,19 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, curre
                         >
                             <CreateIcon className="h-5 w-5" />
                             <span>Criar Pesquisa</span>
+                        </button>
+                    )}
+                    {canCreate && ( // Apenas administradores/desenvolvedores podem acessar sorteios
+                        <button
+                            onClick={() => setView(View.GIVEAWAYS)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors 
+                                        ${currentView === View.GIVEAWAYS
+                                            ? 'bg-primary text-white' 
+                                            : 'text-text-light hover:bg-gray-100'}`}
+                            aria-label="Realizar Sorteios"
+                        >
+                            <GiftIcon className="h-5 w-5" />
+                            <span>Sorteios</span>
                         </button>
                     )}
                 </nav>

@@ -10,6 +10,7 @@ import SurveyForm from './components/SurveyForm';
 import Login from './components/Login';
 import CompanySettings from './components/CompanySettings';
 import CompanySetup from './components/CompanySetup';
+import Giveaways from './components/Giveaways'; // Importar o novo componente Giveaways
 import { supabase } from './src/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
@@ -288,9 +289,9 @@ const App: React.FC = () => {
             case View.SURVEY_LIST:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurvey} canManage={canManage} />;
             case View.CREATE_SURVEY:
-                return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} templates={templates} />; {/* Passar templates */}
+                return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} templates={templates} />;
             case View.EDIT_SURVEY:
-                return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} surveyToEdit={editingSurvey} templates={templates} />; {/* Passar templates */}
+                return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} surveyToEdit={editingSurvey} templates={templates} />;
             case View.DASHBOARD:
                 if (selectedSurvey) {
                     const responsesForSurvey = surveyResponses.filter(r => r.surveyId === selectedSurvey.id);
@@ -306,6 +307,8 @@ const App: React.FC = () => {
                 return null;
             case View.COMPANY_SETTINGS:
                 return <CompanySettings company={currentCompany!} onUpdate={handleUpdateCompany} onBack={handleBack} />;
+            case View.GIVEAWAYS: // Nova case para a view de sorteios
+                return <Giveaways currentUser={currentUser} currentCompany={currentCompany!} />;
             default:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurvey} canManage={canManage} />;
         }

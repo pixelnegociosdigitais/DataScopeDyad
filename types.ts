@@ -69,5 +69,6 @@ export enum View {
     PROFILE = 'PROFILE',
     RESPOND_SURVEY = 'RESPOND_SURVEY',
     COMPANY_SETTINGS = 'COMPANY_SETTINGS',
-    COMPANY_SETUP = 'COMPANY_SETUP', // Nova view
+    COMPANY_SETUP = 'COMPANY_SETUP',
+    GIVEAWAYS = 'GIVEAWAYS', // Nova view para sorteios
 }
