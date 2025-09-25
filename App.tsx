@@ -4,6 +4,7 @@ import { supabase } from '@/src/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import Login from './components/Login';
 import Header from './components/Header';
+import Sidebar from './components/Sidebar';
 import SurveyList from './components/SurveyList';
 import SurveyCreator from './components/SurveyCreator';
 import Dashboard from './components/Dashboard';
@@ -24,7 +25,6 @@ const App: React.FC = () => {
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
 
     useEffect(() => {
-        // Este efeito busca a sessão inicial e se inscreve para futuras mudanças de autenticação.
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
         });
@@ -57,7 +57,6 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        // Este efeito reage a mudanças na sessão para buscar os dados do usuário ou limpá-los.
         if (session?.user) {
             const fetchUserDataAndSurveys = async () => {
                 const { data: profile, error: profileError } = await supabase
@@ -86,11 +85,10 @@ const App: React.FC = () => {
                     setCurrentCompany(company);
                     await fetchSurveys(company.id);
                 }
-                setLoading(false); // Finaliza o carregamento, independentemente do resultado.
+                setLoading(false);
             };
             fetchUserDataAndSurveys();
         } else {
-            // Se não há sessão, limpa os dados e finaliza o carregamento.
             setCurrentUser(null);
             setCurrentCompany(null);
             setSurveys([]);
@@ -109,7 +107,6 @@ const App: React.FC = () => {
         }
     
         if (editingSurvey) {
-            // Lógica de Edição
             const { error: surveyUpdateError } = await supabase
                 .from('surveys')
                 .update({ title: surveyData.title })
@@ -136,7 +133,6 @@ const App: React.FC = () => {
             alert('Pesquisa atualizada com sucesso!');
     
         } else {
-            // Lógica de Criação
             const { data: newSurvey, error: surveyInsertError } = await supabase
                 .from('surveys')
                 .insert({ title: surveyData.title, company_id: currentCompany.id, created_by: currentUser.id })
@@ -277,11 +273,31 @@ const App: React.FC = () => {
     const canCreate = currentUser ? currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER : false;
 
     return (
-        <div className="flex flex-col h-screen bg-background text-text-main">
-            {currentUser && currentCompany && (
-                <Header user={currentUser} company={currentCompany} onLogout={handleLogout} setView={setCurrentView} currentView={currentView} canCreate={canCreate} />
+        <div className="flex h-screen bg-background text-text-main">
+            {currentUser && currentCompany ? (
+                <>
+                    <Sidebar 
+                        currentView={currentView} 
+                        setView={setCurrentView} 
+                        canCreate={canCreate} 
+                    />
+                    <div className="flex flex-col flex-1">
+                        <Header 
+                            user={currentUser} 
+                            company={currentCompany} 
+                            onLogout={handleLogout}
+                            setView={setCurrentView}
+                        />
+                        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
+                            {renderContent()}
+                        </main>
+                    </div>
+                </>
+            ) : (
+                <main className="flex-1 w-full overflow-x-hidden overflow-y-auto bg-background p-8">
+                    {renderContent()}
+                </main>
             )}
-            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">{renderContent()}</main>
         </div>
     );
 };
