@@ -12,7 +12,7 @@ interface DashboardProps {
     onBack: () => void;
 }
 
-const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#14B8A6', '#F97316'];
 
 const renderActiveShape = (props: any) => {
   const RADIAN = Math.PI / 180;
@@ -32,34 +32,15 @@ const renderActiveShape = (props: any) => {
       <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>
         {payload.name}
       </text>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-      />
-      <Sector
-        cx={cx}
-        cy={cy}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        innerRadius={outerRadius + 6}
-        outerRadius={outerRadius + 10}
-        fill={fill}
-      />
+      <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+      <Sector cx={cx} cy={cy} startAngle={startAngle} endAngle={endAngle} innerRadius={outerRadius + 6} outerRadius={outerRadius + 10} fill={fill} />
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
       <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
       <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{`Total ${value}`}</text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999">
-        {`(${(percent * 100).toFixed(2)}%)`}
-      </text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999">{`(${(percent * 100).toFixed(2)}%)`}</text>
     </g>
   );
 };
-
 
 const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
     const dashboardRef = useRef<HTMLDivElement>(null);
@@ -73,10 +54,16 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
         return survey.questions.map(q => {
             const questionResponses = responses.map(r => r.answers.find(a => a.questionId === q.id)).filter(Boolean) as Answer[];
             
-            if (q.type === QuestionType.MULTIPLE_CHOICE || q.type === QuestionType.RATING) {
+            if ([QuestionType.MULTIPLE_CHOICE, QuestionType.CHECKBOX, QuestionType.RATING].includes(q.type)) {
                 const counts = questionResponses.reduce((acc, res) => {
-                    const key = String(res.value);
-                    acc[key] = (acc[key] || 0) + 1;
+                    if (q.type === QuestionType.CHECKBOX && Array.isArray(res.value)) {
+                        res.value.forEach(val => {
+                            acc[val] = (acc[val] || 0) + 1;
+                        });
+                    } else {
+                        const key = String(res.value);
+                        acc[key] = (acc[key] || 0) + 1;
+                    }
                     return acc;
                 }, {} as Record<string, number>);
                 
@@ -84,7 +71,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                 return { ...q, data };
             }
 
-            if (q.type === QuestionType.TEXT) {
+            if ([QuestionType.SHORT_TEXT, QuestionType.LONG_TEXT, QuestionType.EMAIL, QuestionType.PHONE].includes(q.type)) {
                 const data = questionResponses.map(r => String(r.value)).filter(v => v.trim() !== '');
                 return { ...q, data };
             }
@@ -115,8 +102,15 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
         responses.forEach(res => {
             const row = survey.questions.map(q => {
                 const answer = res.answers.find(a => a.questionId === q.id);
-                const value = answer ? String(answer.value).replace(/"/g, '""') : '';
-                return `"${value}"`;
+                let value = '';
+                if (answer) {
+                    if (Array.isArray(answer.value)) {
+                        value = answer.value.join('; '); // For checkbox arrays
+                    } else {
+                        value = String(answer.value);
+                    }
+                }
+                return `"${value.replace(/"/g, '""')}"`;
             }).join(',');
             csvContent += row + "\r\n";
         });
@@ -155,10 +149,19 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
             <div ref={dashboardRef} className="p-4 bg-gray-50 rounded-lg">
                 {analysis.map((q) => (
                     <div key={q.id} className="bg-white p-6 rounded-lg shadow-md mb-6">
-                        <h3 className="text-lg font-semibold text-text-main mb-4">{q.text}</h3>
-                        {(q.type === QuestionType.MULTIPLE_CHOICE || q.type === QuestionType.RATING) && Array.isArray(q.data) && q.data.length > 0 && (
+                        <h3 className="text-lg font-semibold text-text-main mb-4">{q.text} <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{q.type}</span></h3>
+                        {([QuestionType.MULTIPLE_CHOICE, QuestionType.CHECKBOX, QuestionType.RATING].includes(q.type as QuestionType)) && Array.isArray(q.data) && q.data.length > 0 && (
                              <ResponsiveContainer width="100%" height={300}>
-                                {q.type === QuestionType.MULTIPLE_CHOICE ? (
+                                {q.type === QuestionType.RATING ? (
+                                    <BarChart data={q.data.sort((a, b) => Number(a.name) - Number(b.name))}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="name" />
+                                        <YAxis allowDecimals={false} />
+                                        <Tooltip />
+                                        <Legend />
+                                        <Bar dataKey="value" fill="#3B82F6" name="Respostas" />
+                                    </BarChart>
+                                ) : (
                                     <PieChart>
                                         <Pie
                                             activeIndex={activeIndex}
@@ -178,19 +181,10 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                                         </Pie>
                                         <Tooltip />
                                     </PieChart>
-                                ) : (
-                                    <BarChart data={q.data}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name" />
-                                        <YAxis allowDecimals={false} />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Bar dataKey="value" fill="#3B82F6" name="Respostas" />
-                                    </BarChart>
                                 )}
                             </ResponsiveContainer>
                         )}
-                        {q.type === QuestionType.TEXT && Array.isArray(q.data) && (
+                        {([QuestionType.SHORT_TEXT, QuestionType.LONG_TEXT, QuestionType.EMAIL, QuestionType.PHONE].includes(q.type as QuestionType)) && Array.isArray(q.data) && (
                             <div className="max-h-60 overflow-y-auto pr-2">
                                 <ul className="space-y-3">
                                     {q.data.map((text, index) => (

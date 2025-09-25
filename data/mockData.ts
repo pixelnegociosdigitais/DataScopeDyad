@@ -44,7 +44,7 @@ export const MOCK_SURVEYS: Survey[] = [
         questions: [
             { id: 'q1', text: 'Quão satisfeito você está com seu equilíbrio entre vida pessoal e profissional?', type: QuestionType.RATING },
             { id: 'q2', text: 'Em qual departamento você trabalha?', type: QuestionType.MULTIPLE_CHOICE, options: ['Engenharia', 'Marketing', 'Vendas', 'RH'] },
-            { id: 'q3', text: 'Que sugestões você tem para melhorias?', type: QuestionType.TEXT },
+            { id: 'q3', text: 'Que sugestões você tem para melhorias?', type: QuestionType.LONG_TEXT },
         ],
     },
     {
@@ -53,7 +53,7 @@ export const MOCK_SURVEYS: Survey[] = [
         companyId: 'c1',
         questions: [
             { id: 'q1', text: 'Como você avaliaria o novo produto?', type: QuestionType.RATING },
-            { id: 'q2', text: 'Qual funcionalidade você mais gostou?', type: QuestionType.TEXT },
+            { id: 'q2', text: 'Qual funcionalidade você mais gostou?', type: QuestionType.LONG_TEXT },
             { id: 'q3', text: 'Você recomendaria este produto a um amigo?', type: QuestionType.MULTIPLE_CHOICE, options: ['Sim, com certeza', 'Talvez', 'Não'] },
         ],
     },
@@ -70,20 +70,20 @@ export const MOCK_SURVEYS: Survey[] = [
 
 export const MOCK_RESPONSES: SurveyResponse[] = [
     // Respostas para s1
-    { id: 'r1', surveyId: 's1', answers: [{ questionId: 'q1', value: 4 }, { questionId: 'q2', value: 'Engenharia' }, { questionId: 'q3', value: 'Horários mais flexíveis seriam ótimos.' }] },
-    { id: 'r2', surveyId: 's1', answers: [{ questionId: 'q1', value: 5 }, { questionId: 'q2', value: 'Marketing' }, { questionId: 'q3', value: 'A máquina de café precisa de um upgrade!' }] },
-    { id: 'r3', surveyId: 's1', answers: [{ questionId: 'q1', value: 3 }, { questionId: 'q2', value: 'Engenharia' }, { questionId: 'q3', value: '' }] },
-    { id: 'r4', surveyId: 's1', answers: [{ questionId: 'q1', value: 5 }, { questionId: 'q2', value: 'Vendas' }, { questionId: 'q3', value: 'Ótimos eventos de equipe!' }] },
-    { id: 'r5', surveyId: 's1', answers: [{ questionId: 'q1', value: 4 }, { questionId: 'q2', value: 'Engenharia' }, { questionId: 'q3', value: 'Planos de carreira mais claros.' }] },
+    { id: 'r1', surveyId: 's1', answers: [{ questionId: 'q1', value: 8 }, { questionId: 'q2', value: 'Engenharia' }, { questionId: 'q3', value: 'Horários mais flexíveis seriam ótimos.' }] },
+    { id: 'r2', surveyId: 's1', answers: [{ questionId: 'q1', value: 9 }, { questionId: 'q2', value: 'Marketing' }, { questionId: 'q3', value: 'A máquina de café precisa de um upgrade!' }] },
+    { id: 'r3', surveyId: 's1', answers: [{ questionId: 'q1', value: 6 }, { questionId: 'q2', value: 'Engenharia' }, { questionId: 'q3', value: '' }] },
+    { id: 'r4', surveyId: 's1', answers: [{ questionId: 'q1', value: 10 }, { questionId: 'q2', value: 'Vendas' }, { questionId: 'q3', value: 'Ótimos eventos de equipe!' }] },
+    { id: 'r5', surveyId: 's1', answers: [{ questionId: 'q1', value: 7 }, { questionId: 'q2', value: 'Engenharia' }, { questionId: 'q3', value: 'Planos de carreira mais claros.' }] },
     
     // Respostas para s2
-    { id: 'r6', surveyId: 's2', answers: [{ questionId: 'q1', value: 5 }, { questionId: 'q2', value: 'A interface do usuário é muito limpa.' }, { questionId: 'q3', value: 'Sim, com certeza' }] },
-    { id: 'r7', surveyId: 's2', answers: [{ questionId: 'q1', value: 3 }, { questionId: 'q2', value: 'Ficou um pouco lento no meu dispositivo.' }, { questionId: 'q3', value: 'Talvez' }] },
-    { id: 'r8', surveyId: 's2', answers: [{ questionId: 'q1', value: 4 }, { questionId: 'q2', value: 'O processo de configuração rápido.' }, { questionId: 'q3', value: 'Sim, com certeza' }] },
+    { id: 'r6', surveyId: 's2', answers: [{ questionId: 'q1', value: 10 }, { questionId: 'q2', value: 'A interface do usuário é muito limpa.' }, { questionId: 'q3', value: 'Sim, com certeza' }] },
+    { id: 'r7', surveyId: 's2', answers: [{ questionId: 'q1', value: 5 }, { questionId: 'q2', value: 'Ficou um pouco lento no meu dispositivo.' }, { questionId: 'q3', value: 'Talvez' }] },
+    { id: 'r8', surveyId: 's2', answers: [{ questionId: 'q1', value: 8 }, { questionId: 'q2', value: 'O processo de configuração rápido.' }, { questionId: 'q3', value: 'Sim, com certeza' }] },
 
     // Respostas para s3
-    { id: 'r9', surveyId: 's3', answers: [{ questionId: 'q1', value: 'Mídias Sociais' }, { questionId: 'q2', value: 5 }] },
-    { id: 'r10', surveyId: 's3', answers: [{ questionId: 'q1', value: 'E-mail' }, { questionId: 'q2', value: 3 }] },
-    { id: 'r11', surveyId: 's3', answers: [{ questionId: 'q1', value: 'Anúncio' }, { questionId: 'q2', value: 4 }] },
-    { id: 'r12', surveyId: 's3', answers: [{ questionId: 'q1', value: 'Mídias Sociais' }, { questionId: 'q2', value: 4 }] },
+    { id: 'r9', surveyId: 's3', answers: [{ questionId: 'q1', value: 'Mídias Sociais' }, { questionId: 'q2', value: 9 }] },
+    { id: 'r10', surveyId: 's3', answers: [{ questionId: 'q1', value: 'E-mail' }, { questionId: 'q2', value: 6 }] },
+    { id: 'r11', surveyId: 's3', answers: [{ questionId: 'q1', value: 'Anúncio' }, { questionId: 'q2', value: 7 }] },
+    { id: 'r12', surveyId: 's3', answers: [{ questionId: 'q1', value: 'Mídias Sociais' }, { questionId: 'q2', value: 8 }] },
 ];

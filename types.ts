@@ -20,9 +20,13 @@ export interface Company {
 }
 
 export enum QuestionType {
-    TEXT = 'Texto',
+    SHORT_TEXT = 'Texto Curto',
+    LONG_TEXT = 'Texto Longo',
+    PHONE = 'Telefone',
+    EMAIL = 'Email',
     MULTIPLE_CHOICE = 'Múltipla Escolha',
-    RATING = 'Avaliação (1-5)',
+    CHECKBOX = 'Caixas de Seleção',
+    RATING = 'Avaliação (1-10)',
 }
 
 export interface Question {
@@ -41,7 +45,7 @@ export interface Survey {
 
 export interface Answer {
     questionId: string;
-    value: string | number;
+    value: string | number | string[]; // Permitir array de strings para caixas de seleção
 }
 
 export interface SurveyResponse {
