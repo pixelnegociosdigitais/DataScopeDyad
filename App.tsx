@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { User, Company, View, Survey, UserRole } from './types';
+import { User, Company, View, Survey, UserRole, Answer, SurveyResponse } from './types';
 import { MOCK_USERS, MOCK_COMPANIES, MOCK_SURVEYS, MOCK_RESPONSES } from './data/mockData';
 import Login from './components/Login';
 import Header from './components/Header';
@@ -7,6 +7,7 @@ import SurveyList from './components/SurveyList';
 import SurveyCreator from './components/SurveyCreator';
 import Dashboard from './components/Dashboard';
 import Profile from './components/Profile';
+import SurveyForm from './components/SurveyForm';
 
 const App: React.FC = () => {
     const [users, setUsers] = useState<User[]>(MOCK_USERS);
@@ -15,6 +16,7 @@ const App: React.FC = () => {
     const [currentView, setCurrentView] = useState<View>(View.SURVEY_LIST);
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
     const [surveys, setSurveys] = useState<Survey[]>(MOCK_SURVEYS);
+    const [responses, setResponses] = useState<SurveyResponse[]>(MOCK_RESPONSES);
 
     const handleLogin = (userId: string, companyId: string) => {
         const user = users.find(u => u.id === userId);
@@ -43,6 +45,19 @@ const App: React.FC = () => {
         setCurrentView(View.SURVEY_LIST);
     };
 
+    const handleSaveResponse = (answers: Answer[]) => {
+        if (!selectedSurvey) return;
+        const newResponse: SurveyResponse = {
+            id: `r${responses.length + 1}`,
+            surveyId: selectedSurvey.id,
+            answers,
+        };
+        setResponses(prev => [...prev, newResponse]);
+        alert('Respostas salvas com sucesso!');
+        setCurrentView(View.SURVEY_LIST);
+        setSelectedSurvey(null);
+    };
+
     const companySurveys = useMemo(() => {
         return surveys.filter(s => s.companyId === currentCompany?.id);
     }, [surveys, currentCompany]);
@@ -52,8 +67,14 @@ const App: React.FC = () => {
         setCurrentView(View.DASHBOARD);
     }, []);
 
+    const handleStartResponse = useCallback((survey: Survey) => {
+        setSelectedSurvey(survey);
+        setCurrentView(View.RESPOND_SURVEY);
+    }, []);
+
     const handleBack = () => {
         setCurrentView(View.SURVEY_LIST);
+        setSelectedSurvey(null);
     };
 
     const renderContent = () => {
@@ -61,19 +82,24 @@ const App: React.FC = () => {
 
         switch (currentView) {
             case View.SURVEY_LIST:
-                return <SurveyList surveys={companySurveys} onSelectSurvey={handleSelectSurvey} />;
+                return <SurveyList surveys={companySurveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} />;
             case View.CREATE_SURVEY:
                 return <SurveyCreator onSave={handleCreateSurvey} onBack={handleBack} />;
             case View.DASHBOARD:
                 if (selectedSurvey) {
-                    const responses = MOCK_RESPONSES.filter(r => r.surveyId === selectedSurvey.id);
-                    return <Dashboard survey={selectedSurvey} responses={responses} onBack={handleBack} />;
+                    const surveyResponses = responses.filter(r => r.surveyId === selectedSurvey.id);
+                    return <Dashboard survey={selectedSurvey} responses={surveyResponses} onBack={handleBack} />;
                 }
-                return <SurveyList surveys={companySurveys} onSelectSurvey={handleSelectSurvey} />;
+                return <SurveyList surveys={companySurveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} />;
             case View.PROFILE:
                 return <Profile user={currentUser} onUpdate={handleUpdateProfile} onBack={handleBack} />;
+            case View.RESPOND_SURVEY:
+                if (selectedSurvey) {
+                    return <SurveyForm survey={selectedSurvey} onSaveResponse={handleSaveResponse} onBack={handleBack} />;
+                }
+                return <SurveyList surveys={companySurveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} />;
             default:
-                return <SurveyList surveys={companySurveys} onSelectSurvey={handleSelectSurvey} />;
+                return <SurveyList surveys={companySurveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} />;
         }
     };
 

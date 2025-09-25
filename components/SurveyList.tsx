@@ -1,14 +1,16 @@
-
 import React from 'react';
 import { Survey } from '../types';
 import { SurveyIcon } from './icons/SurveyIcon';
+import { DashboardIcon } from './icons/DashboardIcon';
+import { PencilIcon } from './icons/PencilIcon';
 
 interface SurveyListProps {
     surveys: Survey[];
     onSelectSurvey: (survey: Survey) => void;
+    onStartResponse: (survey: Survey) => void;
 }
 
-const SurveyList: React.FC<SurveyListProps> = ({ surveys, onSelectSurvey }) => {
+const SurveyList: React.FC<SurveyListProps> = ({ surveys, onSelectSurvey, onStartResponse }) => {
     return (
         <div>
             <h2 className="text-2xl font-bold mb-6 text-text-main">Pesquisas Disponíveis</h2>
@@ -17,21 +19,33 @@ const SurveyList: React.FC<SurveyListProps> = ({ surveys, onSelectSurvey }) => {
                     {surveys.map(survey => (
                         <div
                             key={survey.id}
-                            className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer"
-                            onClick={() => onSelectSurvey(survey)}
+                            className="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow flex flex-col"
                         >
-                            <div className="flex items-center mb-4">
+                            <div className="flex items-start mb-4">
                                 <div className="p-3 bg-primary/10 rounded-full mr-4">
                                     <SurveyIcon className="h-6 w-6 text-primary" />
                                 </div>
-                                <div>
+                                <div className="flex-1">
                                     <h3 className="text-lg font-semibold text-text-main">{survey.title}</h3>
                                     <p className="text-sm text-text-light">{survey.questions.length} perguntas</p>
                                 </div>
                             </div>
-                            <button className="w-full mt-4 text-sm font-medium text-primary hover:text-primary-dark">
-                                Ver Painel
-                            </button>
+                            <div className="mt-auto pt-4 border-t border-gray-100 flex gap-2">
+                                <button 
+                                    onClick={() => onSelectSurvey(survey)}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                                >
+                                    <DashboardIcon className="h-4 w-4" />
+                                    Painel
+                                </button>
+                                <button 
+                                    onClick={() => onStartResponse(survey)}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary/10 transition-colors"
+                                >
+                                    <PencilIcon className="h-4 w-4" />
+                                    Responder
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
