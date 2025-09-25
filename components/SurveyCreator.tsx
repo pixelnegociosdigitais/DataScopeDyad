@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Question, QuestionType, Survey } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
+import { ArrowUpIcon } from './icons/ArrowUpIcon';
+import { ArrowDownIcon } from './icons/ArrowDownIcon';
 
 interface SurveyCreatorProps {
     onSave: (survey: Survey) => void;
@@ -57,6 +59,19 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack }) => {
         setQuestions(newQuestions);
     };
 
+    const moveQuestion = (index: number, direction: 'up' | 'down') => {
+        if (direction === 'up' && index === 0) return;
+        if (direction === 'down' && index === questions.length - 1) return;
+
+        const newQuestions = [...questions];
+        const targetIndex = direction === 'up' ? index - 1 : index + 1;
+        
+        // Swap elements
+        [newQuestions[index], newQuestions[targetIndex]] = [newQuestions[targetIndex], newQuestions[index]];
+        
+        setQuestions(newQuestions);
+    };
+
     const handleSave = () => {
         if (!title.trim() || questions.length === 0 || questions.some(q => !q.text.trim())) {
             alert('Por favor, forneça um título e garanta que todas as perguntas tenham texto.');
@@ -66,6 +81,7 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack }) => {
     };
 
     const renderQuestionInput = (q: Question, qIndex: number) => {
+        // ... (o resto da função permanece o mesmo)
         switch (q.type) {
             case QuestionType.LONG_TEXT:
                 return (
@@ -77,12 +93,6 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack }) => {
                         rows={3}
                     />
                 );
-            case QuestionType.SHORT_TEXT:
-            case QuestionType.EMAIL:
-            case QuestionType.PHONE:
-            case QuestionType.RATING:
-            case QuestionType.MULTIPLE_CHOICE:
-            case QuestionType.CHECKBOX:
             default:
                 return (
                     <input
@@ -117,28 +127,43 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack }) => {
             </div>
 
             {questions.map((q, qIndex) => (
-                <div key={q.id} className="bg-white p-6 rounded-lg shadow-md mb-4 relative">
-                    <button onClick={() => removeQuestion(qIndex)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-2xl font-bold">&times;</button>
-                    <label className="block text-sm font-medium text-gray-700">Pergunta {qIndex + 1} <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{q.type}</span></label>
-                    {renderQuestionInput(q, qIndex)}
-                    {(q.type === QuestionType.MULTIPLE_CHOICE || q.type === QuestionType.CHECKBOX) && (
-                        <div className="mt-4 pl-4 border-l-2 border-primary/20">
-                            <h4 className="text-xs font-semibold text-gray-600 mb-2">Opções</h4>
-                            {q.options?.map((opt, oIndex) => (
-                                <div key={oIndex} className="flex items-center mb-2">
-                                    <input
-                                        type="text"
-                                        value={opt}
-                                        onChange={(e) => updateOptionText(qIndex, oIndex, e.target.value)}
-                                        placeholder={`Opção ${oIndex + 1}`}
-                                        className="block w-full sm:w-1/2 px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700 placeholder-gray-400"
-                                    />
-                                    <button onClick={() => removeOption(qIndex, oIndex)} className="ml-2 text-gray-400 hover:text-red-500 text-xl" disabled={q.options?.length === 1}>&minus;</button>
-                                </div>
-                            ))}
-                            <button onClick={() => addOption(qIndex)} className="text-sm text-primary hover:text-primary-dark mt-1">+ Adicionar Opção</button>
+                <div key={q.id} className="bg-white p-6 rounded-lg shadow-md mb-4 flex gap-4">
+                    <div className="flex flex-col items-center justify-center">
+                        <button onClick={() => moveQuestion(qIndex, 'up')} disabled={qIndex === 0} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed">
+                            <ArrowUpIcon />
+                        </button>
+                        <span className="font-bold text-lg text-primary">{qIndex + 1}</span>
+                        <button onClick={() => moveQuestion(qIndex, 'down')} disabled={qIndex === questions.length - 1} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed">
+                            <ArrowDownIcon />
+                        </button>
+                    </div>
+                    <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Pergunta <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{q.type}</span>
+                            </label>
+                            <button onClick={() => removeQuestion(qIndex)} className="text-gray-400 hover:text-red-500 text-2xl font-bold leading-none">&times;</button>
                         </div>
-                    )}
+                        {renderQuestionInput(q, qIndex)}
+                        {(q.type === QuestionType.MULTIPLE_CHOICE || q.type === QuestionType.CHECKBOX) && (
+                            <div className="mt-4 pl-4 border-l-2 border-primary/20">
+                                <h4 className="text-xs font-semibold text-gray-600 mb-2">Opções</h4>
+                                {q.options?.map((opt, oIndex) => (
+                                    <div key={oIndex} className="flex items-center mb-2">
+                                        <input
+                                            type="text"
+                                            value={opt}
+                                            onChange={(e) => updateOptionText(qIndex, oIndex, e.target.value)}
+                                            placeholder={`Opção ${oIndex + 1}`}
+                                            className="block w-full sm:w-1/2 px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700 placeholder-gray-400"
+                                        />
+                                        <button onClick={() => removeOption(qIndex, oIndex)} className="ml-2 text-gray-400 hover:text-red-500 text-xl" disabled={q.options?.length === 1}>&minus;</button>
+                                    </div>
+                                ))}
+                                <button onClick={() => addOption(qIndex)} className="text-sm text-primary hover:text-primary-dark mt-1">+ Adicionar Opção</button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             ))}
 
