@@ -1,28 +1,10 @@
-import React, { useState } from 'react';
-import { User, Company } from '../types';
+import React from 'react';
+import { Auth } from '@supabase/auth-ui-react';
+import { ThemeSupa } from '@supabase/auth-ui-shared';
+import { supabase } from '../integrations/supabase/client';
 import { LogoIcon } from './icons/LogoIcon';
 
-interface LoginProps {
-    onLogin: (userId: string, companyId: string) => void;
-    users: User[];
-    companies: Company[];
-}
-
-const Login: React.FC<LoginProps> = ({ onLogin, users, companies }) => {
-    const [selectedUserId, setSelectedUserId] = useState(users[0]?.id || '');
-    const [selectedCompanyId, setSelectedCompanyId] = useState(companies[0]?.id || '');
-    const [error, setError] = useState('');
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedUserId || !selectedCompanyId) {
-            setError('Por favor, selecione um usuário e uma empresa.');
-            return;
-        }
-        setError('');
-        onLogin(selectedUserId, selectedCompanyId);
-    };
-
+const Login: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center">
             <div className="max-w-md w-full mx-auto bg-white p-8 border border-gray-200 rounded-lg shadow-lg">
@@ -33,42 +15,42 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, companies }) => {
                     </div>
                     <p className="text-text-light">Sua Solução Completa de Pesquisas</p>
                 </div>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label htmlFor="company" className="text-sm font-medium text-gray-700 block mb-2">
-                            Selecione a Empresa
-                        </label>
-                        <select
-                            id="company"
-                            value={selectedCompanyId}
-                            onChange={(e) => setSelectedCompanyId(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary bg-white text-gray-700"
-                        >
-                            {companies.map(company => (
-                                <option key={company.id} value={company.id}>{company.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="user" className="text-sm font-medium text-gray-700 block mb-2">
-                            Selecione o Perfil (Demonstração)
-                        </label>
-                        <select
-                            id="user"
-                            value={selectedUserId}
-                            onChange={(e) => setSelectedUserId(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary bg-white text-gray-700"
-                        >
-                            {users.map(user => (
-                                <option key={user.id} value={user.id}>{`${user.fullName} (${user.role})`}</option>
-                            ))}
-                        </select>
-                    </div>
-                    {error && <p className="text-red-500 text-sm">{error}</p>}
-                    <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                        Entrar
-                    </button>
-                </form>
+                <Auth
+                    supabaseClient={supabase}
+                    appearance={{ theme: ThemeSupa }}
+                    providers={[]}
+                    localization={{
+                        variables: {
+                            sign_in: {
+                                email_label: 'Endereço de e-mail',
+                                password_label: 'Senha',
+                                email_input_placeholder: 'Seu e-mail',
+                                password_input_placeholder: 'Sua senha',
+                                button_label: 'Entrar',
+                                link_text: 'Já tem uma conta? Entre',
+                            },
+                            sign_up: {
+                                email_label: 'Endereço de e-mail',
+                                password_label: 'Crie uma senha',
+                                email_input_placeholder: 'Seu e-mail',
+                                password_input_placeholder: 'Sua senha',
+                                button_label: 'Cadastrar',
+                                link_text: 'Não tem uma conta? Cadastre-se',
+                                user_meta: {
+                                    full_name: 'Nome Completo'
+                                }
+                            },
+                            forgotten_password: {
+                                email_label: 'Endereço de e-mail',
+                                email_input_placeholder: 'Seu e-mail',
+                                button_label: 'Enviar instruções de recuperação',
+                                link_text: 'Esqueceu sua senha?',
+                            }
+                        },
+                    }}
+                    view="sign_in"
+                    showLinks={true}
+                />
             </div>
         </div>
     );
