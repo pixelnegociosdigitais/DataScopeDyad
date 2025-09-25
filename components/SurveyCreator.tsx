@@ -46,10 +46,10 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
         }
     };
 
-    const addQuestion = (type: QuestionType) => {
+    const addQuestion = (type: QuestionType, initialText: string = '') => {
         const newQuestion: Question = {
             id: `q${Date.now()}-${Math.random().toString(36).substring(7)}`, // ID único para cada pergunta
-            text: '',
+            text: initialText, // Usar initialText aqui
             type: type,
             ...((type === QuestionType.MULTIPLE_CHOICE || type === QuestionType.CHECKBOX) && { options: [''] })
         };
@@ -228,7 +228,15 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
             ))}
 
             <div className="bg-white p-4 rounded-lg shadow-md">
-                <span className="text-sm font-medium text-gray-600 mr-4">Adicionar Pergunta:</span>
+                <span className="text-sm font-medium text-gray-600 mr-4">Adicionar Pergunta Rápida:</span>
+                <div className="flex flex-wrap gap-2 mt-2 mb-4 border-b pb-4">
+                    <button onClick={() => addQuestion(QuestionType.SHORT_TEXT, 'Nome Completo')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">Nome</button>
+                    <button onClick={() => addQuestion(QuestionType.PHONE, 'Telefone')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">Telefone</button>
+                    <button onClick={() => addQuestion(QuestionType.LONG_TEXT, 'Endereço Completo')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">Endereço</button>
+                    <button onClick={() => addQuestion(QuestionType.EMAIL, 'E-mail')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">E-mail</button>
+                </div>
+
+                <span className="text-sm font-medium text-gray-600 mr-4">Adicionar Outro Tipo de Pergunta:</span>
                 <div className="flex flex-wrap gap-2 mt-2">
                     <button onClick={() => addQuestion(QuestionType.SHORT_TEXT)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Texto Curto</button>
                     <button onClick={() => addQuestion(QuestionType.LONG_TEXT)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Texto Longo</button>
