@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { User, Company, View, Survey, UserRole, Answer, SurveyResponse } from './types';
+import { User, Company, View, Survey, UserRole, Answer, SurveyResponse, Question } from './types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 import Login from './components/Login';
@@ -24,11 +24,12 @@ const App: React.FC = () => {
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
 
     useEffect(() => {
-        setLoading(true);
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        const getSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
-            // O carregamento de dados do usuário acontecerá no próximo useEffect
-        });
+            setLoading(false);
+        };
+        getSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
@@ -46,7 +47,6 @@ const App: React.FC = () => {
 
         if (error) {
             console.error('Error fetching surveys:', error);
-            setSurveys([]);
         } else {
             const fetchedSurveys = data.map((s: any) => ({
                 ...s,
@@ -59,20 +59,16 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (session?.user) {
-            const fetchUserDataAndSurveys = async () => {
-                setLoading(true);
-                const { data: profile, error: profileError } = await supabase
+            const fetchUserData = async () => {
+                const { data: profile, error } = await supabase
                     .from('profiles')
-                    .select(`*, company:companies(*)`)
+                    .select(`*, company:companies (*)`)
                     .eq('id', session.user.id)
                     .single();
 
-                if (profileError || !profile || !profile.company) {
-                    console.error('Error fetching profile or profile not complete.', profileError);
-                    setCurrentUser(null);
-                    setCurrentCompany(null);
-                    setSurveys([]);
-                } else {
+                if (error) {
+                    console.error('Error fetching profile:', error);
+                } else if (profile) {
                     const user: User = {
                         id: profile.id,
                         fullName: profile.full_name,
@@ -83,20 +79,16 @@ const App: React.FC = () => {
                         profilePictureUrl: profile.avatar_url,
                     };
                     setCurrentUser(user);
-                    const company = profile.company as Company;
-                    setCurrentCompany(company);
-                    await fetchSurveys(company.id);
+                    setCurrentCompany(profile.company as Company);
+                    fetchSurveys(profile.company.id);
                 }
-                setLoading(false);
             };
-            fetchUserDataAndSurveys();
+            fetchUserData();
         } else {
             setCurrentUser(null);
             setCurrentCompany(null);
-            setSurveys([]);
-            if (loading) setLoading(false);
         }
-    }, [session, fetchSurveys, loading]);
+    }, [session, fetchSurveys]);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -106,29 +98,52 @@ const App: React.FC = () => {
         if (!currentUser || !currentCompany) return;
 
         if (editingSurvey) {
+            // Lógica de Atualização
             const { error: surveyError } = await supabase
                 .from('surveys')
                 .update({ title: surveyData.title })
                 .eq('id', editingSurvey.id);
-            if (surveyError) { console.error('Error updating survey:', surveyError); return; }
 
+            if (surveyError) {
+                console.error('Error updating survey:', surveyError);
+                return;
+            }
+
+            // Para simplificar, removemos as perguntas antigas e inserimos as novas
             await supabase.from('questions').delete().eq('survey_id', editingSurvey.id);
             
             const questionsToInsert = surveyData.questions.map((q, index) => ({
-                survey_id: editingSurvey.id, text: q.text, type: q.type, options: q.options, position: index,
+                survey_id: editingSurvey.id,
+                text: q.text,
+                type: q.type,
+                options: q.options,
+                position: index,
             }));
+
             const { error: questionsError } = await supabase.from('questions').insert(questionsToInsert);
             if (questionsError) console.error('Error updating questions:', questionsError);
+
         } else {
+            // Lógica de Criação
             const { data: newSurvey, error: surveyError } = await supabase
                 .from('surveys')
                 .insert({ title: surveyData.title, company_id: currentCompany.id, created_by: currentUser.id })
-                .select().single();
-            if (surveyError || !newSurvey) { console.error('Error creating survey:', surveyError); return; }
+                .select()
+                .single();
+
+            if (surveyError || !newSurvey) {
+                console.error('Error creating survey:', surveyError);
+                return;
+            }
 
             const questionsToInsert = surveyData.questions.map((q, index) => ({
-                survey_id: newSurvey.id, text: q.text, type: q.type, options: q.options, position: index,
+                survey_id: newSurvey.id,
+                text: q.text,
+                type: q.type,
+                options: q.options,
+                position: index,
             }));
+
             const { error: questionsError } = await supabase.from('questions').insert(questionsToInsert);
             if (questionsError) console.error('Error creating questions:', questionsError);
         }
@@ -154,6 +169,7 @@ const App: React.FC = () => {
             .from('profiles')
             .update({ full_name: updatedUser.fullName, phone: updatedUser.phone, address: updatedUser.address, avatar_url: updatedUser.profilePictureUrl })
             .eq('id', updatedUser.id);
+
         if (error) {
             console.error('Error updating profile:', error);
         } else {
@@ -164,14 +180,24 @@ const App: React.FC = () => {
 
     const handleSaveResponse = async (answers: Answer[]) => {
         if (!selectedSurvey) return;
+
         const { data: responseData, error: responseError } = await supabase
-            .from('survey_responses').insert({ survey_id: selectedSurvey.id, respondent_id: session?.user.id })
-            .select().single();
-        if (responseError || !responseData) { console.error('Error creating response:', responseError); return; }
+            .from('survey_responses')
+            .insert({ survey_id: selectedSurvey.id, respondent_id: session?.user.id })
+            .select()
+            .single();
+
+        if (responseError || !responseData) {
+            console.error('Error creating response:', responseError);
+            return;
+        }
 
         const answersToInsert = answers.map(answer => ({
-            response_id: responseData.id, question_id: answer.questionId, value: answer.value,
+            response_id: responseData.id,
+            question_id: answer.questionId,
+            value: answer.value,
         }));
+
         const { error: answersError } = await supabase.from('answers').insert(answersToInsert);
         if (answersError) console.error('Error saving answers:', answersError);
         
@@ -182,6 +208,7 @@ const App: React.FC = () => {
     const handleSelectSurvey = useCallback(async (survey: Survey) => {
         setSelectedSurvey(survey);
         const { data, error } = await supabase.from('survey_responses').select('*, answers(*)').eq('survey_id', survey.id);
+
         if (error) {
             console.error('Error fetching responses:', error);
             setSurveyResponses([]);
@@ -209,20 +236,7 @@ const App: React.FC = () => {
     };
 
     const renderContent = () => {
-        if (!currentUser || !currentCompany) {
-             if (session) {
-                return (
-                    <div className="text-center">
-                        <h2 className="text-xl font-bold mb-2">Ocorreu um problema ao carregar seu perfil.</h2>
-                        <p className="text-text-light mb-4">Isso pode acontecer logo após o cadastro. Por favor, tente recarregar a página.</p>
-                        <button onClick={() => window.location.reload()} className="px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark shadow-sm">
-                            Recarregar
-                        </button>
-                    </div>
-                );
-            }
-            return null;
-        }
+        if (!currentUser || !currentCompany) return null;
         const canManage = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
 
         switch (currentView) {
@@ -245,14 +259,13 @@ const App: React.FC = () => {
 
     if (loading) return <div className="h-screen w-screen flex items-center justify-center">Carregando...</div>;
     if (!session) return <Login />;
-    
-    const canCreate = currentUser ? currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER : false;
+    if (!currentUser || !currentCompany) return <div className="h-screen w-screen flex items-center justify-center">Carregando perfil...</div>;
+
+    const canCreate = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
 
     return (
         <div className="flex flex-col h-screen bg-background text-text-main">
-            {currentUser && currentCompany && (
-                <Header user={currentUser} company={currentCompany} onLogout={handleLogout} setView={setCurrentView} currentView={currentView} canCreate={canCreate} />
-            )}
+            <Header user={currentUser} company={currentCompany} onLogout={handleLogout} setView={setCurrentView} currentView={currentView} canCreate={canCreate} />
             <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">{renderContent()}</main>
         </div>
     );
