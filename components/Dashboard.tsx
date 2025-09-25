@@ -1,14 +1,15 @@
-
 import React, { useMemo, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Survey, SurveyResponse, Question, QuestionType, Answer } from '../types';
 import { DownloadIcon } from './icons/DownloadIcon';
+import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 
 interface DashboardProps {
     survey: Survey;
     responses: SurveyResponse[];
+    onBack: () => void;
 }
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
@@ -60,7 +61,7 @@ const renderActiveShape = (props: any) => {
 };
 
 
-const Dashboard: React.FC<DashboardProps> = ({ survey, responses }) => {
+const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
     const dashboardRef = useRef<HTMLDivElement>(null);
     const [activeIndex, setActiveIndex] = React.useState(0);
 
@@ -132,9 +133,14 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses }) => {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h2 className="text-2xl font-bold text-text-main">{survey.title}</h2>
-                    <p className="text-text-light">{responses.length} respostas</p>
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Voltar">
+                        <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
+                    </button>
+                    <div>
+                        <h2 className="text-2xl font-bold text-text-main">{survey.title}</h2>
+                        <p className="text-text-light">{responses.length} respostas</p>
+                    </div>
                 </div>
                 <div className="flex gap-2">
                     <button onClick={exportToPDF} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">

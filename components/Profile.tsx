@@ -2,13 +2,15 @@ import React, { useState, ChangeEvent, FormEvent } from 'react';
 import { User } from '../types';
 import { UserIcon } from './icons/UserIcon';
 import { UploadIcon } from './icons/UploadIcon';
+import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 
 interface ProfileProps {
     user: User;
     onUpdate: (user: User) => void;
+    onBack: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ user, onUpdate }) => {
+const Profile: React.FC<ProfileProps> = ({ user, onUpdate, onBack }) => {
     const [formData, setFormData] = useState<User>(user);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -36,7 +38,12 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdate }) => {
 
     return (
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold mb-6 text-text-main">Meu Perfil</h2>
+            <div className="flex items-center gap-4 mb-6">
+                <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Voltar">
+                    <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
+                </button>
+                <h2 className="text-2xl font-bold text-text-main">Meu Perfil</h2>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="flex items-center space-x-6">
                     {formData.profilePictureUrl ? (

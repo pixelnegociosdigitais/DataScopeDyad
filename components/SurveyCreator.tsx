@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Question, QuestionType, Survey } from '../types';
+import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 
 interface SurveyCreatorProps {
     onSave: (survey: Survey) => void;
+    onBack: () => void;
 }
 
-const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave }) => {
+const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack }) => {
     const [title, setTitle] = useState('');
     const [questions, setQuestions] = useState<Question[]>([]);
 
@@ -66,7 +68,12 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave }) => {
 
     return (
         <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6 text-text-main">Criar Nova Pesquisa</h2>
+            <div className="flex items-center gap-4 mb-6">
+                <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Voltar">
+                    <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
+                </button>
+                <h2 className="text-2xl font-bold text-text-main">Criar Nova Pesquisa</h2>
+            </div>
             <div className="bg-white p-8 rounded-lg shadow-md mb-6">
                 <label htmlFor="survey-title" className="block text-sm font-medium text-gray-700">Título da Pesquisa</label>
                 <input

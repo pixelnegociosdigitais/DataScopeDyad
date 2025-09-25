@@ -3,7 +3,6 @@ import { User, Company, View, Survey, UserRole } from './types';
 import { MOCK_USERS, MOCK_COMPANIES, MOCK_SURVEYS, MOCK_RESPONSES } from './data/mockData';
 import Login from './components/Login';
 import Header from './components/Header';
-// import Sidebar from './components/Sidebar'; // Removendo a importação do Sidebar
 import SurveyList from './components/SurveyList';
 import SurveyCreator from './components/SurveyCreator';
 import Dashboard from './components/Dashboard';
@@ -53,6 +52,10 @@ const App: React.FC = () => {
         setCurrentView(View.DASHBOARD);
     }, []);
 
+    const handleBack = () => {
+        setCurrentView(View.SURVEY_LIST);
+    };
+
     const renderContent = () => {
         if (!currentUser || !currentCompany) return null;
 
@@ -60,15 +63,15 @@ const App: React.FC = () => {
             case View.SURVEY_LIST:
                 return <SurveyList surveys={companySurveys} onSelectSurvey={handleSelectSurvey} />;
             case View.CREATE_SURVEY:
-                return <SurveyCreator onSave={handleCreateSurvey} />;
+                return <SurveyCreator onSave={handleCreateSurvey} onBack={handleBack} />;
             case View.DASHBOARD:
                 if (selectedSurvey) {
                     const responses = MOCK_RESPONSES.filter(r => r.surveyId === selectedSurvey.id);
-                    return <Dashboard survey={selectedSurvey} responses={responses} />;
+                    return <Dashboard survey={selectedSurvey} responses={responses} onBack={handleBack} />;
                 }
                 return <SurveyList surveys={companySurveys} onSelectSurvey={handleSelectSurvey} />;
             case View.PROFILE:
-                return <Profile user={currentUser} onUpdate={handleUpdateProfile} />;
+                return <Profile user={currentUser} onUpdate={handleUpdateProfile} onBack={handleBack} />;
             default:
                 return <SurveyList surveys={companySurveys} onSelectSurvey={handleSelectSurvey} />;
         }
