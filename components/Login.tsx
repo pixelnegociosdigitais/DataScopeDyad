@@ -32,12 +32,13 @@ const Login: React.FC = () => {
                             sign_up: {
                                 email_label: 'Endereço de e-mail',
                                 password_label: 'Crie uma senha',
-                                email_input_placeholder: 'Seu e-mail',
+                                email_input_placeholder: 'Seu e-email',
                                 password_input_placeholder: 'Sua senha',
                                 button_label: 'Cadastrar',
                                 link_text: 'Não tem uma conta? Cadastre-se',
                                 user_meta: {
-                                    full_name: 'Nome Completo'
+                                    full_name: 'Nome Completo',
+                                    company_name: 'Nome da Empresa' // Adicionado para o trigger
                                 }
                             },
                             forgotten_password: {

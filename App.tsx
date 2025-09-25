@@ -9,6 +9,7 @@ import Profile from './components/Profile';
 import SurveyForm from './components/SurveyForm';
 import Login from './components/Login';
 import CompanySettings from './components/CompanySettings';
+import CompanySetup from './components/CompanySetup'; // Importar o novo componente
 import { supabase } from './src/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
@@ -29,7 +30,7 @@ const App: React.FC = () => {
             const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
             if (session) {
-                await fetchUserData(session.user.id);
+                await fetchUserData(session.user.id, session.user.email || '');
             }
             setLoading(false);
         };
@@ -40,7 +41,7 @@ const App: React.FC = () => {
             setSession(session);
             if (session) {
                 setLoading(true);
-                await fetchUserData(session.user.id);
+                await fetchUserData(session.user.id, session.user.email || '');
                 setLoading(false);
             } else {
                 setCurrentUser(null);
@@ -51,7 +52,7 @@ const App: React.FC = () => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const fetchUserData = async (userId: string) => {
+    const fetchUserData = async (userId: string, userEmail: string) => {
         const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select(`
@@ -68,6 +69,8 @@ const App: React.FC = () => {
 
         if (profileError) {
             console.error('Error fetching profile:', profileError);
+            // Se o perfil não for encontrado, pode ser um novo usuário sem perfil ainda
+            // Ou um problema de RLS. Por enquanto, vamos apenas retornar.
             return;
         }
 
@@ -76,7 +79,7 @@ const App: React.FC = () => {
                 id: profileData.id,
                 fullName: profileData.full_name || '',
                 role: profileData.role as UserRole,
-                email: session?.user.email || '',
+                email: userEmail, // Usar o email da sessão
                 phone: profileData.phone || undefined,
                 address: profileData.address || undefined,
                 profilePictureUrl: profileData.avatar_url || undefined,
@@ -91,9 +94,49 @@ const App: React.FC = () => {
                 setCurrentCompany(company);
                 // TODO: Fetch surveys from database for the current company
                 setSurveys(MOCK_SURVEYS); 
+            } else {
+                // Se o usuário tem perfil mas não tem empresa, direciona para a configuração
+                setCurrentView(View.COMPANY_SETUP);
             }
         }
     };
+
+    const handleCreateCompany = async (companyName: string) => {
+        if (!currentUser) return;
+
+        // 1. Inserir a nova empresa
+        const { data: newCompanyData, error: companyError } = await supabase
+            .from('companies')
+            .insert({ name: companyName })
+            .select()
+            .single();
+
+        if (companyError) {
+            alert('Erro ao criar a empresa: ' + companyError.message);
+            console.error('Erro ao criar a empresa:', companyError);
+            return;
+        }
+
+        // 2. Atualizar o perfil do usuário com a nova company_id e role de Administrador
+        const { error: profileUpdateError } = await supabase
+            .from('profiles')
+            .update({ company_id: newCompanyData.id, role: UserRole.ADMIN })
+            .eq('id', currentUser.id);
+
+        if (profileUpdateError) {
+            alert('Erro ao vincular a empresa ao seu perfil: ' + profileUpdateError.message);
+            console.error('Erro ao vincular empresa ao perfil:', profileUpdateError);
+            // Se falhar aqui, talvez seja bom tentar reverter a criação da empresa ou lidar com isso
+            return;
+        }
+
+        // 3. Atualizar o estado local
+        setCurrentCompany(newCompanyData);
+        setCurrentUser(prev => prev ? { ...prev, role: UserRole.ADMIN } : null); // Atualiza a role localmente
+        alert('Empresa criada e vinculada com sucesso!');
+        setCurrentView(View.SURVEY_LIST); // Volta para a lista de pesquisas
+    };
+
 
     const handleSaveSurvey = (surveyData: Survey) => {
         // This logic remains local for now.
@@ -183,8 +226,21 @@ const App: React.FC = () => {
     };
 
     const renderContent = () => {
-        if (!currentUser || !currentCompany) return null;
+        if (!currentUser) return null; // currentUser deve existir aqui
+
+        // Se o usuário está logado mas não tem empresa, mostra a tela de setup
+        if (!currentCompany && currentView !== View.COMPANY_SETUP) {
+            setCurrentView(View.COMPANY_SETUP); // Garante que a view correta seja definida
+            return null; // Retorna null para que o próximo renderContent use a view atualizada
+        }
+        
+        if (currentView === View.COMPANY_SETUP) {
+            return <CompanySetup user={currentUser} onCreateCompany={handleCreateCompany} />;
+        }
+
+        // A partir daqui, currentUser e currentCompany devem existir
         const canManage = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
+        const canManageCompany = currentUser.role === UserRole.ADMIN;
 
         switch (currentView) {
             case View.SURVEY_LIST:
@@ -207,7 +263,7 @@ const App: React.FC = () => {
                 }
                 return null;
             case View.COMPANY_SETTINGS:
-                return <CompanySettings company={currentCompany} onUpdate={handleUpdateCompany} onBack={handleBack} />;
+                return <CompanySettings company={currentCompany!} onUpdate={handleUpdateCompany} onBack={handleBack} />;
             default:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurvey} canManage={canManage} />;
         }
@@ -221,10 +277,17 @@ const App: React.FC = () => {
         return <Login />;
     }
 
-    if (!currentUser || !currentCompany) {
+    // Se o usuário está logado mas ainda não tem um perfil ou empresa carregados
+    if (!currentUser || (!currentCompany && currentView !== View.COMPANY_SETUP)) {
         return <div className="h-screen w-screen flex items-center justify-center">Carregando dados do usuário...</div>;
     }
 
+    // Se o usuário está logado e tem um perfil, mas não tem empresa, mostra a tela de setup
+    if (currentUser && !currentCompany && currentView === View.COMPANY_SETUP) {
+        return <CompanySetup user={currentUser} onCreateCompany={handleCreateCompany} />;
+    }
+
+    // A partir daqui, currentUser e currentCompany devem existir (ou a view é COMPANY_SETUP)
     const canManage = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
     const canManageCompany = currentUser.role === UserRole.ADMIN;
 
@@ -232,7 +295,7 @@ const App: React.FC = () => {
         <div className="flex flex-col h-screen bg-background text-text-main">
             <Header 
                 user={currentUser} 
-                company={currentCompany} 
+                company={currentCompany!} // currentCompany é garantido aqui ou a view é COMPANY_SETUP
                 onLogout={() => supabase.auth.signOut()} 
                 setView={setCurrentView} 
                 currentView={currentView} 
