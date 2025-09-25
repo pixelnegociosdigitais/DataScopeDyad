@@ -9,12 +9,17 @@ interface CompanySettingsProps {
 }
 
 const CompanySettings: React.FC<CompanySettingsProps> = ({ company, onUpdate, onBack }) => {
-    const [companyName, setCompanyName] = useState(company.name);
+    const [formData, setFormData] = useState<Company>(company);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        if (companyName.trim()) {
-            onUpdate({ ...company, name: companyName });
+        if (formData.name.trim()) {
+            onUpdate(formData);
         }
     };
 
@@ -28,16 +33,99 @@ const CompanySettings: React.FC<CompanySettingsProps> = ({ company, onUpdate, on
             </div>
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                    <label htmlFor="companyName" className="block text-sm font-medium text-gray-700">Nome da Empresa</label>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nome da Empresa</label>
                     <input
                         type="text"
-                        name="companyName"
-                        id="companyName"
-                        value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
+                        name="name"
+                        id="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                        required
+                    />
+                </div>
+                <div>
+                    <label htmlFor="cnpj" className="block text-sm font-medium text-gray-700">CNPJ</label>
+                    <input
+                        type="text"
+                        name="cnpj"
+                        id="cnpj"
+                        value={formData.cnpj || ''}
+                        onChange={handleChange}
                         className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
                     />
                 </div>
+                <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Telefone</label>
+                    <input
+                        type="tel"
+                        name="phone"
+                        id="phone"
+                        value={formData.phone || ''}
+                        onChange={handleChange}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                    />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label htmlFor="address_street" className="block text-sm font-medium text-gray-700">Rua</label>
+                        <input
+                            type="text"
+                            name="address_street"
+                            id="address_street"
+                            value={formData.address_street || ''}
+                            onChange={handleChange}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="address_neighborhood" className="block text-sm font-medium text-gray-700">Bairro</label>
+                        <input
+                            type="text"
+                            name="address_neighborhood"
+                            id="address_neighborhood"
+                            value={formData.address_neighborhood || ''}
+                            onChange={handleChange}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                        />
+                    </div>
+                </div>
+                <div>
+                    <label htmlFor="address_complement" className="block text-sm font-medium text-gray-700">Complemento</label>
+                    <input
+                        type="text"
+                        name="address_complement"
+                        id="address_complement"
+                        value={formData.address_complement || ''}
+                        onChange={handleChange}
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                    />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label htmlFor="address_city" className="block text-sm font-medium text-gray-700">Cidade</label>
+                        <input
+                            type="text"
+                            name="address_city"
+                            id="address_city"
+                            value={formData.address_city || ''}
+                            onChange={handleChange}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="address_state" className="block text-sm font-medium text-gray-700">Estado</label>
+                        <input
+                            type="text"
+                            name="address_state"
+                            id="address_state"
+                            value={formData.address_state || ''}
+                            onChange={handleChange}
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                        />
+                    </div>
+                </div>
+                
                 <div className="pt-2 flex justify-end">
                     <button type="submit" className="px-6 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark shadow-sm">
                         Salvar Alterações

@@ -17,6 +17,13 @@ export interface User {
 export interface Company {
     id: string;
     name: string;
+    cnpj?: string;
+    phone?: string;
+    address_street?: string;
+    address_neighborhood?: string;
+    address_complement?: string;
+    address_city?: string;
+    address_state?: string;
 }
 
 export enum QuestionType {

@@ -62,7 +62,17 @@ const App: React.FC = () => {
                 phone,
                 address,
                 avatar_url,
-                company:companies (id, name)
+                company:companies (
+                    id, 
+                    name,
+                    cnpj,
+                    phone,
+                    address_street,
+                    address_neighborhood,
+                    address_complement,
+                    address_city,
+                    address_state
+                )
             `)
             .eq('id', userId)
             .single();
@@ -90,6 +100,13 @@ const App: React.FC = () => {
                 const company: Company = {
                     id: profileData.company.id,
                     name: profileData.company.name,
+                    cnpj: profileData.company.cnpj || undefined,
+                    phone: profileData.company.phone || undefined,
+                    address_street: profileData.company.address_street || undefined,
+                    address_neighborhood: profileData.company.address_neighborhood || undefined,
+                    address_complement: profileData.company.address_complement || undefined,
+                    address_city: profileData.company.address_city || undefined,
+                    address_state: profileData.company.address_state || undefined,
                 };
                 setCurrentCompany(company);
                 // TODO: Fetch surveys from database for the current company
@@ -175,7 +192,16 @@ const App: React.FC = () => {
         if (!currentCompany) return;
         const { data, error } = await supabase
             .from('companies')
-            .update({ name: updatedCompany.name })
+            .update({ 
+                name: updatedCompany.name,
+                cnpj: updatedCompany.cnpj,
+                phone: updatedCompany.phone,
+                address_street: updatedCompany.address_street,
+                address_neighborhood: updatedCompany.address_neighborhood,
+                address_complement: updatedCompany.address_complement,
+                address_city: updatedCompany.address_city,
+                address_state: updatedCompany.address_state,
+            })
             .eq('id', currentCompany.id)
             .select()
             .single();
