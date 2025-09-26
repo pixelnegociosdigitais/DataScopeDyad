@@ -37,8 +37,9 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
             value,
         }));
         
+        console.log('Formatted Answers:', formattedAnswers); // Novo log para depuração
         const success = await onSaveResponse(formattedAnswers); // Aguardar o resultado do salvamento
-        // console.log('Survey response save success:', success); // Removido o log de depuração
+        console.log('Survey response save success:', success); // Log existente, agora mais relevante
         if (success) {
             showSuccess('Resposta enviada com sucesso!'); // Agora o toast é disparado aqui
             setShowConfirmationDialog(true);

@@ -246,11 +246,14 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
     }, [currentCompany?.id, fetchSurveys]);
 
     const handleSaveResponse = useCallback(async (answers: Answer[], selectedSurvey: Survey, currentUser: User): Promise<boolean> => {
+        console.log('handleSaveResponse: Iniciando salvamento da resposta.'); // Novo log
         if (!selectedSurvey || !currentUser) {
             showError('Usuário ou pesquisa não identificados.');
+            console.error('handleSaveResponse: Usuário ou pesquisa não identificados.'); // Log detalhado
             return false;
         }
 
+        console.log('handleSaveResponse: Tentando inserir em survey_responses para surveyId:', selectedSurvey.id, 'respondentId:', currentUser.id); // Novo log
         const { data: newResponse, error: responseError } = await supabase
             .from('survey_responses')
             .insert({
@@ -262,9 +265,10 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
         if (responseError) {
             showError('Erro ao enviar a resposta: ' + responseError.message);
-            console.error('Erro ao enviar resposta:', responseError);
+            console.error('handleSaveResponse: Erro ao inserir survey_responses:', responseError); // Log detalhado
             return false;
         }
+        console.log('handleSaveResponse: Resposta principal inserida com sucesso:', newResponse); // Novo log
 
         if (newResponse) {
             const answersToInsert = answers.map(a => ({
@@ -272,6 +276,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 question_id: a.questionId,
                 value: a.value,
             }));
+            console.log('handleSaveResponse: Respostas detalhadas a serem inseridas:', answersToInsert); // Novo log
 
             const { error: answersError } = await supabase
                 .from('answers')
@@ -279,12 +284,13 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
             if (answersError) {
                 showError('Erro ao salvar as respostas detalhadas: ' + answersError.message);
-                console.error('Erro ao salvar respostas detalhadas:', answersError);
+                console.error('handleSaveResponse: Erro ao inserir answers:', answersError); // Log detalhado
                 return false;
             }
-            // showSuccess('Resposta enviada com sucesso!'); // REMOVIDO DAQUI
+            console.log('handleSaveResponse: Respostas detalhadas inseridas com sucesso.'); // Novo log
             return true; // Retorna true em caso de sucesso
         }
+        console.error('handleSaveResponse: newResponse foi nulo após a inserção, mas nenhum erro foi reportado.'); // Log detalhado
         return false; // Caso newResponse seja nulo (não deveria acontecer com .single())
     }, []);
 
