@@ -153,7 +153,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                         {([QuestionType.MULTIPLE_CHOICE, QuestionType.CHECKBOX, QuestionType.RATING].includes(q.type as QuestionType)) && Array.isArray(q.data) && q.data.length > 0 && (
                              <ResponsiveContainer width="100%" height={300}>
                                 {q.type === QuestionType.RATING ? (
-                                    <BarChart data={q.data.sort((a, b) => Number(a.name) - Number(b.name))}>
+                                    <BarChart data={[...q.data].sort((a, b) => Number(a.name) - Number(b.name))}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="name" />
                                         <YAxis allowDecimals={false} />
