@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
                                         : 'hover:bg-gray-700 text-gray-300'}
                                     ${isExpanded ? 'justify-start' : 'justify-center'}`}
                     >
-                        <item.icon className="h-6 w-6 mr-4" />
+                        <item.icon className="h-7 w-7 mr-4" /> {/* Aumentado para h-7 w-7 */}
                         {isExpanded && <span className="text-lg whitespace-nowrap">{item.label}</span>}
                     </button>
                 ))}
@@ -75,7 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
                     className="p-2 rounded-full text-gray-300 hover:bg-gray-700 transition-colors"
                     aria-label={isExpanded ? "Recolher menu" : "Expandir menu"}
                 >
-                    {isExpanded ? <ChevronLeftIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
+                    {isExpanded ? <ChevronLeftIcon className="h-7 w-7" /> : <MenuIcon className="h-7 w-7" />} {/* Aumentado para h-7 w-7 */}
                 </button>
             </div>
         </aside>
