@@ -141,6 +141,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             return;
         }
 
+        let targetSurveyId = editingSurveyId;
+
         if (editingSurveyId) {
             // Atualizar pesquisa existente
             const { error: surveyUpdateError } = await supabase
@@ -206,6 +208,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             }
 
             if (newSurvey) {
+                targetSurveyId = newSurvey.id; // Define o ID da nova pesquisa
                 const questionsToInsert = surveyData.questions.map((q, index) => ({
                     survey_id: newSurvey.id,
                     text: q.text,
@@ -226,10 +229,61 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 showSuccess('Pesquisa criada com sucesso!');
             }
         }
-        // Após salvar/atualizar, re-fetch e atualize o estado de surveys
-        if (currentCompany?.id) {
-            const updatedSurveys = await fetchSurveys(currentCompany.id);
-            setSurveys(updatedSurveys);
+
+        // Buscar a pesquisa específica atualizada e atualizar o estado
+        if (targetSurveyId && currentCompany?.id) {
+            const { data: updatedSurveyData, error: fetchSingleError } = await supabase
+                .from('surveys')
+                .select(`
+                    id,
+                    title,
+                    company_id,
+                    created_by,
+                    created_at,
+                    questions (
+                        id,
+                        text,
+                        type,
+                        options,
+                        position
+                    )
+                `)
+                .eq('id', targetSurveyId)
+                .single();
+
+            if (fetchSingleError) {
+                console.error('Erro ao buscar pesquisa única atualizada:', fetchSingleError);
+                // Fallback para buscar todas as pesquisas se a busca única falhar
+                await fetchSurveys(currentCompany.id);
+                return;
+            }
+
+            if (updatedSurveyData) {
+                const updatedSurvey: Survey = {
+                    id: updatedSurveyData.id,
+                    title: updatedSurveyData.title,
+                    companyId: updatedSurveyData.company_id,
+                    questions: updatedSurveyData.questions.map((q: any) => ({
+                        id: q.id,
+                        text: q.text,
+                        type: q.type,
+                        options: q.options || undefined,
+                    })).sort((a, b) => (a.position || 0) - (b.position || 0)),
+                };
+
+                setSurveys(prevSurveys => {
+                    const existingIndex = prevSurveys.findIndex(s => s.id === updatedSurvey.id);
+                    if (existingIndex > -1) {
+                        // Atualiza a pesquisa existente no array
+                        const newSurveys = [...prevSurveys];
+                        newSurveys[existingIndex] = updatedSurvey;
+                        return newSurveys;
+                    } else {
+                        // Adiciona a nova pesquisa ao array (para criação de nova pesquisa)
+                        return [updatedSurvey, ...prevSurveys];
+                    }
+                });
+            }
         }
     }, [currentUser, currentCompany, fetchSurveys]);
 
@@ -245,14 +299,11 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 console.error('Erro ao excluir pesquisa:', error);
             } else {
                 showSuccess('Pesquisa excluída com sucesso!');
-                // Após excluir, re-fetch e atualize o estado de surveys
-                if (currentCompany?.id) {
-                    const updatedSurveys = await fetchSurveys(currentCompany.id);
-                    setSurveys(updatedSurveys);
-                }
+                // Atualiza o estado de surveys removendo a pesquisa excluída
+                setSurveys(prevSurveys => prevSurveys.filter(s => s.id !== surveyId));
             }
         }
-    }, [currentCompany?.id, fetchSurveys]);
+    }, []);
 
     const handleSaveResponse = useCallback(async (answers: Answer[], selectedSurvey: Survey, currentUser: User): Promise<boolean> => {
         console.log('useSurveys: handleSaveResponse: Iniciando salvamento da resposta.');
