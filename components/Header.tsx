@@ -1,12 +1,13 @@
 import React from 'react';
-import { User, Company, View } from '../types';
+import { User, Company, View, UserRole } from '../types'; // Importar UserRole
 import { LogoutIcon } from './icons/LogoutIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
 import { SurveyIcon } from './icons/SurveyIcon';
 import { CreateIcon } from './icons/CreateIcon';
 import { LogoIcon } from './icons/LogoIcon';
-import { GiftIcon } from './icons/GiftIcon'; // Importar o novo ícone
+import { GiftIcon } from './icons/GiftIcon';
+import { SettingsIcon } from './icons/SettingsIcon'; // Importar o novo ícone
 
 interface HeaderProps {
     user: User;
@@ -19,6 +20,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, currentView, canCreate, canManageCompany }) => {
+    const canAccessSettings = user.role === UserRole.DEVELOPER; // Apenas desenvolvedores podem acessar as configurações
+
     return (
         <header className="bg-white shadow-sm p-4 flex justify-between items-center">
             <div className="flex items-center gap-6">
@@ -63,6 +66,19 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, curre
                         >
                             <GiftIcon className="h-5 w-5" />
                             <span>Sorteios</span>
+                        </button>
+                    )}
+                    {canAccessSettings && ( // Botão de configurações visível apenas para Desenvolvedores
+                        <button
+                            onClick={() => setView(View.SETTINGS_PANEL)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors 
+                                        ${currentView === View.SETTINGS_PANEL
+                                            ? 'bg-primary text-white' 
+                                            : 'text-text-light hover:bg-gray-100'}`}
+                            aria-label="Configurações da Aplicação"
+                        >
+                            <SettingsIcon className="h-5 w-5" />
+                            <span>Configurações</span>
                         </button>
                     )}
                 </nav>

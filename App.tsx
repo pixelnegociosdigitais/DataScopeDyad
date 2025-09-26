@@ -10,6 +10,7 @@ import Login from './components/Login';
 import CompanySettings from './components/CompanySettings';
 import CompanySetup from './components/CompanySetup';
 import Giveaways from './components/Giveaways';
+import SettingsPanel from './components/SettingsPanel'; // Importar o novo componente
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
@@ -144,6 +145,8 @@ const App: React.FC = () => {
                 return <CompanySettings company={currentCompany} onUpdate={handleUpdateCompany} onBack={handleBack} />;
             case View.GIVEAWAYS:
                 return <Giveaways currentUser={currentUser} currentCompany={currentCompany} />;
+            case View.SETTINGS_PANEL: // Novo caso para o painel de configurações
+                return <SettingsPanel onBack={handleBack} />;
             default:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManage} />;
         }

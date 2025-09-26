@@ -71,4 +71,5 @@ export enum View {
     COMPANY_SETTINGS = 'COMPANY_SETTINGS',
     COMPANY_SETUP = 'COMPANY_SETUP',
     GIVEAWAYS = 'GIVEAWAYS', // Nova view para sorteios
+    SETTINGS_PANEL = 'SETTINGS_PANEL', // Nova view para o painel de configurações
 }
