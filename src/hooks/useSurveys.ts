@@ -378,12 +378,13 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             // Após salvar uma resposta, atualize a contagem de respostas para a pesquisa na lista
             if (currentCompany?.id) {
                 await fetchSurveys(currentCompany.id);
+                await fetchSurveyResponses(selectedSurvey.id); // <--- Adicionado para atualizar o dashboard
             }
             return true;
         }
         console.error('useSurveys: handleSaveResponse: newResponse foi nulo após a inserção, mas nenhum erro foi reportado.');
         return false;
-    }, [currentCompany?.id, fetchSurveys]);
+    }, [currentCompany?.id, fetchSurveys, fetchSurveyResponses]);
 
     return {
         surveys,
