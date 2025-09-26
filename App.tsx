@@ -116,9 +116,11 @@ const App: React.FC = () => {
                 console.error('App: handleSaveResponse returned false, indicating an error occurred during Supabase operation.');
                 // showError should have been called inside useSurveys.ts
             }
+            return success; // <--- Adicionado para retornar o status de sucesso/falha
         } else {
             showError('Não foi possível enviar a resposta. Dados da pesquisa ou do usuário ausentes.');
             console.error('App: handleSaveResponseWrapper: selectedSurvey or currentUser is missing.', { selectedSurvey, currentUser });
+            return false;
         }
     }, [handleSaveResponse, selectedSurvey, currentUser]);
 
