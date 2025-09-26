@@ -37,7 +37,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     type,
                     options,
                     position
-                )
+                ),
+                survey_responses(count)
             `)
             .eq('company_id', companyId)
             .order('created_at', { ascending: false });
@@ -58,6 +59,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     type: q.type,
                     options: q.options || undefined,
                 })).sort((a, b) => (a.position || 0) - (b.position || 0)),
+                responseCount: s.survey_responses[0]?.count || 0, // Extrai a contagem de respostas
             }));
             setSurveys(fetchedSurveys);
             setLoadingSurveys(false);
@@ -246,7 +248,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         type,
                         options,
                         position
-                    )
+                    ),
+                    survey_responses(count)
                 `)
                 .eq('id', targetSurveyId)
                 .single();
@@ -269,6 +272,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         type: q.type,
                         options: q.options || undefined,
                     })).sort((a, b) => (a.position || 0) - (b.position || 0)),
+                    responseCount: updatedSurveyData.survey_responses[0]?.count || 0,
                 };
 
                 setSurveys(prevSurveys => {
@@ -370,11 +374,16 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 return false;
             }
             console.log('useSurveys: handleSaveResponse: Respostas detalhadas inseridas com sucesso.');
+            
+            // Após salvar uma resposta, atualize a contagem de respostas para a pesquisa na lista
+            if (currentCompany?.id) {
+                await fetchSurveys(currentCompany.id);
+            }
             return true;
         }
         console.error('useSurveys: handleSaveResponse: newResponse foi nulo após a inserção, mas nenhum erro foi reportado.');
         return false;
-    }, []);
+    }, [currentCompany?.id, fetchSurveys]);
 
     return {
         surveys,

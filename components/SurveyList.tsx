@@ -31,7 +31,10 @@ const SurveyList: React.FC<SurveyListProps> = ({ surveys, onSelectSurvey, onStar
                                 </div>
                                 <div className="flex-1">
                                     <h3 className="text-lg font-semibold text-text-main">{survey.title}</h3>
-                                    <p className="text-sm text-text-light">{survey.questions.length} perguntas</p>
+                                    <p className="text-sm text-text-light">
+                                        {survey.questions.length} perguntas
+                                        {survey.responseCount !== undefined && ` • ${survey.responseCount} respostas`}
+                                    </p>
                                 </div>
                                 {canManage && (
                                     <div className="flex items-center">

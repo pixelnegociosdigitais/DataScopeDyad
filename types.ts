@@ -48,6 +48,7 @@ export interface Survey {
     title: string;
     companyId: string;
     questions: Question[];
+    responseCount?: number; // Adicionado para armazenar a contagem de respostas
 }
 
 export interface Answer {
