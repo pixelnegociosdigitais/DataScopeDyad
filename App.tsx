@@ -108,14 +108,15 @@ const App: React.FC = () => {
     }, [handleSaveSurvey, editingSurvey, modulePermissions]);
 
     const handleSaveResponseWrapper = useCallback(async (answers: any[]) => {
+        console.log('App: handleSaveResponseWrapper called with answers:', answers); // Novo log
         if (selectedSurvey && currentUser) {
-            // A função handleSaveResponse agora retorna um booleano, mas o SurveyForm
-            // é quem vai reagir a esse sucesso para mostrar o diálogo.
-            // Não precisamos mais de setCurrentView aqui.
-            await handleSaveResponse(answers, selectedSurvey, currentUser);
+            console.log('App: Calling handleSaveResponse with selectedSurvey and currentUser.'); // Novo log
+            const success = await handleSaveResponse(answers, selectedSurvey, currentUser);
+            if (!success) {
+                console.error('App: handleSaveResponse returned false, indicating an error occurred during Supabase operation.');
+                // showError should have been called inside useSurveys.ts
+            }
         } else {
-            // Se selectedSurvey ou currentUser for nulo, a função de salvar em useSurveys nunca é chamada.
-            // Exibir um erro explícito para o usuário.
             showError('Não foi possível enviar a resposta. Dados da pesquisa ou do usuário ausentes.');
             console.error('App: handleSaveResponseWrapper: selectedSurvey or currentUser is missing.', { selectedSurvey, currentUser });
         }

@@ -38,7 +38,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
             value,
         }));
         
-        console.log('SurveyForm: Formatted Answers:', formattedAnswers); // Novo log para depuração
+        console.log('SurveyForm: Formatted Answers before onSaveResponse:', formattedAnswers); // Updated log
         try {
             const success = await onSaveResponse(formattedAnswers); // Aguardar o resultado do salvamento
             console.log('SurveyForm: onSaveResponse returned success:', success); // Added log
