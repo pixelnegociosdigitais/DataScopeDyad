@@ -332,8 +332,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
     const handleSaveResponse = useCallback(async (answers: Answer[], selectedSurvey: Survey, currentUser: User): Promise<boolean> => {
         console.log('useSurveys: handleSaveResponse: Iniciando salvamento da resposta.');
         if (!selectedSurvey || !currentUser) {
-            showError('Usuário ou pesquisa não identificados para salvar a resposta.');
             console.error('useSurveys: handleSaveResponse: Usuário ou pesquisa não identificados.', { selectedSurvey, currentUser });
+            showError('Usuário ou pesquisa não identificados para salvar a resposta.');
+            console.log('useSurveys: handleSaveResponse: Retornando FALSE devido a dados ausentes.');
             return false;
         }
 
@@ -353,8 +354,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
         if (missingAnswers.length > 0) {
             const missingQuestionTexts = missingAnswers.map(q => q.text).join(', ');
-            showError(`Por favor, responda a todas as perguntas obrigatórias: ${missingQuestionTexts}`);
             console.error('useSurveys: handleSaveResponse: Perguntas obrigatórias não respondidas:', missingAnswers);
+            showError(`Por favor, responda a todas as perguntas obrigatórias: ${missingQuestionTexts}`);
+            console.log('useSurveys: handleSaveResponse: Retornando FALSE devido a validação de campos obrigatórios.');
             return false;
         }
         // --- End client-side validation ---
@@ -370,8 +372,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             .single();
 
         if (responseError) {
-            showError('Erro ao enviar a resposta da pesquisa: ' + responseError.message);
             console.error('useSurveys: handleSaveResponse: Erro ao inserir survey_responses:', responseError);
+            showError('Erro ao enviar a resposta da pesquisa: ' + responseError.message);
+            console.log('useSurveys: handleSaveResponse: Retornando FALSE devido a erro na inserção da resposta principal.');
             return false;
         }
         console.log('useSurveys: handleSaveResponse: Resposta principal inserida com sucesso:', newResponse);
@@ -389,8 +392,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 .insert(answersToInsert);
 
             if (answersError) {
-                showError('Erro ao salvar as respostas detalhadas: ' + answersError.message);
                 console.error('useSurveys: handleSaveResponse: Erro ao inserir answers:', answersError);
+                showError('Erro ao salvar as respostas detalhadas: ' + answersError.message);
+                console.log('useSurveys: handleSaveResponse: Retornando FALSE devido a erro na inserção das respostas detalhadas.');
                 return false;
             }
             console.log('useSurveys: handleSaveResponse: Respostas detalhadas inseridas com sucesso.');
@@ -402,9 +406,11 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 await fetchSurveyResponses(selectedSurvey.id);
             }
             showSuccess('Resposta enviada com sucesso!');
+            console.log('useSurveys: handleSaveResponse: Retornando TRUE - sucesso total.');
             return true;
         }
         console.error('useSurveys: handleSaveResponse: newResponse foi nulo após a inserção, mas nenhum erro foi reportado.');
+        console.log('useSurveys: handleSaveResponse: Retornando FALSE - newResponse nulo.');
         return false;
     }, [currentCompany?.id, fetchSurveys, fetchSurveyResponses, showSuccess, showError]);
 

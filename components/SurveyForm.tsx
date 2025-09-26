@@ -60,12 +60,10 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
         console.log('SurveyForm: Formatted Answers before onSaveResponse:', formattedAnswers);
         try {
             const success = await onSaveResponse(formattedAnswers); // Aguardar o resultado do salvamento
-            console.log('SurveyForm: onSaveResponse returned success:', success);
+            console.log('SurveyForm: onSaveResponse returned success:', success); // Log do valor de sucesso
             if (success) {
-                // showSuccess('Resposta enviada com sucesso!'); // REMOVIDO: Agora o toast é disparado em useSurveys
                 setShowConfirmationDialog(true);
             } else {
-                // Se onSaveResponse retornar false, significa que um erro ocorreu e showError já foi chamado em useSurveys ou App.tsx.
                 console.log('SurveyForm: Submission failed, check console for errors from useSurveys or App.tsx.');
             }
         } catch (error: any) {
