@@ -8,11 +8,11 @@ interface UseSurveysReturn {
     surveyResponses: SurveyResponse[];
     templates: Survey[];
     loadingSurveys: boolean;
-    fetchSurveys: (companyId: string) => Promise<void>;
+    fetchSurveys: (companyId: string) => Promise<Survey[]>; // Alterado para retornar Promise<Survey[]>
     fetchSurveyResponses: (surveyId: string) => Promise<void>;
     handleSaveSurvey: (surveyData: Survey, editingSurveyId?: string) => Promise<void>;
     handleDeleteSurvey: (surveyId: string) => Promise<void>;
-    handleSaveResponse: (answers: Answer[], selectedSurvey: Survey, currentUser: User) => Promise<boolean>; // Alterado para retornar Promise<boolean>
+    handleSaveResponse: (answers: Answer[], selectedSurvey: Survey, currentUser: User) => Promise<boolean>;
 }
 
 export const useSurveys = (currentCompany: Company | null, currentUser: User | null): UseSurveysReturn => {
@@ -21,7 +21,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
     const [templates, setTemplates] = useState<Survey[]>([]);
     const [loadingSurveys, setLoadingSurveys] = useState(true);
 
-    const fetchSurveys = useCallback(async (companyId: string) => {
+    const fetchSurveys = useCallback(async (companyId: string): Promise<Survey[]> => {
         setLoadingSurveys(true);
         const { data, error } = await supabase
             .from('surveys')
@@ -45,6 +45,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         if (error) {
             console.error('Erro ao buscar pesquisas:', error);
             setSurveys([]);
+            setLoadingSurveys(false);
+            return [];
         } else if (data) {
             const fetchedSurveys: Survey[] = data.map(s => ({
                 id: s.id,
@@ -58,8 +60,11 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 })).sort((a, b) => (a.position || 0) - (b.position || 0)),
             }));
             setSurveys(fetchedSurveys);
+            setLoadingSurveys(false);
+            return fetchedSurveys;
         }
         setLoadingSurveys(false);
+        return [];
     }, []);
 
     const fetchSurveyResponses = useCallback(async (surveyId: string) => {
@@ -221,8 +226,10 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 showSuccess('Pesquisa criada com sucesso!');
             }
         }
+        // Após salvar/atualizar, re-fetch e atualize o estado de surveys
         if (currentCompany?.id) {
-            await fetchSurveys(currentCompany.id);
+            const updatedSurveys = await fetchSurveys(currentCompany.id);
+            setSurveys(updatedSurveys);
         }
     }, [currentUser, currentCompany, fetchSurveys]);
 
@@ -238,8 +245,10 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 console.error('Erro ao excluir pesquisa:', error);
             } else {
                 showSuccess('Pesquisa excluída com sucesso!');
+                // Após excluir, re-fetch e atualize o estado de surveys
                 if (currentCompany?.id) {
-                    await fetchSurveys(currentCompany.id);
+                    const updatedSurveys = await fetchSurveys(currentCompany.id);
+                    setSurveys(updatedSurveys);
                 }
             }
         }
