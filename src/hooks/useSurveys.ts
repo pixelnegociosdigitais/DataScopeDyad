@@ -8,7 +8,7 @@ interface UseSurveysReturn {
     surveyResponses: SurveyResponse[];
     templates: Survey[];
     loadingSurveys: boolean;
-    fetchSurveys: (companyId: string) => Promise<Survey[]>; // Alterado para retornar Promise<Survey[]>
+    fetchSurveys: (companyId: string) => Promise<Survey[]>;
     fetchSurveyResponses: (surveyId: string) => Promise<void>;
     handleSaveSurvey: (surveyData: Survey, editingSurveyId?: string) => Promise<void>;
     handleDeleteSurvey: (surveyId: string) => Promise<void>;
@@ -23,6 +23,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
     const fetchSurveys = useCallback(async (companyId: string): Promise<Survey[]> => {
         setLoadingSurveys(true);
+        console.log('useSurveys: fetchSurveys called for companyId:', companyId);
         const { data, error } = await supabase
             .from('surveys')
             .select(`
@@ -38,17 +39,18 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     options,
                     position
                 ),
-                survey_responses(count)
+                survey_responses(*) // Buscar todas as respostas para contagem no cliente
             `)
             .eq('company_id', companyId)
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('Erro ao buscar pesquisas:', error);
+            console.error('useSurveys: fetchSurveys error:', error);
             setSurveys([]);
             setLoadingSurveys(false);
             return [];
         } else if (data) {
+            console.log('useSurveys: fetchSurveys data received:', data);
             const fetchedSurveys: Survey[] = data.map(s => ({
                 id: s.id,
                 title: s.title,
@@ -59,8 +61,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     type: q.type,
                     options: q.options || undefined,
                 })).sort((a, b) => (a.position || 0) - (b.position || 0)),
-                responseCount: s.survey_responses[0]?.count || 0, // Extrai a contagem de respostas
+                responseCount: s.survey_responses ? s.survey_responses.length : 0, // Contar no cliente
             }));
+            console.log('useSurveys: fetchSurveys - setting surveys to:', fetchedSurveys);
             setSurveys(fetchedSurveys);
             setLoadingSurveys(false);
             return fetchedSurveys;
@@ -70,6 +73,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
     }, []);
 
     const fetchSurveyResponses = useCallback(async (surveyId: string) => {
+        console.log('useSurveys: fetchSurveyResponses called for surveyId:', surveyId);
         const { data, error } = await supabase
             .from('survey_responses')
             .select(`
@@ -85,12 +89,13 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             .eq('survey_id', surveyId);
 
         if (error) {
-            console.error('Erro ao buscar respostas da pesquisa:', error);
+            console.error('useSurveys: fetchSurveyResponses error:', error);
             setSurveyResponses([]);
             return;
         }
 
         if (data) {
+            console.log('useSurveys: fetchSurveyResponses data received:', data);
             const fetchedResponses: SurveyResponse[] = data.map(r => ({
                 id: r.id,
                 surveyId: r.survey_id,
@@ -99,21 +104,27 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     value: a.value,
                 })),
             }));
+            console.log('useSurveys: fetchSurveyResponses - setting surveyResponses to:', fetchedResponses);
             setSurveyResponses(fetchedResponses);
+        } else {
+            console.log('useSurveys: fetchSurveyResponses - no data received, setting surveyResponses to empty array.');
+            setSurveyResponses([]);
         }
     }, []);
 
     const fetchTemplates = useCallback(async () => {
+        console.log('useSurveys: fetchTemplates called.');
         const { data, error } = await supabase
             .from('survey_templates')
             .select('id, title, questions');
 
         if (error) {
-            console.error('Erro ao buscar templates de pesquisa:', error);
+            console.error('useSurveys: fetchTemplates error:', error);
             return;
         }
 
         if (data) {
+            console.log('useSurveys: fetchTemplates data received:', data);
             const fetchedTemplates: Survey[] = data.map(template => ({
                 id: template.id,
                 title: template.title,
@@ -130,8 +141,10 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
     useEffect(() => {
         if (currentCompany?.id) {
+            console.log('useSurveys: currentCompany.id changed, fetching surveys.');
             fetchSurveys(currentCompany.id);
         } else {
+            console.log('useSurveys: currentCompany.id is null, clearing surveys.');
             setSurveys([]);
             setLoadingSurveys(false);
         }
@@ -146,6 +159,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         let targetSurveyId = editingSurveyId;
 
         if (editingSurveyId) {
+            console.log('useSurveys: handleSaveSurvey: Updating existing survey:', editingSurveyId);
             // Atualizar pesquisa existente
             const { error: surveyUpdateError } = await supabase
                 .from('surveys')
@@ -154,7 +168,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
             if (surveyUpdateError) {
                 showError('Erro ao atualizar a pesquisa: ' + surveyUpdateError.message);
-                console.error('Erro ao atualizar pesquisa:', surveyUpdateError);
+                console.error('useSurveys: handleSaveSurvey: Erro ao atualizar pesquisa:', surveyUpdateError);
                 return;
             }
 
@@ -166,7 +180,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
             if (deleteQuestionsError) {
                 showError('Erro ao remover perguntas antigas: ' + deleteQuestionsError.message);
-                console.error('Erro ao remover perguntas antigas:', deleteQuestionsError);
+                console.error('useSurveys: handleSaveSurvey: Erro ao remover perguntas antigas:', deleteQuestionsError);
                 return;
             }
 
@@ -178,6 +192,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 options: q.options || null,
                 position: index,
             }));
+            console.log('useSurveys: handleSaveSurvey: Inserting new/updated questions:', questionsToInsert);
 
             const { error: insertQuestionsError } = await supabase
                 .from('questions')
@@ -185,13 +200,14 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
             if (insertQuestionsError) {
                 showError('Erro ao inserir novas perguntas: ' + insertQuestionsError.message);
-                console.error('Erro ao inserir novas perguntas:', insertQuestionsError);
+                console.error('useSurveys: handleSaveSurvey: Erro ao inserir novas perguntas:', insertQuestionsError);
                 return;
             }
 
             showSuccess('Pesquisa atualizada com sucesso!');
 
         } else {
+            console.log('useSurveys: handleSaveSurvey: Creating new survey.');
             // Criar nova pesquisa
             const { data: newSurvey, error: surveyInsertError } = await supabase
                 .from('surveys')
@@ -205,7 +221,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
             if (surveyInsertError) {
                 showError('Erro ao criar a pesquisa: ' + surveyInsertError.message);
-                console.error('Erro ao criar pesquisa:', surveyInsertError);
+                console.error('useSurveys: handleSaveSurvey: Erro ao criar pesquisa:', surveyInsertError);
                 return;
             }
 
@@ -218,6 +234,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     options: q.options || null,
                     position: index,
                 }));
+                console.log('useSurveys: handleSaveSurvey: Inserting questions for new survey:', questionsToInsert);
 
                 const { error: questionsInsertError } = await supabase
                     .from('questions')
@@ -225,7 +242,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
                 if (questionsInsertError) {
                     showError('Erro ao inserir perguntas da pesquisa: ' + questionsInsertError.message);
-                    console.error('Erro ao inserir perguntas:', questionsInsertError);
+                    console.error('useSurveys: handleSaveSurvey: Erro ao inserir perguntas:', questionsInsertError);
                     return;
                 }
                 showSuccess('Pesquisa criada com sucesso!');
@@ -234,6 +251,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
         // Buscar a pesquisa específica atualizada e atualizar o estado
         if (targetSurveyId && currentCompany?.id) {
+            console.log('useSurveys: handleSaveSurvey: Fetching updated single survey for ID:', targetSurveyId);
             const { data: updatedSurveyData, error: fetchSingleError } = await supabase
                 .from('surveys')
                 .select(`
@@ -249,13 +267,13 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         options,
                         position
                     ),
-                    survey_responses(count)
+                    survey_responses(*)
                 `)
                 .eq('id', targetSurveyId)
                 .single();
 
             if (fetchSingleError) {
-                console.error('Erro ao buscar pesquisa única atualizada:', fetchSingleError);
+                console.error('useSurveys: handleSaveSurvey: Erro ao buscar pesquisa única atualizada:', fetchSingleError);
                 // Fallback para buscar todas as pesquisas se a busca única falhar
                 await fetchSurveys(currentCompany.id);
                 return;
@@ -272,8 +290,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         type: q.type,
                         options: q.options || undefined,
                     })).sort((a, b) => (a.position || 0) - (b.position || 0)),
-                    responseCount: updatedSurveyData.survey_responses[0]?.count || 0,
+                    responseCount: updatedSurveyData.survey_responses ? updatedSurveyData.survey_responses.length : 0,
                 };
+                console.log('useSurveys: handleSaveSurvey: Updated survey data:', updatedSurvey);
 
                 setSurveys(prevSurveys => {
                     const existingIndex = prevSurveys.findIndex(s => s.id === updatedSurvey.id);
@@ -289,10 +308,11 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 });
             }
         }
-    }, [currentUser, currentCompany, fetchSurveys]);
+    }, [currentUser, currentCompany, fetchSurveys, showSuccess, showError]);
 
     const handleDeleteSurvey = useCallback(async (surveyId: string) => {
         if (window.confirm('Tem certeza que deseja excluir esta pesquisa? Todas as perguntas e respostas associadas também serão excluídas.')) {
+            console.log('useSurveys: handleDeleteSurvey: Deleting survey ID:', surveyId);
             const { error } = await supabase
                 .from('surveys')
                 .delete()
@@ -300,14 +320,14 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
             if (error) {
                 showError('Erro ao excluir a pesquisa: ' + error.message);
-                console.error('Erro ao excluir pesquisa:', error);
+                console.error('useSurveys: handleDeleteSurvey: Erro ao excluir pesquisa:', error);
             } else {
                 showSuccess('Pesquisa excluída com sucesso!');
                 // Atualiza o estado de surveys removendo a pesquisa excluída
                 setSurveys(prevSurveys => prevSurveys.filter(s => s.id !== surveyId));
             }
         }
-    }, []);
+    }, [showSuccess, showError]);
 
     const handleSaveResponse = useCallback(async (answers: Answer[], selectedSurvey: Survey, currentUser: User): Promise<boolean> => {
         console.log('useSurveys: handleSaveResponse: Iniciando salvamento da resposta.');
@@ -375,16 +395,18 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             }
             console.log('useSurveys: handleSaveResponse: Respostas detalhadas inseridas com sucesso.');
             
-            // Após salvar uma resposta, atualize a contagem de respostas para a pesquisa na lista
+            // Após salvar uma resposta, atualize a contagem de respostas para a pesquisa na lista E no dashboard
             if (currentCompany?.id) {
+                console.log('useSurveys: handleSaveResponse: Calling fetchSurveys and fetchSurveyResponses to update counts and dashboard data.');
                 await fetchSurveys(currentCompany.id);
-                await fetchSurveyResponses(selectedSurvey.id); // <--- Adicionado para atualizar o dashboard
+                await fetchSurveyResponses(selectedSurvey.id);
             }
+            showSuccess('Resposta enviada com sucesso!');
             return true;
         }
         console.error('useSurveys: handleSaveResponse: newResponse foi nulo após a inserção, mas nenhum erro foi reportado.');
         return false;
-    }, [currentCompany?.id, fetchSurveys, fetchSurveyResponses]);
+    }, [currentCompany?.id, fetchSurveys, fetchSurveyResponses, showSuccess, showError]);
 
     return {
         surveys,

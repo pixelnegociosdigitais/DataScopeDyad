@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Survey, Question, QuestionType, Answer } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
-import { showSuccess, showError } from '../src/utils/toast'; // Importar showError
+import { showError } from '../src/utils/toast'; // Importar showError
 
 interface SurveyFormProps {
     survey: Survey;
@@ -62,7 +62,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
             const success = await onSaveResponse(formattedAnswers); // Aguardar o resultado do salvamento
             console.log('SurveyForm: onSaveResponse returned success:', success);
             if (success) {
-                showSuccess('Resposta enviada com sucesso!'); // Agora o toast é disparado aqui
+                // showSuccess('Resposta enviada com sucesso!'); // REMOVIDO: Agora o toast é disparado em useSurveys
                 setShowConfirmationDialog(true);
             } else {
                 // Se onSaveResponse retornar false, significa que um erro ocorreu e showError já foi chamado em useSurveys ou App.tsx.
