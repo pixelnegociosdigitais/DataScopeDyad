@@ -33,13 +33,14 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
     const [modulePermissions, setModulePermissions] = useState<Record<ModuleName, boolean>>(DEFAULT_MODULE_PERMISSIONS);
 
     const fetchModulePermissions = useCallback(async (role: UserRole) => {
+        console.log('useAuth: fetchModulePermissions - Buscando permissões para o papel:', role);
         const { data, error } = await supabase
             .from('module_permissions')
             .select('*')
             .eq('role', role);
 
         if (error) {
-            console.error('Erro ao buscar permissões de módulo:', error);
+            console.error('useAuth: Erro ao buscar permissões de módulo:', error);
             setModulePermissions(DEFAULT_MODULE_PERMISSIONS); // Fallback to default
             return;
         }
@@ -51,10 +52,12 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             }
         });
         setModulePermissions(newPermissions);
+        console.log('useAuth: Permissões de módulo buscadas:', newPermissions);
     }, []);
 
     const fetchUserData = useCallback(async (userId: string, userEmail: string) => {
         setLoadingAuth(true);
+        console.log('useAuth: fetchUserData - Iniciando busca de dados do usuário para ID:', userId);
         const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select(`
@@ -80,12 +83,13 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             .single();
 
         if (profileError) {
-            console.error('Erro ao buscar perfil:', profileError);
+            console.error('useAuth: Erro ao buscar perfil:', profileError);
             setLoadingAuth(false);
             return;
         }
 
         if (profileData) {
+            console.log('useAuth: Perfil encontrado:', profileData);
             const user: User = {
                 id: profileData.id,
                 fullName: profileData.full_name || '',
@@ -99,6 +103,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             await fetchModulePermissions(user.role); // Fetch permissions for the user's role
 
             if (profileData.company) {
+                console.log('useAuth: Empresa encontrada:', profileData.company);
                 const company: Company = {
                     id: profileData.company.id,
                     name: profileData.company.name,
@@ -113,19 +118,23 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 setCurrentCompany(company);
                 setNeedsCompanySetup(false);
             } else {
+                console.log('useAuth: Nenhuma empresa associada ao perfil. Necessita configuração.');
                 setCurrentCompany(null);
                 setNeedsCompanySetup(true);
                 setCurrentView(View.COMPANY_SETUP);
             }
         }
         setLoadingAuth(false);
+        console.log('useAuth: fetchUserData concluído. loadingAuth = false.');
     }, [setCurrentView, fetchModulePermissions]);
 
     useEffect(() => {
+        console.log('useAuth: useEffect - loadingSession:', loadingSession, 'session:', session);
         if (!loadingSession) {
             if (session) {
                 fetchUserData(session.user.id, session.user.email || '');
             } else {
+                console.log('useAuth: Nenhuma sessão ativa. Resetando estados.');
                 setCurrentUser(null);
                 setCurrentCompany(null);
                 setLoadingAuth(false);
@@ -137,6 +146,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
     const handleCreateCompany = useCallback(async (companyName: string) => {
         if (!currentUser) return;
+        console.log('useAuth: handleCreateCompany - Criando empresa:', companyName);
 
         const { data: newCompanyData, error: companyError } = await supabase
             .from('companies')
@@ -146,7 +156,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         if (companyError) {
             showError('Erro ao criar a empresa: ' + companyError.message);
-            console.error('Erro ao criar a empresa:', companyError);
+            console.error('useAuth: Erro ao criar a empresa:', companyError);
             return;
         }
 
@@ -157,7 +167,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         if (profileUpdateError) {
             showError('Erro ao vincular a empresa ao seu perfil: ' + profileUpdateError.message);
-            console.error('Erro ao vincular empresa ao perfil:', profileUpdateError);
+            console.error('useAuth: Erro ao vincular empresa ao perfil:', profileUpdateError);
             return;
         }
 
@@ -167,9 +177,11 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         showSuccess('Empresa criada e vinculada com sucesso!');
         setNeedsCompanySetup(false);
         setCurrentView(View.SURVEY_LIST);
+        console.log('useAuth: Empresa criada e perfil atualizado com sucesso.');
     }, [currentUser, setCurrentView, fetchModulePermissions]);
 
     const handleUpdateProfile = useCallback(async (updatedUser: User) => {
+        console.log('useAuth: handleUpdateProfile - Atualizando perfil para:', updatedUser.id);
         const { error } = await supabase
             .from('profiles')
             .update({
@@ -182,7 +194,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         if (error) {
             showError('Erro ao atualizar o perfil: ' + error.message);
-            console.error('Erro ao atualizar perfil:', error);
+            console.error('useAuth: Erro ao atualizar perfil:', error);
         } else {
             setCurrentUser(updatedUser);
             // If role changes, permissions might change, so re-fetch
@@ -191,11 +203,13 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             }
             showSuccess('Perfil atualizado com sucesso!');
             setCurrentView(View.SURVEY_LIST);
+            console.log('useAuth: Perfil atualizado com sucesso.');
         }
     }, [setCurrentView, currentUser?.role, fetchModulePermissions]);
 
     const handleUpdateCompany = useCallback(async (updatedCompany: Company) => {
         if (!currentCompany) return;
+        console.log('useAuth: handleUpdateCompany - Atualizando empresa:', currentCompany.id);
         const { data, error } = await supabase
             .from('companies')
             .update({ 
@@ -214,11 +228,12 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         if (error) {
             showError('Erro ao atualizar a empresa: ' + error.message);
-            console.error('Erro ao atualizar empresa:', error);
+            console.error('useAuth: Erro ao atualizar empresa:', error);
         } else if (data) {
             setCurrentCompany(data as Company);
             showSuccess('Empresa atualizada com sucesso!');
             setCurrentView(View.SURVEY_LIST);
+            console.log('useAuth: Empresa atualizada com sucesso.');
         }
     }, [currentCompany, setCurrentView]);
 

@@ -15,19 +15,26 @@ export const AuthSessionProvider: React.FC<{ children: ReactNode }> = ({ childre
 
     useEffect(() => {
         const getSession = async () => {
+            console.log('AuthSessionContext: Iniciando busca da sessão...');
             const { data: { session } } = await supabase.auth.getSession();
             setSession(session);
             setLoadingSession(false);
+            console.log('AuthSessionContext: Sessão buscada. loadingSession = false. Sessão:', session);
         };
 
         getSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            console.log('AuthSessionContext: Evento onAuthStateChange. Evento:', _event, 'Sessão:', session);
             setSession(session);
             setLoadingSession(false);
+            console.log('AuthSessionContext: onAuthStateChange concluído. loadingSession = false.');
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            console.log('AuthSessionContext: Desinscrevendo do onAuthStateChange.');
+            subscription.unsubscribe();
+        };
     }, []);
 
     return (
