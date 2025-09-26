@@ -109,8 +109,10 @@ const App: React.FC = () => {
 
     const handleSaveResponseWrapper = useCallback(async (answers: any[]) => {
         if (selectedSurvey && currentUser) {
+            // A função handleSaveResponse agora retorna um booleano, mas o SurveyForm
+            // é quem vai reagir a esse sucesso para mostrar o diálogo.
+            // Não precisamos mais de setCurrentView aqui.
             await handleSaveResponse(answers, selectedSurvey, currentUser);
-            setCurrentView(View.SURVEY_LIST);
         }
     }, [handleSaveResponse, selectedSurvey, currentUser]);
 

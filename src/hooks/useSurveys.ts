@@ -12,7 +12,7 @@ interface UseSurveysReturn {
     fetchSurveyResponses: (surveyId: string) => Promise<void>;
     handleSaveSurvey: (surveyData: Survey, editingSurveyId?: string) => Promise<void>;
     handleDeleteSurvey: (surveyId: string) => Promise<void>;
-    handleSaveResponse: (answers: Answer[], selectedSurvey: Survey, currentUser: User) => Promise<void>;
+    handleSaveResponse: (answers: Answer[], selectedSurvey: Survey, currentUser: User) => Promise<boolean>; // Alterado para retornar Promise<boolean>
 }
 
 export const useSurveys = (currentCompany: Company | null, currentUser: User | null): UseSurveysReturn => {
@@ -245,8 +245,11 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         }
     }, [currentCompany?.id, fetchSurveys]);
 
-    const handleSaveResponse = useCallback(async (answers: Answer[], selectedSurvey: Survey, currentUser: User) => {
-        if (!selectedSurvey || !currentUser) return;
+    const handleSaveResponse = useCallback(async (answers: Answer[], selectedSurvey: Survey, currentUser: User): Promise<boolean> => {
+        if (!selectedSurvey || !currentUser) {
+            showError('Usuário ou pesquisa não identificados.');
+            return false;
+        }
 
         const { data: newResponse, error: responseError } = await supabase
             .from('survey_responses')
@@ -260,7 +263,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         if (responseError) {
             showError('Erro ao enviar a resposta: ' + responseError.message);
             console.error('Erro ao enviar resposta:', responseError);
-            return;
+            return false;
         }
 
         if (newResponse) {
@@ -277,10 +280,12 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             if (answersError) {
                 showError('Erro ao salvar as respostas detalhadas: ' + answersError.message);
                 console.error('Erro ao salvar respostas detalhadas:', answersError);
-                return;
+                return false;
             }
             showSuccess('Resposta enviada com sucesso!');
+            return true; // Retorna true em caso de sucesso
         }
+        return false; // Caso newResponse seja nulo (não deveria acontecer com .single())
     }, []);
 
     return {
