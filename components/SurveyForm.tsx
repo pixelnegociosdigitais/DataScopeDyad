@@ -13,6 +13,9 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false); // Novo estado para o diálogo
 
+    // Log do objeto survey para depuração do problema "3 respostas feitas"
+    console.log('SurveyForm: Current survey prop:', survey);
+
     const handleInputChange = (questionId: string, value: any) => {
         setAnswers(prev => ({ ...prev, [questionId]: value }));
     };
@@ -35,10 +38,21 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
         console.log('SurveyForm: handleSubmit called.');
 
         // Garantir que todas as perguntas sejam incluídas em formattedAnswers, mesmo que não respondidas
-        const formattedAnswers: Answer[] = survey.questions.map(q => ({
-            questionId: q.id,
-            value: answers[q.id] !== undefined ? answers[q.id] : null, // Usar null para perguntas não respondidas
-        }));
+        const formattedAnswers: Answer[] = survey.questions.map(q => {
+            let valueToSave = answers[q.id];
+            // Para caixas de seleção, se nada foi selecionado, garantir que seja um array vazio para validação
+            if (q.type === QuestionType.CHECKBOX && valueToSave === undefined) {
+                valueToSave = [];
+            }
+            // Para outros tipos, se indefinido, definir como null para validação
+            else if (valueToSave === undefined) {
+                valueToSave = null;
+            }
+            return {
+                questionId: q.id,
+                value: valueToSave,
+            };
+        });
         
         console.log('SurveyForm: Formatted Answers before onSaveResponse:', formattedAnswers);
         try {
