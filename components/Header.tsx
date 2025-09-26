@@ -1,13 +1,9 @@
 import React from 'react';
-import { User, Company, View, UserRole, ModuleName } from '../types'; // Importar UserRole e ModuleName
+import { User, Company, View, ModuleName } from '../types';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
-import { SurveyIcon } from './icons/SurveyIcon';
-import { CreateIcon } from './icons/CreateIcon';
-import { LogoIcon } from './icons/LogoIcon';
-import { GiftIcon } from './icons/GiftIcon';
-import { SettingsIcon } from './icons/SettingsIcon';
+import { SettingsIcon } from './icons/SettingsIcon'; // Manter para o botão de configurações da empresa
 
 interface HeaderProps {
     user: User;
@@ -15,76 +11,14 @@ interface HeaderProps {
     onLogout: () => void;
     setView: (view: View) => void;
     currentView: View;
-    modulePermissions: Record<ModuleName, boolean>; // Adicionar permissões de módulo
+    modulePermissions: Record<ModuleName, boolean>;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, currentView, modulePermissions }) => {
-    const canAccessSettingsPanel = user.role === UserRole.DEVELOPER; // Apenas desenvolvedores podem acessar o painel de configurações
-
+const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modulePermissions }) => {
     return (
-        <header className="bg-white shadow-sm p-4 flex justify-between items-center">
+        <header className="bg-white shadow-sm p-4 flex justify-end items-center w-full">
             <div className="flex items-center gap-6">
-                <div className="flex items-center gap-3">
-                    <LogoIcon className="h-8 w-8 text-primary" />
-                    <h1 className="text-xl font-bold text-text-main">DataScope</h1>
-                </div>
-                
-                <nav className="ml-8 flex gap-4">
-                    <button
-                        onClick={() => setView(View.SURVEY_LIST)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors 
-                                    ${currentView === View.SURVEY_LIST || currentView === View.DASHBOARD 
-                                        ? 'bg-primary text-white' 
-                                        : 'text-text-light hover:bg-gray-100'}`}
-                        aria-label="Ver Pesquisas"
-                    >
-                        <SurveyIcon className="h-5 w-5" />
-                        <span>Pesquisas</span>
-                    </button>
-                    {modulePermissions[ModuleName.CREATE_SURVEY] && ( // Usar permissão de módulo
-                        <button
-                            onClick={() => setView(View.CREATE_SURVEY)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors 
-                                        ${currentView === View.CREATE_SURVEY 
-                                            ? 'bg-primary text-white' 
-                                            : 'text-text-light hover:bg-gray-100'}`}
-                            aria-label="Criar Nova Pesquisa"
-                        >
-                            <CreateIcon className="h-5 w-5" />
-                            <span>Criar Pesquisa</span>
-                        </button>
-                    )}
-                    {modulePermissions[ModuleName.ACCESS_GIVEAWAYS] && ( // Usar permissão de módulo
-                        <button
-                            onClick={() => setView(View.GIVEAWAYS)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors 
-                                        ${currentView === View.GIVEAWAYS
-                                            ? 'bg-primary text-white' 
-                                            : 'text-text-light hover:bg-gray-100'}`}
-                            aria-label="Realizar Sorteios"
-                        >
-                            <GiftIcon className="h-5 w-5" />
-                            <span>Sorteios</span>
-                        </button>
-                    )}
-                    {canAccessSettingsPanel && ( // Botão de configurações visível apenas para Desenvolvedores
-                        <button
-                            onClick={() => setView(View.SETTINGS_PANEL)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors 
-                                        ${currentView === View.SETTINGS_PANEL
-                                            ? 'bg-primary text-white' 
-                                            : 'text-text-light hover:bg-gray-100'}`}
-                            aria-label="Configurações da Aplicação"
-                        >
-                            <SettingsIcon className="h-5 w-5" />
-                            <span>Configurações</span>
-                        </button>
-                    )}
-                </nav>
-            </div>
-
-            <div className="flex items-center gap-6">
-                 {modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS] ? ( // Usar permissão de módulo
+                 {modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS] ? (
                     <button 
                         onClick={() => setView(View.COMPANY_SETTINGS)}
                         className="flex items-center gap-2 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"
