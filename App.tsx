@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { User, Company, View, Survey, UserRole, Answer, SurveyResponse } from './types';
-import { MOCK_RESPONSES } from './data/mockData'; // MOCK_SURVEYS será removido
+import { User, Company, View, Survey, UserRole, Answer, SurveyResponse, Question } from './types';
 import Header from './components/Header';
 import SurveyList from './components/SurveyList';
 import SurveyCreator from './components/SurveyCreator';
@@ -10,7 +9,7 @@ import SurveyForm from './components/SurveyForm';
 import Login from './components/Login';
 import CompanySettings from './components/CompanySettings';
 import CompanySetup from './components/CompanySetup';
-import Giveaways from './components/Giveaways'; // Importar o novo componente Giveaways
+import Giveaways from './components/Giveaways';
 import { supabase } from './src/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
 
@@ -19,13 +18,93 @@ const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
     const [surveys, setSurveys] = useState<Survey[]>([]);
-    const [surveyResponses, setSurveyResponses] = useState<SurveyResponse[]>(MOCK_RESPONSES);
-    const [templates, setTemplates] = useState<Survey[]>([]); // Novo estado para templates
+    const [surveyResponses, setSurveyResponses] = useState<SurveyResponse[]>([]);
+    const [templates, setTemplates] = useState<Survey[]>([]);
     
     const [currentView, setCurrentView] = useState<View>(View.SURVEY_LIST);
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Helper para buscar pesquisas da empresa atual
+    const fetchSurveys = useCallback(async (companyId: string) => {
+        const { data, error } = await supabase
+            .from('surveys')
+            .select(`
+                id,
+                title,
+                company_id,
+                created_by,
+                created_at,
+                questions (
+                    id,
+                    text,
+                    type,
+                    options,
+                    position
+                )
+            `)
+            .eq('company_id', companyId)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Erro ao buscar pesquisas:', error);
+            return [];
+        }
+
+        if (data) {
+            const fetchedSurveys: Survey[] = data.map(s => ({
+                id: s.id,
+                title: s.title,
+                companyId: s.company_id,
+                questions: s.questions.map((q: any) => ({
+                    id: q.id,
+                    text: q.text,
+                    type: q.type,
+                    options: q.options || undefined,
+                })).sort((a, b) => (a.position || 0) - (b.position || 0)),
+            }));
+            setSurveys(fetchedSurveys);
+            return fetchedSurveys;
+        }
+        return [];
+    }, []);
+
+    // Helper para buscar respostas de uma pesquisa específica
+    const fetchSurveyResponses = useCallback(async (surveyId: string) => {
+        const { data, error } = await supabase
+            .from('survey_responses')
+            .select(`
+                id,
+                survey_id,
+                respondent_id,
+                created_at,
+                answers (
+                    question_id,
+                    value
+                )
+            `)
+            .eq('survey_id', surveyId);
+
+        if (error) {
+            console.error('Erro ao buscar respostas da pesquisa:', error);
+            return [];
+        }
+
+        if (data) {
+            const fetchedResponses: SurveyResponse[] = data.map(r => ({
+                id: r.id,
+                surveyId: r.survey_id,
+                answers: r.answers.map((a: any) => ({
+                    questionId: a.question_id,
+                    value: a.value,
+                })),
+            }));
+            return fetchedResponses;
+        }
+        return [];
+    }, []);
+
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -34,7 +113,7 @@ const App: React.FC = () => {
             if (session) {
                 await fetchUserData(session.user.id, session.user.email || '');
             }
-            await fetchTemplates(); // Buscar templates
+            await fetchTemplates();
             setLoading(false);
         };
 
@@ -45,17 +124,19 @@ const App: React.FC = () => {
             if (session) {
                 setLoading(true);
                 await fetchUserData(session.user.id, session.user.email || '');
-                await fetchTemplates(); // Buscar templates novamente
+                await fetchTemplates();
                 setLoading(false);
             } else {
                 setCurrentUser(null);
                 setCurrentCompany(null);
+                setSurveys([]);
+                setSurveyResponses([]);
                 setTemplates([]);
             }
         });
 
         return () => subscription.unsubscribe();
-    }, []);
+    }, [fetchSurveys]);
 
     const fetchUserData = async (userId: string, userEmail: string) => {
         const { data: profileData, error: profileError } = await supabase
@@ -83,7 +164,7 @@ const App: React.FC = () => {
             .single();
 
         if (profileError) {
-            console.error('Error fetching profile:', profileError);
+            console.error('Erro ao buscar perfil:', profileError);
             return;
         }
 
@@ -112,8 +193,7 @@ const App: React.FC = () => {
                     address_state: profileData.company.address_state || undefined,
                 };
                 setCurrentCompany(company);
-                // TODO: Fetch surveys from database for the current company
-                // setSurveys(MOCK_SURVEYS); // Remover esta linha quando as pesquisas forem do DB
+                await fetchSurveys(company.id);
             } else {
                 setCurrentView(View.COMPANY_SETUP);
             }
@@ -126,17 +206,16 @@ const App: React.FC = () => {
             .select('id, title, questions');
 
         if (error) {
-            console.error('Error fetching survey templates:', error);
+            console.error('Erro ao buscar templates de pesquisa:', error);
             return;
         }
 
         if (data) {
-            // Mapear os dados do banco para o tipo Survey
             const fetchedTemplates: Survey[] = data.map(template => ({
                 id: template.id,
                 title: template.title,
-                companyId: '', // Templates não têm companyId, será definido ao criar a pesquisa
-                questions: template.questions,
+                companyId: '',
+                questions: template.questions as Question[],
             }));
             setTemplates(fetchedTemplates);
         }
@@ -172,19 +251,102 @@ const App: React.FC = () => {
         setCurrentUser(prev => prev ? { ...prev, role: UserRole.ADMIN } : null);
         alert('Empresa criada e vinculada com sucesso!');
         setCurrentView(View.SURVEY_LIST);
+        await fetchSurveys(newCompanyData.id);
     };
 
-    const handleSaveSurvey = (surveyData: Survey) => {
-        // This logic remains local for now.
-        if (editingSurvey) {
-            setSurveys(prev => prev.map(s => s.id === editingSurvey.id ? { ...s, ...surveyData } : s));
-            alert('Pesquisa atualizada com sucesso! (localmente)');
-            setEditingSurvey(null);
-        } else {
-            const newSurvey: Survey = { ...surveyData, id: `s${Date.now()}`, companyId: currentCompany!.id };
-            setSurveys(prev => [newSurvey, ...prev]);
-            alert('Pesquisa criada com sucesso! (localmente)');
+    const handleSaveSurvey = async (surveyData: Survey) => {
+        if (!currentUser || !currentCompany) {
+            alert('Usuário ou empresa não identificados.');
+            return;
         }
+
+        if (editingSurvey) {
+            // Atualizar pesquisa existente
+            const { error: surveyUpdateError } = await supabase
+                .from('surveys')
+                .update({ title: surveyData.title })
+                .eq('id', editingSurvey.id);
+
+            if (surveyUpdateError) {
+                alert('Erro ao atualizar a pesquisa: ' + surveyUpdateError.message);
+                console.error('Erro ao atualizar pesquisa:', surveyUpdateError);
+                return;
+            }
+
+            // Excluir perguntas existentes
+            const { error: deleteQuestionsError } = await supabase
+                .from('questions')
+                .delete()
+                .eq('survey_id', editingSurvey.id);
+
+            if (deleteQuestionsError) {
+                alert('Erro ao remover perguntas antigas: ' + deleteQuestionsError.message);
+                console.error('Erro ao remover perguntas antigas:', deleteQuestionsError);
+                return;
+            }
+
+            // Inserir novas/atualizadas perguntas
+            const questionsToInsert = surveyData.questions.map((q, index) => ({
+                survey_id: editingSurvey.id,
+                text: q.text,
+                type: q.type,
+                options: q.options || null,
+                position: index,
+            }));
+
+            const { error: insertQuestionsError } = await supabase
+                .from('questions')
+                .insert(questionsToInsert);
+
+            if (insertQuestionsError) {
+                alert('Erro ao inserir novas perguntas: ' + insertQuestionsError.message);
+                console.error('Erro ao inserir novas perguntas:', insertQuestionsError);
+                return;
+            }
+
+            alert('Pesquisa atualizada com sucesso!');
+            setEditingSurvey(null);
+
+        } else {
+            // Criar nova pesquisa
+            const { data: newSurvey, error: surveyInsertError } = await supabase
+                .from('surveys')
+                .insert({
+                    title: surveyData.title,
+                    company_id: currentCompany.id,
+                    created_by: currentUser.id,
+                })
+                .select()
+                .single();
+
+            if (surveyInsertError) {
+                alert('Erro ao criar a pesquisa: ' + surveyInsertError.message);
+                console.error('Erro ao criar pesquisa:', surveyInsertError);
+                return;
+            }
+
+            if (newSurvey) {
+                const questionsToInsert = surveyData.questions.map((q, index) => ({
+                    survey_id: newSurvey.id,
+                    text: q.text,
+                    type: q.type,
+                    options: q.options || null,
+                    position: index,
+                }));
+
+                const { error: questionsInsertError } = await supabase
+                    .from('questions')
+                    .insert(questionsToInsert);
+
+                if (questionsInsertError) {
+                    alert('Erro ao inserir perguntas da pesquisa: ' + questionsInsertError.message);
+                    console.error('Erro ao inserir perguntas:', questionsInsertError);
+                    return;
+                }
+                alert('Pesquisa criada com sucesso!');
+            }
+        }
+        await fetchSurveys(currentCompany.id);
         setCurrentView(View.SURVEY_LIST);
     };
 
@@ -195,11 +357,13 @@ const App: React.FC = () => {
                 full_name: updatedUser.fullName,
                 phone: updatedUser.phone,
                 address: updatedUser.address,
+                avatar_url: updatedUser.profilePictureUrl,
             })
             .eq('id', updatedUser.id);
 
         if (error) {
-            alert('Erro ao atualizar o perfil.');
+            alert('Erro ao atualizar o perfil: ' + error.message);
+            console.error('Erro ao atualizar perfil:', error);
         } else {
             setCurrentUser(updatedUser);
             alert('Perfil atualizado com sucesso!');
@@ -226,7 +390,8 @@ const App: React.FC = () => {
             .single();
 
         if (error) {
-            alert('Erro ao atualizar a empresa.');
+            alert('Erro ao atualizar a empresa: ' + error.message);
+            console.error('Erro ao atualizar empresa:', error);
         } else if (data) {
             setCurrentCompany(data as Company);
             alert('Empresa atualizada com sucesso!');
@@ -234,18 +399,51 @@ const App: React.FC = () => {
         }
     };
 
-    const handleSaveResponse = (answers: Answer[]) => {
-        if (!selectedSurvey) return;
-        const newResponse: SurveyResponse = { id: `r${Date.now()}`, surveyId: selectedSurvey.id, answers };
-        setSurveyResponses(prev => [...prev, newResponse]);
-        alert('Resposta enviada com sucesso! (localmente)');
-        setCurrentView(View.SURVEY_LIST);
+    const handleSaveResponse = async (answers: Answer[]) => {
+        if (!selectedSurvey || !currentUser) return;
+
+        const { data: newResponse, error: responseError } = await supabase
+            .from('survey_responses')
+            .insert({
+                survey_id: selectedSurvey.id,
+                respondent_id: currentUser.id,
+            })
+            .select()
+            .single();
+
+        if (responseError) {
+            alert('Erro ao enviar a resposta: ' + responseError.message);
+            console.error('Erro ao enviar resposta:', responseError);
+            return;
+        }
+
+        if (newResponse) {
+            const answersToInsert = answers.map(a => ({
+                response_id: newResponse.id,
+                question_id: a.questionId,
+                value: a.value,
+            }));
+
+            const { error: answersError } = await supabase
+                .from('answers')
+                .insert(answersToInsert);
+
+            if (answersError) {
+                alert('Erro ao salvar as respostas detalhadas: ' + answersError.message);
+                console.error('Erro ao salvar respostas detalhadas:', answersError);
+                return;
+            }
+            alert('Resposta enviada com sucesso!');
+            setCurrentView(View.SURVEY_LIST);
+        }
     };
 
-    const handleSelectSurvey = useCallback((survey: Survey) => {
+    const handleSelectSurvey = useCallback(async (survey: Survey) => {
         setSelectedSurvey(survey);
+        const responses = await fetchSurveyResponses(survey.id);
+        setSurveyResponses(responses);
         setCurrentView(View.DASHBOARD);
-    }, []);
+    }, [fetchSurveyResponses]);
 
     const handleStartResponse = useCallback((survey: Survey) => {
         setSelectedSurvey(survey);
@@ -257,10 +455,28 @@ const App: React.FC = () => {
         setCurrentView(View.EDIT_SURVEY);
     };
 
-    const handleDeleteSurvey = (surveyId: string) => {
-        if (window.confirm('Tem certeza que deseja excluir esta pesquisa?')) {
-            setSurveys(prev => prev.filter(s => s.id !== surveyId));
-            alert('Pesquisa excluída com sucesso! (localmente)');
+    const handleDeleteSurvey = async (surveyId: string) => {
+        if (window.confirm('Tem certeza que deseja excluir esta pesquisa? Todas as perguntas e respostas associadas também serão excluídas.')) {
+            const { error } = await supabase
+                .from('surveys')
+                .delete()
+                .eq('id', surveyId);
+
+            if (error) {
+                alert('Erro ao excluir a pesquisa: ' + error.message);
+                console.error('Erro ao excluir pesquisa:', error);
+            } else {
+                alert('Pesquisa excluída com sucesso!');
+                if (currentCompany) {
+                    await fetchSurveys(currentCompany.id);
+                }
+                if (selectedSurvey?.id === surveyId) {
+                    setSelectedSurvey(null);
+                }
+                if (editingSurvey?.id === surveyId) {
+                    setEditingSurvey(null);
+                }
+            }
         }
     };
 
@@ -268,6 +484,7 @@ const App: React.FC = () => {
         setCurrentView(View.SURVEY_LIST);
         setSelectedSurvey(null);
         setEditingSurvey(null);
+        setSurveyResponses([]);
     };
 
     const renderContent = () => {
@@ -294,8 +511,7 @@ const App: React.FC = () => {
                 return <SurveyCreator onSave={handleSaveSurvey} onBack={handleBack} surveyToEdit={editingSurvey} templates={templates} />;
             case View.DASHBOARD:
                 if (selectedSurvey) {
-                    const responsesForSurvey = surveyResponses.filter(r => r.surveyId === selectedSurvey.id);
-                    return <Dashboard survey={selectedSurvey} responses={responsesForSurvey} onBack={handleBack} />;
+                    return <Dashboard survey={selectedSurvey} responses={surveyResponses} onBack={handleBack} />;
                 }
                 return null;
             case View.PROFILE:
@@ -307,7 +523,7 @@ const App: React.FC = () => {
                 return null;
             case View.COMPANY_SETTINGS:
                 return <CompanySettings company={currentCompany!} onUpdate={handleUpdateCompany} onBack={handleBack} />;
-            case View.GIVEAWAYS: // Nova case para a view de sorteios
+            case View.GIVEAWAYS:
                 return <Giveaways currentUser={currentUser} currentCompany={currentCompany!} />;
             default:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurvey} canManage={canManage} />;
