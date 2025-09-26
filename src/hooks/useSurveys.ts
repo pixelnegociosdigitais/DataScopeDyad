@@ -282,7 +282,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 console.error('Erro ao salvar respostas detalhadas:', answersError);
                 return false;
             }
-            showSuccess('Resposta enviada com sucesso!');
+            // showSuccess('Resposta enviada com sucesso!'); // REMOVIDO DAQUI
             return true; // Retorna true em caso de sucesso
         }
         return false; // Caso newResponse seja nulo (não deveria acontecer com .single())
