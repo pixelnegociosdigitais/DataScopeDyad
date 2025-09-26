@@ -24,7 +24,7 @@ const App: React.FC = () => {
     const [currentView, setCurrentView] = useState<View>(View.SURVEY_LIST);
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
-    const [isSidebarExpanded, setIsSidebarExpanded] = useState(true); // Estado para o sidebar
+    const [isSidebarExpanded, setIsSidebarExpanded] = useState(false); // Alterado para false para iniciar fechado
 
     const {
         currentUser,
