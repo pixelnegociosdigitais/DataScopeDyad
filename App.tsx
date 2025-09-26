@@ -195,8 +195,7 @@ const App: React.FC = () => {
                 onLogout={() => supabase.auth.signOut()} 
                 setView={setCurrentView} 
                 currentView={currentView} 
-                canCreate={canCreateSurvey} // Usar permissão de módulo
-                canManageCompany={canManageCompanySettings} // Usar permissão de módulo
+                modulePermissions={modulePermissions} // Passando modulePermissions
             />
             <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
                 {renderContent()}

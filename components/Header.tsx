@@ -15,12 +15,10 @@ interface HeaderProps {
     onLogout: () => void;
     setView: (view: View) => void;
     currentView: View;
-    canCreate: boolean; // Agora representa canCreateSurvey
-    canManageCompany: boolean; // Agora representa canManageCompanySettings
     modulePermissions: Record<ModuleName, boolean>; // Adicionar permissões de módulo
 }
 
-const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, currentView, canCreate, canManageCompany, modulePermissions }) => {
+const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, currentView, modulePermissions }) => {
     const canAccessSettingsPanel = user.role === UserRole.DEVELOPER; // Apenas desenvolvedores podem acessar o painel de configurações
 
     return (
