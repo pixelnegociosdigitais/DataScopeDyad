@@ -7,6 +7,13 @@ interface SettingsPanelProps {
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack }) => {
+
+    const handleManagePermissions = () => {
+        alert('Funcionalidade de Gerenciamento de Permissões em desenvolvimento! Em breve você poderá configurar módulos e acessos aqui.');
+        // Futuramente, aqui seria a lógica para navegar para uma tela de gerenciamento de permissões
+        // ou abrir um modal com as opções de configuração.
+    };
+
     return (
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
             <div className="flex items-center gap-4 mb-6">
@@ -23,12 +30,15 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack }) => {
 
             <div className="space-y-6">
                 <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                    <h3 className="text-lg font-semibold text-text-main mb-2">Gerenciamento de Módulos (Em Breve)</h3>
+                    <h3 className="text-lg font-semibold text-text-main mb-2">Gerenciamento de Módulos</h3>
                     <p className="text-text-light text-sm">
                         Esta seção permitirá habilitar ou desabilitar módulos e funcionalidades para diferentes papéis de usuário.
                         Entre em contato com o suporte para mais informações sobre como personalizar as permissões.
                     </p>
-                    <button className="mt-4 px-4 py-2 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary/10 transition-colors" disabled>
+                    <button 
+                        onClick={handleManagePermissions}
+                        className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                    >
                         Gerenciar Permissões
                     </button>
                 </div>
