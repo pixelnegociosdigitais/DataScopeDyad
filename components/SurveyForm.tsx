@@ -32,16 +32,18 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
 
     const handleSubmit = async (e: React.FormEvent) => { // Tornar a função assíncrona
         e.preventDefault();
-        console.log('SurveyForm: handleSubmit called.'); // Added log
-        const formattedAnswers: Answer[] = Object.entries(answers).map(([questionId, value]) => ({
-            questionId,
-            value,
+        console.log('SurveyForm: handleSubmit called.');
+
+        // Garantir que todas as perguntas sejam incluídas em formattedAnswers, mesmo que não respondidas
+        const formattedAnswers: Answer[] = survey.questions.map(q => ({
+            questionId: q.id,
+            value: answers[q.id] !== undefined ? answers[q.id] : null, // Usar null para perguntas não respondidas
         }));
         
-        console.log('SurveyForm: Formatted Answers before onSaveResponse:', formattedAnswers); // Updated log
+        console.log('SurveyForm: Formatted Answers before onSaveResponse:', formattedAnswers);
         try {
             const success = await onSaveResponse(formattedAnswers); // Aguardar o resultado do salvamento
-            console.log('SurveyForm: onSaveResponse returned success:', success); // Added log
+            console.log('SurveyForm: onSaveResponse returned success:', success);
             if (success) {
                 showSuccess('Resposta enviada com sucesso!'); // Agora o toast é disparado aqui
                 setShowConfirmationDialog(true);
@@ -50,7 +52,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
                 console.log('SurveyForm: Submission failed, check console for errors from useSurveys or App.tsx.');
             }
         } catch (error: any) {
-            console.error('SurveyForm: Unexpected error during submission:', error); // Added catch for unexpected errors
+            console.error('SurveyForm: Unexpected error during submission:', error);
             showError('Ocorreu um erro inesperado ao enviar a resposta: ' + error.message);
         }
     };

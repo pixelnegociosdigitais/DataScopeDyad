@@ -246,14 +246,36 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
     }, [currentCompany?.id, fetchSurveys]);
 
     const handleSaveResponse = useCallback(async (answers: Answer[], selectedSurvey: Survey, currentUser: User): Promise<boolean> => {
-        console.log('handleSaveResponse: Iniciando salvamento da resposta.'); // Novo log
+        console.log('useSurveys: handleSaveResponse: Iniciando salvamento da resposta.');
         if (!selectedSurvey || !currentUser) {
-            showError('Usuário ou pesquisa não identificados.');
-            console.error('handleSaveResponse: Usuário ou pesquisa não identificados.'); // Log detalhado
+            showError('Usuário ou pesquisa não identificados para salvar a resposta.');
+            console.error('useSurveys: handleSaveResponse: Usuário ou pesquisa não identificados.', { selectedSurvey, currentUser });
             return false;
         }
 
-        console.log('handleSaveResponse: Tentando inserir em survey_responses para surveyId:', selectedSurvey.id, 'respondentId:', currentUser.id); // Novo log
+        // --- Client-side validation for required fields ---
+        const missingAnswers = selectedSurvey.questions.filter(q => {
+            const answer = answers.find(a => a.questionId === q.id);
+            if (!answer || answer.value === null || answer.value === undefined) {
+                return true; // No answer provided or value is null/undefined
+            }
+
+            // Check for empty values based on question type
+            if (typeof answer.value === 'string' && answer.value.trim() === '') return true;
+            if (Array.isArray(answer.value) && answer.value.length === 0) return true;
+            
+            return false;
+        });
+
+        if (missingAnswers.length > 0) {
+            const missingQuestionTexts = missingAnswers.map(q => q.text).join(', ');
+            showError(`Por favor, responda a todas as perguntas obrigatórias: ${missingQuestionTexts}`);
+            console.error('useSurveys: handleSaveResponse: Perguntas obrigatórias não respondidas:', missingAnswers);
+            return false;
+        }
+        // --- End client-side validation ---
+
+        console.log('useSurveys: handleSaveResponse: Tentando inserir em survey_responses para surveyId:', selectedSurvey.id, 'respondentId:', currentUser.id);
         const { data: newResponse, error: responseError } = await supabase
             .from('survey_responses')
             .insert({
@@ -264,11 +286,11 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             .single();
 
         if (responseError) {
-            showError('Erro ao enviar a resposta: ' + responseError.message);
-            console.error('handleSaveResponse: Erro ao inserir survey_responses:', responseError); // Log detalhado
+            showError('Erro ao enviar a resposta da pesquisa: ' + responseError.message);
+            console.error('useSurveys: handleSaveResponse: Erro ao inserir survey_responses:', responseError);
             return false;
         }
-        console.log('handleSaveResponse: Resposta principal inserida com sucesso:', newResponse); // Novo log
+        console.log('useSurveys: handleSaveResponse: Resposta principal inserida com sucesso:', newResponse);
 
         if (newResponse) {
             const answersToInsert = answers.map(a => ({
@@ -276,7 +298,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 question_id: a.questionId,
                 value: a.value,
             }));
-            console.log('handleSaveResponse: Respostas detalhadas a serem inseridas:', answersToInsert); // Novo log
+            console.log('useSurveys: handleSaveResponse: Respostas detalhadas a serem inseridas:', answersToInsert);
 
             const { error: answersError } = await supabase
                 .from('answers')
@@ -284,14 +306,14 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
             if (answersError) {
                 showError('Erro ao salvar as respostas detalhadas: ' + answersError.message);
-                console.error('handleSaveResponse: Erro ao inserir answers:', answersError); // Log detalhado
+                console.error('useSurveys: handleSaveResponse: Erro ao inserir answers:', answersError);
                 return false;
             }
-            console.log('handleSaveResponse: Respostas detalhadas inseridas com sucesso.'); // Novo log
-            return true; // Retorna true em caso de sucesso
+            console.log('useSurveys: handleSaveResponse: Respostas detalhadas inseridas com sucesso.');
+            return true;
         }
-        console.error('handleSaveResponse: newResponse foi nulo após a inserção, mas nenhum erro foi reportado.'); // Log detalhado
-        return false; // Caso newResponse seja nulo (não deveria acontecer com .single())
+        console.error('useSurveys: handleSaveResponse: newResponse foi nulo após a inserção, mas nenhum erro foi reportado.');
+        return false;
     }, []);
 
     return {
