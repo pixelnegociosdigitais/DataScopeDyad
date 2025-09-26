@@ -17,6 +17,7 @@ import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
 import { useSurveys } from './src/hooks/useSurveys';
+import { showError } from './src/utils/toast'; // Importar showError
 
 const App: React.FC = () => {
     const { session, loadingSession } = useAuthSession();
@@ -49,7 +50,7 @@ const App: React.FC = () => {
 
     const handleSelectSurvey = useCallback(async (survey: Survey) => {
         if (!modulePermissions[ModuleName.VIEW_DASHBOARD]) {
-            alert('Você não tem permissão para visualizar o painel desta pesquisa.');
+            showError('Você não tem permissão para visualizar o painel desta pesquisa.');
             return;
         }
         try {
@@ -58,7 +59,7 @@ const App: React.FC = () => {
             setCurrentView(View.DASHBOARD);
         } catch (error) {
             console.error("Erro ao selecionar pesquisa ou buscar respostas:", error);
-            alert("Ocorreu um erro ao carregar o painel da pesquisa. Por favor, tente novamente.");
+            showError("Ocorreu um erro ao carregar o painel da pesquisa. Por favor, tente novamente.");
             setCurrentView(View.SURVEY_LIST);
         }
     }, [fetchSurveyResponses, modulePermissions]);
@@ -70,7 +71,7 @@ const App: React.FC = () => {
 
     const handleEditSurvey = (survey: Survey) => {
         if (!modulePermissions[ModuleName.MANAGE_SURVEYS]) {
-            alert('Você não tem permissão para editar pesquisas.');
+            showError('Você não tem permissão para editar pesquisas.');
             return;
         }
         setEditingSurvey(survey);
@@ -79,7 +80,7 @@ const App: React.FC = () => {
 
     const handleDeleteSurveyWrapper = useCallback(async (surveyId: string) => {
         if (!modulePermissions[ModuleName.MANAGE_SURVEYS]) {
-            alert('Você não tem permissão para excluir pesquisas.');
+            showError('Você não tem permissão para excluir pesquisas.');
             return;
         }
         await handleDeleteSurvey(surveyId);
@@ -94,11 +95,11 @@ const App: React.FC = () => {
 
     const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey) => {
         if (!modulePermissions[ModuleName.CREATE_SURVEY] && !editingSurvey) {
-            alert('Você não tem permissão para criar pesquisas.');
+            showError('Você não tem permissão para criar pesquisas.');
             return;
         }
         if (!modulePermissions[ModuleName.MANAGE_SURVEYS] && editingSurvey) {
-            alert('Você não tem permissão para editar pesquisas.');
+            showError('Você não tem permissão para editar pesquisas.');
             return;
         }
         await handleSaveSurvey(surveyData, editingSurvey?.id);

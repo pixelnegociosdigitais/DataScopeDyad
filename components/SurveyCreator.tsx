@@ -4,6 +4,7 @@ import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { ArrowUpIcon } from './icons/ArrowUpIcon';
 import { ArrowDownIcon } from './icons/ArrowDownIcon';
 import { TrashIcon } from './icons/TrashIcon'; // Adicionado para remover perguntas
+import { showError } from '../src/utils/toast'; // Importar showError
 
 interface SurveyCreatorProps {
     onSave: (survey: Survey) => void;
@@ -106,7 +107,7 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
 
     const handleSave = () => {
         if (!title.trim() || questions.length === 0 || questions.some(q => !q.text.trim())) {
-            alert('Por favor, forneça um título e garanta que todas as perguntas tenham texto.');
+            showError('Por favor, forneça um título e garanta que todas as perguntas tenham texto.');
             return;
         }
         onSave({ 

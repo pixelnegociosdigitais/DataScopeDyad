@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Survey, SurveyResponse, Question, Answer, Company, User } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
+import { showSuccess, showError } from '@/src/utils/toast'; // Importar showSuccess e showError
 
 interface UseSurveysReturn {
     surveys: Survey[];
@@ -131,7 +132,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
     const handleSaveSurvey = useCallback(async (surveyData: Survey, editingSurveyId?: string) => {
         if (!currentUser || !currentCompany) {
-            alert('Usuário ou empresa não identificados.');
+            showError('Usuário ou empresa não identificados.');
             return;
         }
 
@@ -143,7 +144,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 .eq('id', editingSurveyId);
 
             if (surveyUpdateError) {
-                alert('Erro ao atualizar a pesquisa: ' + surveyUpdateError.message);
+                showError('Erro ao atualizar a pesquisa: ' + surveyUpdateError.message);
                 console.error('Erro ao atualizar pesquisa:', surveyUpdateError);
                 return;
             }
@@ -155,7 +156,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 .eq('survey_id', editingSurveyId);
 
             if (deleteQuestionsError) {
-                alert('Erro ao remover perguntas antigas: ' + deleteQuestionsError.message);
+                showError('Erro ao remover perguntas antigas: ' + deleteQuestionsError.message);
                 console.error('Erro ao remover perguntas antigas:', deleteQuestionsError);
                 return;
             }
@@ -174,12 +175,12 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 .insert(questionsToInsert);
 
             if (insertQuestionsError) {
-                alert('Erro ao inserir novas perguntas: ' + insertQuestionsError.message);
+                showError('Erro ao inserir novas perguntas: ' + insertQuestionsError.message);
                 console.error('Erro ao inserir novas perguntas:', insertQuestionsError);
                 return;
             }
 
-            alert('Pesquisa atualizada com sucesso!');
+            showSuccess('Pesquisa atualizada com sucesso!');
 
         } else {
             // Criar nova pesquisa
@@ -194,7 +195,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 .single();
 
             if (surveyInsertError) {
-                alert('Erro ao criar a pesquisa: ' + surveyInsertError.message);
+                showError('Erro ao criar a pesquisa: ' + surveyInsertError.message);
                 console.error('Erro ao criar pesquisa:', surveyInsertError);
                 return;
             }
@@ -213,11 +214,11 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     .insert(questionsToInsert);
 
                 if (questionsInsertError) {
-                    alert('Erro ao inserir perguntas da pesquisa: ' + questionsInsertError.message);
+                    showError('Erro ao inserir perguntas da pesquisa: ' + questionsInsertError.message);
                     console.error('Erro ao inserir perguntas:', questionsInsertError);
                     return;
                 }
-                alert('Pesquisa criada com sucesso!');
+                showSuccess('Pesquisa criada com sucesso!');
             }
         }
         if (currentCompany?.id) {
@@ -233,10 +234,10 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 .eq('id', surveyId);
 
             if (error) {
-                alert('Erro ao excluir a pesquisa: ' + error.message);
+                showError('Erro ao excluir a pesquisa: ' + error.message);
                 console.error('Erro ao excluir pesquisa:', error);
             } else {
-                alert('Pesquisa excluída com sucesso!');
+                showSuccess('Pesquisa excluída com sucesso!');
                 if (currentCompany?.id) {
                     await fetchSurveys(currentCompany.id);
                 }
@@ -257,7 +258,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             .single();
 
         if (responseError) {
-            alert('Erro ao enviar a resposta: ' + responseError.message);
+            showError('Erro ao enviar a resposta: ' + responseError.message);
             console.error('Erro ao enviar resposta:', responseError);
             return;
         }
@@ -274,11 +275,11 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 .insert(answersToInsert);
 
             if (answersError) {
-                alert('Erro ao salvar as respostas detalhadas: ' + answersError.message);
+                showError('Erro ao salvar as respostas detalhadas: ' + answersError.message);
                 console.error('Erro ao salvar respostas detalhadas:', answersError);
                 return;
             }
-            alert('Resposta enviada com sucesso!');
+            showSuccess('Resposta enviada com sucesso!');
         }
     }, []);
 

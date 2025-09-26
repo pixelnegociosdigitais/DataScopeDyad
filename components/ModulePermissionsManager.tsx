@@ -3,6 +3,7 @@ import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { UserRole, ModuleName, ModulePermission } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
+import { showSuccess, showError } from '../src/utils/toast'; // Importar showSuccess e showError
 
 interface ModulePermissionsManagerProps {
     onBack: () => void;
@@ -102,12 +103,12 @@ const ModulePermissionsManager: React.FC<ModulePermissionsManagerProps> = ({ onB
                 if (error) throw error;
             }
             
-            alert('Permissões salvas com sucesso!');
+            showSuccess('Permissões salvas com sucesso!');
             await fetchPermissions(); // Re-fetch to get IDs for newly inserted permissions
         } catch (err: any) {
             console.error('Erro ao salvar permissões:', err.message);
             setError('Erro ao salvar permissões: ' + err.message);
-            alert('Erro ao salvar permissões: ' + err.message);
+            showError('Erro ao salvar permissões: ' + err.message);
         } finally {
             setSaving(false);
         }

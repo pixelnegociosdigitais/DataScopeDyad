@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { User, Company, UserRole, View, ModuleName, ModulePermission } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { useAuthSession } from '@/src/context/AuthSessionContext';
+import { showSuccess, showError } from '@/src/utils/toast'; // Importar showSuccess e showError
 
 interface UseAuthReturn {
     currentUser: User | null;
@@ -144,7 +145,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             .single();
 
         if (companyError) {
-            alert('Erro ao criar a empresa: ' + companyError.message);
+            showError('Erro ao criar a empresa: ' + companyError.message);
             console.error('Erro ao criar a empresa:', companyError);
             return;
         }
@@ -155,7 +156,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             .eq('id', currentUser.id);
 
         if (profileUpdateError) {
-            alert('Erro ao vincular a empresa ao seu perfil: ' + profileUpdateError.message);
+            showError('Erro ao vincular a empresa ao seu perfil: ' + profileUpdateError.message);
             console.error('Erro ao vincular empresa ao perfil:', profileUpdateError);
             return;
         }
@@ -163,7 +164,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         setCurrentCompany(newCompanyData);
         setCurrentUser(prev => prev ? { ...prev, role: UserRole.ADMIN } : null);
         await fetchModulePermissions(UserRole.ADMIN); // Fetch permissions for the new ADMIN role
-        alert('Empresa criada e vinculada com sucesso!');
+        showSuccess('Empresa criada e vinculada com sucesso!');
         setNeedsCompanySetup(false);
         setCurrentView(View.SURVEY_LIST);
     }, [currentUser, setCurrentView, fetchModulePermissions]);
@@ -180,7 +181,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             .eq('id', updatedUser.id);
 
         if (error) {
-            alert('Erro ao atualizar o perfil: ' + error.message);
+            showError('Erro ao atualizar o perfil: ' + error.message);
             console.error('Erro ao atualizar perfil:', error);
         } else {
             setCurrentUser(updatedUser);
@@ -188,7 +189,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             if (currentUser?.role !== updatedUser.role) {
                 await fetchModulePermissions(updatedUser.role);
             }
-            alert('Perfil atualizado com sucesso!');
+            showSuccess('Perfil atualizado com sucesso!');
             setCurrentView(View.SURVEY_LIST);
         }
     }, [setCurrentView, currentUser?.role, fetchModulePermissions]);
@@ -212,11 +213,11 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             .single();
 
         if (error) {
-            alert('Erro ao atualizar a empresa: ' + error.message);
+            showError('Erro ao atualizar a empresa: ' + error.message);
             console.error('Erro ao atualizar empresa:', error);
         } else if (data) {
             setCurrentCompany(data as Company);
-            alert('Empresa atualizada com sucesso!');
+            showSuccess('Empresa atualizada com sucesso!');
             setCurrentView(View.SURVEY_LIST);
         }
     }, [currentCompany, setCurrentView]);

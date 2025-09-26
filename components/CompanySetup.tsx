@@ -1,6 +1,7 @@
 import React, { useState, FormEvent } from 'react';
 import { User } from '../types';
 import { LogoIcon } from './icons/LogoIcon';
+import { showError } from '../src/utils/toast'; // Importar showError
 
 interface CompanySetupProps {
     user: User;
@@ -15,7 +16,7 @@ const CompanySetup: React.FC<CompanySetupProps> = ({ user, onCreateCompany }) =>
         if (companyName.trim()) {
             onCreateCompany(companyName);
         } else {
-            alert('Por favor, insira o nome da sua empresa.');
+            showError('Por favor, insira o nome da sua empresa.');
         }
     };
 
