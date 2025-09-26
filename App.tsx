@@ -43,9 +43,15 @@ const App: React.FC = () => {
     } = useSurveys(currentCompany, currentUser);
 
     const handleSelectSurvey = useCallback(async (survey: Survey) => {
-        setSelectedSurvey(survey);
-        await fetchSurveyResponses(survey.id);
-        setCurrentView(View.DASHBOARD);
+        try {
+            setSelectedSurvey(survey);
+            await fetchSurveyResponses(survey.id);
+            setCurrentView(View.DASHBOARD);
+        } catch (error) {
+            console.error("Erro ao selecionar pesquisa ou buscar respostas:", error);
+            alert("Ocorreu um erro ao carregar o painel da pesquisa. Por favor, tente novamente.");
+            setCurrentView(View.SURVEY_LIST); // Volta para a lista em caso de erro
+        }
     }, [fetchSurveyResponses]);
 
     const handleStartResponse = useCallback((survey: Survey) => {
