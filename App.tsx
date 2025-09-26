@@ -113,6 +113,11 @@ const App: React.FC = () => {
             // é quem vai reagir a esse sucesso para mostrar o diálogo.
             // Não precisamos mais de setCurrentView aqui.
             await handleSaveResponse(answers, selectedSurvey, currentUser);
+        } else {
+            // Se selectedSurvey ou currentUser for nulo, a função de salvar em useSurveys nunca é chamada.
+            // Exibir um erro explícito para o usuário.
+            showError('Não foi possível enviar a resposta. Dados da pesquisa ou do usuário ausentes.');
+            console.error('App: handleSaveResponseWrapper: selectedSurvey or currentUser is missing.', { selectedSurvey, currentUser });
         }
     }, [handleSaveResponse, selectedSurvey, currentUser]);
 

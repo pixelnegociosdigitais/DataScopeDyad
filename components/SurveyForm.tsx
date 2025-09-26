@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Survey, Question, QuestionType, Answer } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
-import { showSuccess } from '../src/utils/toast'; // Importar showSuccess
+import { showSuccess, showError } from '../src/utils/toast'; // Importar showError
 
 interface SurveyFormProps {
     survey: Survey;
@@ -32,17 +32,26 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
 
     const handleSubmit = async (e: React.FormEvent) => { // Tornar a função assíncrona
         e.preventDefault();
+        console.log('SurveyForm: handleSubmit called.'); // Added log
         const formattedAnswers: Answer[] = Object.entries(answers).map(([questionId, value]) => ({
             questionId,
             value,
         }));
         
-        console.log('Formatted Answers:', formattedAnswers); // Novo log para depuração
-        const success = await onSaveResponse(formattedAnswers); // Aguardar o resultado do salvamento
-        console.log('Survey response save success:', success); // Log existente, agora mais relevante
-        if (success) {
-            showSuccess('Resposta enviada com sucesso!'); // Agora o toast é disparado aqui
-            setShowConfirmationDialog(true);
+        console.log('SurveyForm: Formatted Answers:', formattedAnswers); // Novo log para depuração
+        try {
+            const success = await onSaveResponse(formattedAnswers); // Aguardar o resultado do salvamento
+            console.log('SurveyForm: onSaveResponse returned success:', success); // Added log
+            if (success) {
+                showSuccess('Resposta enviada com sucesso!'); // Agora o toast é disparado aqui
+                setShowConfirmationDialog(true);
+            } else {
+                // Se onSaveResponse retornar false, significa que um erro ocorreu e showError já foi chamado em useSurveys ou App.tsx.
+                console.log('SurveyForm: Submission failed, check console for errors from useSurveys or App.tsx.');
+            }
+        } catch (error: any) {
+            console.error('SurveyForm: Unexpected error during submission:', error); // Added catch for unexpected errors
+            showError('Ocorreu um erro inesperado ao enviar a resposta: ' + error.message);
         }
     };
 
