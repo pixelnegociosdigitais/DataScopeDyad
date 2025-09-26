@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { UserRole, View, Survey, ModuleName } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -17,14 +17,14 @@ import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
 import { useSurveys } from './src/hooks/useSurveys';
-import { showError } from './src/utils/toast'; // Importar showError
+import { showError } from './src/utils/toast';
 
 const App: React.FC = () => {
     const { session, loadingSession } = useAuthSession();
     const [currentView, setCurrentView] = useState<View>(View.SURVEY_LIST);
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
-    const [isSidebarExpanded, setIsSidebarExpanded] = useState(false); // Alterado para false para iniciar fechado
+    const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
     const {
         currentUser,
@@ -47,6 +47,15 @@ const App: React.FC = () => {
         handleDeleteSurvey,
         handleSaveResponse,
     } = useSurveys(currentCompany, currentUser);
+
+    // Diagnostic log for global loading state
+    useEffect(() => {
+        if (loadingSession || loadingAuth || loadingSurveys) {
+            console.log('App: Global loading state active. loadingSession:', loadingSession, 'loadingAuth:', loadingAuth, 'loadingSurveys:', loadingSurveys);
+        } else {
+            console.log('App: Global loading state inactive.');
+        }
+    }, [loadingSession, loadingAuth, loadingSurveys]);
 
     const handleSelectSurvey = useCallback(async (survey: Survey) => {
         if (!modulePermissions[ModuleName.VIEW_DASHBOARD]) {
@@ -108,15 +117,14 @@ const App: React.FC = () => {
     }, [handleSaveSurvey, editingSurvey, modulePermissions]);
 
     const handleSaveResponseWrapper = useCallback(async (answers: any[]) => {
-        console.log('App: handleSaveResponseWrapper called with answers:', answers); // Novo log
+        console.log('App: handleSaveResponseWrapper called with answers:', answers);
         if (selectedSurvey && currentUser) {
-            console.log('App: Calling handleSaveResponse with selectedSurvey and currentUser.'); // Novo log
+            console.log('App: Calling handleSaveResponse with selectedSurvey and currentUser.');
             const success = await handleSaveResponse(answers, selectedSurvey, currentUser);
             if (!success) {
                 console.error('App: handleSaveResponse returned false, indicating an error occurred during Supabase operation.');
-                // showError should have been called inside useSurveys.ts
             }
-            return success; // <--- Adicionado para retornar o status de sucesso/falha
+            return success;
         } else {
             showError('Não foi possível enviar a resposta. Dados da pesquisa ou do usuário ausentes.');
             console.error('App: handleSaveResponseWrapper: selectedSurvey or currentUser is missing.', { selectedSurvey, currentUser });
@@ -193,21 +201,21 @@ const App: React.FC = () => {
 
     return (
         <div className="flex h-screen bg-background text-text-main">
-            <Sidebar 
-                currentView={currentView} 
-                setView={setCurrentView} 
-                modulePermissions={modulePermissions} 
+            <Sidebar
+                currentView={currentView}
+                setView={setCurrentView}
+                modulePermissions={modulePermissions}
                 currentUserRole={currentUser.role}
-                isExpanded={isSidebarExpanded} // Passar estado
-                onToggle={toggleSidebar} // Passar função de toggle
+                isExpanded={isSidebarExpanded}
+                onToggle={toggleSidebar}
             />
-            <div className={`flex-1 flex flex-col ${isSidebarExpanded ? 'ml-64' : 'ml-20'} transition-all duration-300 ease-in-out`}> {/* Margem dinâmica */}
-                <Header 
-                    user={currentUser} 
+            <div className={`flex-1 flex flex-col ${isSidebarExpanded ? 'ml-64' : 'ml-20'} transition-all duration-300 ease-in-out`}>
+                <Header
+                    user={currentUser}
                     company={currentCompany}
-                    onLogout={() => supabase.auth.signOut()} 
-                    setView={setCurrentView} 
-                    currentView={currentView} 
+                    onLogout={() => supabase.auth.signOut()}
+                    setView={setCurrentView}
+                    currentView={currentView}
                     modulePermissions={modulePermissions}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
