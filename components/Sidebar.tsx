@@ -1,20 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { LogoIcon } from './icons/LogoIcon';
 import { HomeIcon } from './icons/HomeIcon';
-import { SurveyIcon } from './icons/SurveyIcon';
 import { CreateIcon } from './icons/CreateIcon';
 import { GiftIcon } from './icons/GiftIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
-import { View, ModuleName, UserRole, User } from '../types';
+import { MenuIcon } from './icons/MenuIcon'; // Importar o novo ícone
+import { ChevronLeftIcon } from './icons/ChevronLeftIcon'; // Importar o novo ícone
+import { View, ModuleName, UserRole } from '../types';
 
 interface SidebarProps {
     currentView: View;
     setView: (view: View) => void;
     modulePermissions: Record<ModuleName, boolean>;
     currentUserRole: UserRole;
+    isExpanded: boolean; // Adicionar prop para controlar expansão
+    onToggle: () => void; // Adicionar prop para função de toggle
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissions, currentUserRole }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissions, currentUserRole, isExpanded, onToggle }) => {
     const navItems = [
         {
             label: 'Início',
@@ -43,10 +46,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
     ];
 
     return (
-        <aside className="fixed inset-y-0 left-0 w-64 bg-gray-800 text-white p-4 flex flex-col shadow-lg z-30">
-            <div className="flex items-center gap-3 mb-8 px-2">
+        <aside className={`fixed inset-y-0 left-0 ${isExpanded ? 'w-64' : 'w-20'} bg-gray-800 text-white p-4 flex flex-col shadow-lg z-30 transition-all duration-300 ease-in-out`}>
+            <div className={`flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} gap-3 mb-8 px-2`}>
                 <LogoIcon className="h-10 w-10 text-primary" />
-                <h1 className="text-2xl font-bold text-white">DataScope</h1>
+                {isExpanded && <h1 className="text-2xl font-bold text-white whitespace-nowrap">DataScope</h1>}
             </div>
 
             <nav className="flex-1 space-y-2">
@@ -57,13 +60,24 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
                         className={`flex items-center w-full p-3 rounded-lg text-left transition-colors duration-200
                                     ${currentView === item.view || (item.view === View.SURVEY_LIST && (currentView === View.DASHBOARD || currentView === View.RESPOND_SURVEY || currentView === View.EDIT_SURVEY))
                                         ? 'bg-gray-700 text-primary-light relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary'
-                                        : 'hover:bg-gray-700 text-gray-300'}`}
+                                        : 'hover:bg-gray-700 text-gray-300'}
+                                    ${isExpanded ? 'justify-start' : 'justify-center'}`}
                     >
                         <item.icon className="h-6 w-6 mr-4" />
-                        <span className="text-lg">{item.label}</span>
+                        {isExpanded && <span className="text-lg whitespace-nowrap">{item.label}</span>}
                     </button>
                 ))}
             </nav>
+
+            <div className={`mt-auto pt-4 border-t border-gray-700 ${isExpanded ? 'justify-end' : 'justify-center'} flex`}>
+                <button
+                    onClick={onToggle}
+                    className="p-2 rounded-full text-gray-300 hover:bg-gray-700 transition-colors"
+                    aria-label={isExpanded ? "Recolher menu" : "Expandir menu"}
+                >
+                    {isExpanded ? <ChevronLeftIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
+                </button>
+            </div>
         </aside>
     );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { UserRole, View, Survey, ModuleName } from './types';
 import Header from './components/Header';
-import Sidebar from './components/Sidebar'; // Importar o Sidebar
+import Sidebar from './components/Sidebar';
 import SurveyList from './components/SurveyList';
 import SurveyCreator from './components/SurveyCreator';
 import Dashboard from './components/Dashboard';
@@ -23,6 +23,7 @@ const App: React.FC = () => {
     const [currentView, setCurrentView] = useState<View>(View.SURVEY_LIST);
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
+    const [isSidebarExpanded, setIsSidebarExpanded] = useState(true); // Estado para o sidebar
 
     const {
         currentUser,
@@ -118,6 +119,10 @@ const App: React.FC = () => {
         setEditingSurvey(null);
     }, []);
 
+    const toggleSidebar = useCallback(() => {
+        setIsSidebarExpanded(prev => !prev);
+    }, []);
+
     const loading = loadingSession || loadingAuth || loadingSurveys;
 
     if (loading) {
@@ -141,7 +146,6 @@ const App: React.FC = () => {
     }
 
     const canManageSurveys = modulePermissions[ModuleName.MANAGE_SURVEYS];
-    const canAccessSettingsPanel = currentUser.role === UserRole.DEVELOPER;
 
     const renderContent = () => {
         switch (currentView) {
@@ -183,8 +187,10 @@ const App: React.FC = () => {
                 setView={setCurrentView} 
                 modulePermissions={modulePermissions} 
                 currentUserRole={currentUser.role}
+                isExpanded={isSidebarExpanded} // Passar estado
+                onToggle={toggleSidebar} // Passar função de toggle
             />
-            <div className="flex-1 flex flex-col ml-64"> {/* Adiciona margem para o sidebar */}
+            <div className={`flex-1 flex flex-col ${isSidebarExpanded ? 'ml-64' : 'ml-20'} transition-all duration-300 ease-in-out`}> {/* Margem dinâmica */}
                 <Header 
                     user={currentUser} 
                     company={currentCompany}
