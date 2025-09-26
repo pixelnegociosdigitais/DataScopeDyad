@@ -17,10 +17,12 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
     console.log('SurveyForm: Current survey prop:', survey);
 
     const handleInputChange = (questionId: string, value: any) => {
+        console.log(`SurveyForm: Input changed for ${questionId}:`, value); // Novo log
         setAnswers(prev => ({ ...prev, [questionId]: value }));
     };
 
     const handleCheckboxChange = (questionId: string, option: string, checked: boolean) => {
+        console.log(`SurveyForm: Checkbox changed for ${questionId}, option ${option}:`, checked); // Novo log
         const currentAnswers = answers[questionId] || [];
         const newAnswers = checked
             ? [...currentAnswers, option]
@@ -36,6 +38,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
     const handleSubmit = async (e: React.FormEvent) => { // Tornar a função assíncrona
         e.preventDefault();
         console.log('SurveyForm: handleSubmit called.');
+        console.log('SurveyForm: Current answers state before formatting:', answers); // Novo log
 
         // Garantir que todas as perguntas sejam incluídas em formattedAnswers, mesmo que não respondidas
         const formattedAnswers: Answer[] = survey.questions.map(q => {
