@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Company, View, UserRole } from '../types'; // Importar UserRole
+import { User, Company, View, UserRole, ModuleName } from '../types'; // Importar UserRole e ModuleName
 import { LogoutIcon } from './icons/LogoutIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
@@ -7,7 +7,7 @@ import { SurveyIcon } from './icons/SurveyIcon';
 import { CreateIcon } from './icons/CreateIcon';
 import { LogoIcon } from './icons/LogoIcon';
 import { GiftIcon } from './icons/GiftIcon';
-import { SettingsIcon } from './icons/SettingsIcon'; // Importar o novo ícone
+import { SettingsIcon } from './icons/SettingsIcon';
 
 interface HeaderProps {
     user: User;
@@ -15,12 +15,13 @@ interface HeaderProps {
     onLogout: () => void;
     setView: (view: View) => void;
     currentView: View;
-    canCreate: boolean;
-    canManageCompany: boolean;
+    canCreate: boolean; // Agora representa canCreateSurvey
+    canManageCompany: boolean; // Agora representa canManageCompanySettings
+    modulePermissions: Record<ModuleName, boolean>; // Adicionar permissões de módulo
 }
 
-const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, currentView, canCreate, canManageCompany }) => {
-    const canAccessSettings = user.role === UserRole.DEVELOPER; // Apenas desenvolvedores podem acessar as configurações
+const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, currentView, canCreate, canManageCompany, modulePermissions }) => {
+    const canAccessSettingsPanel = user.role === UserRole.DEVELOPER; // Apenas desenvolvedores podem acessar o painel de configurações
 
     return (
         <header className="bg-white shadow-sm p-4 flex justify-between items-center">
@@ -42,7 +43,7 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, curre
                         <SurveyIcon className="h-5 w-5" />
                         <span>Pesquisas</span>
                     </button>
-                    {canCreate && (
+                    {modulePermissions[ModuleName.CREATE_SURVEY] && ( // Usar permissão de módulo
                         <button
                             onClick={() => setView(View.CREATE_SURVEY)}
                             className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors 
@@ -55,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, curre
                             <span>Criar Pesquisa</span>
                         </button>
                     )}
-                    {canCreate && ( // Apenas administradores/desenvolvedores podem acessar sorteios
+                    {modulePermissions[ModuleName.ACCESS_GIVEAWAYS] && ( // Usar permissão de módulo
                         <button
                             onClick={() => setView(View.GIVEAWAYS)}
                             className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors 
@@ -68,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, curre
                             <span>Sorteios</span>
                         </button>
                     )}
-                    {canAccessSettings && ( // Botão de configurações visível apenas para Desenvolvedores
+                    {canAccessSettingsPanel && ( // Botão de configurações visível apenas para Desenvolvedores
                         <button
                             onClick={() => setView(View.SETTINGS_PANEL)}
                             className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors 
@@ -85,7 +86,7 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, curre
             </div>
 
             <div className="flex items-center gap-6">
-                 {canManageCompany ? (
+                 {modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS] ? ( // Usar permissão de módulo
                     <button 
                         onClick={() => setView(View.COMPANY_SETTINGS)}
                         className="flex items-center gap-2 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"

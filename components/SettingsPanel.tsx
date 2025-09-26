@@ -1,17 +1,17 @@
 import React from 'react';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
+import { View } from '../types'; // Importar View
 
 interface SettingsPanelProps {
     onBack: () => void;
+    setView: (view: View) => void; // Adicionar setView para navegação
 }
 
-const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack }) => {
+const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
 
     const handleManagePermissions = () => {
-        alert('Funcionalidade de Gerenciamento de Permissões em desenvolvimento! Em breve você poderá configurar módulos e acessos aqui.');
-        // Futuramente, aqui seria a lógica para navegar para uma tela de gerenciamento de permissões
-        // ou abrir um modal com as opções de configuração.
+        setView(View.MODULE_PERMISSIONS_MANAGER);
     };
 
     return (
@@ -32,8 +32,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack }) => {
                 <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
                     <h3 className="text-lg font-semibold text-text-main mb-2">Gerenciamento de Módulos</h3>
                     <p className="text-text-light text-sm">
-                        Esta seção permitirá habilitar ou desabilitar módulos e funcionalidades para diferentes papéis de usuário.
-                        Entre em contato com o suporte para mais informações sobre como personalizar as permissões.
+                        Esta seção permite habilitar ou desabilitar módulos e funcionalidades para diferentes papéis de usuário.
                     </p>
                     <button 
                         onClick={handleManagePermissions}

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { UserRole, View, Survey } from './types';
+import { UserRole, View, Survey, ModuleName } from './types';
 import Header from './components/Header';
 import SurveyList from './components/SurveyList';
 import SurveyCreator from './components/SurveyCreator';
@@ -10,7 +10,8 @@ import Login from './components/Login';
 import CompanySettings from './components/CompanySettings';
 import CompanySetup from './components/CompanySetup';
 import Giveaways from './components/Giveaways';
-import SettingsPanel from './components/SettingsPanel'; // Importar o novo componente
+import SettingsPanel from './components/SettingsPanel';
+import ModulePermissionsManager from './components/ModulePermissionsManager'; // Importar o novo componente
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
@@ -30,6 +31,7 @@ const App: React.FC = () => {
         handleUpdateProfile,
         handleUpdateCompany,
         needsCompanySetup,
+        modulePermissions, // Obter as permissões de módulo
     } = useAuth(setCurrentView);
 
     const {
@@ -44,6 +46,10 @@ const App: React.FC = () => {
     } = useSurveys(currentCompany, currentUser);
 
     const handleSelectSurvey = useCallback(async (survey: Survey) => {
+        if (!modulePermissions[ModuleName.VIEW_DASHBOARD]) {
+            alert('Você não tem permissão para visualizar o painel desta pesquisa.');
+            return;
+        }
         try {
             setSelectedSurvey(survey);
             await fetchSurveyResponses(survey.id);
@@ -53,7 +59,7 @@ const App: React.FC = () => {
             alert("Ocorreu um erro ao carregar o painel da pesquisa. Por favor, tente novamente.");
             setCurrentView(View.SURVEY_LIST); // Volta para a lista em caso de erro
         }
-    }, [fetchSurveyResponses]);
+    }, [fetchSurveyResponses, modulePermissions]);
 
     const handleStartResponse = useCallback((survey: Survey) => {
         setSelectedSurvey(survey);
@@ -61,11 +67,19 @@ const App: React.FC = () => {
     }, []);
 
     const handleEditSurvey = (survey: Survey) => {
+        if (!modulePermissions[ModuleName.MANAGE_SURVEYS]) {
+            alert('Você não tem permissão para editar pesquisas.');
+            return;
+        }
         setEditingSurvey(survey);
         setCurrentView(View.EDIT_SURVEY);
     };
 
     const handleDeleteSurveyWrapper = useCallback(async (surveyId: string) => {
+        if (!modulePermissions[ModuleName.MANAGE_SURVEYS]) {
+            alert('Você não tem permissão para excluir pesquisas.');
+            return;
+        }
         await handleDeleteSurvey(surveyId);
         if (selectedSurvey?.id === surveyId) {
             setSelectedSurvey(null);
@@ -74,13 +88,21 @@ const App: React.FC = () => {
             setEditingSurvey(null);
         }
         setCurrentView(View.SURVEY_LIST);
-    }, [handleDeleteSurvey, selectedSurvey, editingSurvey]);
+    }, [handleDeleteSurvey, selectedSurvey, editingSurvey, modulePermissions]);
 
     const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey) => {
+        if (!modulePermissions[ModuleName.CREATE_SURVEY] && !editingSurvey) { // Check for create permission
+            alert('Você não tem permissão para criar pesquisas.');
+            return;
+        }
+        if (!modulePermissions[ModuleName.MANAGE_SURVEYS] && editingSurvey) { // Check for manage permission if editing
+            alert('Você não tem permissão para editar pesquisas.');
+            return;
+        }
         await handleSaveSurvey(surveyData, editingSurvey?.id);
         setEditingSurvey(null);
         setCurrentView(View.SURVEY_LIST);
-    }, [handleSaveSurvey, editingSurvey]);
+    }, [handleSaveSurvey, editingSurvey, modulePermissions]);
 
     const handleSaveResponseWrapper = useCallback(async (answers: any[]) => {
         if (selectedSurvey && currentUser) {
@@ -118,18 +140,25 @@ const App: React.FC = () => {
         return <div className="h-screen w-screen flex items-center justify-center">Carregando dados da empresa...</div>;
     }
 
-    const canManage = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
-    const canManageCompany = currentUser.role === UserRole.ADMIN;
+    // Permissions based on modulePermissions
+    const canCreateSurvey = modulePermissions[ModuleName.CREATE_SURVEY];
+    const canManageSurveys = modulePermissions[ModuleName.MANAGE_SURVEYS];
+    const canAccessGiveaways = modulePermissions[ModuleName.ACCESS_GIVEAWAYS];
+    const canManageCompanySettings = modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS];
+    const canAccessSettingsPanel = currentUser.role === UserRole.DEVELOPER; // Settings panel itself is developer-only
 
     const renderContent = () => {
         switch (currentView) {
             case View.SURVEY_LIST:
-                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManage} />;
+                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} />;
             case View.CREATE_SURVEY:
+                if (!canCreateSurvey) return <div className="text-center py-12 text-red-600">Você não tem permissão para criar pesquisas.</div>;
                 return <SurveyCreator onSave={handleSaveSurveyWrapper} onBack={handleBack} templates={templates} />;
             case View.EDIT_SURVEY:
+                if (!canManageSurveys) return <div className="text-center py-12 text-red-600">Você não tem permissão para editar pesquisas.</div>;
                 return <SurveyCreator onSave={handleSaveSurveyWrapper} onBack={handleBack} surveyToEdit={editingSurvey} templates={templates} />;
             case View.DASHBOARD:
+                if (!modulePermissions[ModuleName.VIEW_DASHBOARD]) return <div className="text-center py-12 text-red-600">Você não tem permissão para visualizar painéis.</div>;
                 if (selectedSurvey) {
                     return <Dashboard survey={selectedSurvey} responses={surveyResponses} onBack={handleBack} />;
                 }
@@ -142,13 +171,19 @@ const App: React.FC = () => {
                 }
                 return null;
             case View.COMPANY_SETTINGS:
+                if (!canManageCompanySettings) return <div className="text-center py-12 text-red-600">Você não tem permissão para gerenciar as configurações da empresa.</div>;
                 return <CompanySettings company={currentCompany} onUpdate={handleUpdateCompany} onBack={handleBack} />;
             case View.GIVEAWAYS:
+                if (!canAccessGiveaways) return <div className="text-center py-12 text-red-600">Você não tem permissão para acessar sorteios.</div>;
                 return <Giveaways currentUser={currentUser} currentCompany={currentCompany} />;
-            case View.SETTINGS_PANEL: // Novo caso para o painel de configurações
-                return <SettingsPanel onBack={handleBack} />;
+            case View.SETTINGS_PANEL:
+                if (!canAccessSettingsPanel) return <div className="text-center py-12 text-red-600">Você não tem permissão para acessar o painel de configurações.</div>;
+                return <SettingsPanel onBack={handleBack} setView={setCurrentView} />;
+            case View.MODULE_PERMISSIONS_MANAGER:
+                if (!canAccessSettingsPanel) return <div className="text-center py-12 text-red-600">Você não tem permissão para gerenciar permissões de módulos.</div>;
+                return <ModulePermissionsManager onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
             default:
-                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManage} />;
+                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} />;
         }
     };
 
@@ -160,8 +195,8 @@ const App: React.FC = () => {
                 onLogout={() => supabase.auth.signOut()} 
                 setView={setCurrentView} 
                 currentView={currentView} 
-                canCreate={canManage}
-                canManageCompany={canManageCompany}
+                canCreate={canCreateSurvey} // Usar permissão de módulo
+                canManageCompany={canManageCompanySettings} // Usar permissão de módulo
             />
             <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
                 {renderContent()}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User, Company, UserRole, View } from '@/types';
+import { User, Company, UserRole, View, ModuleName, ModulePermission } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { useAuthSession } from '@/src/context/AuthSessionContext';
 
@@ -12,7 +12,16 @@ interface UseAuthReturn {
     handleUpdateCompany: (updatedCompany: Company) => Promise<void>;
     fetchUserData: (userId: string, userEmail: string) => Promise<void>;
     needsCompanySetup: boolean;
+    modulePermissions: Record<ModuleName, boolean>; // Adicionar permissões de módulo
 }
+
+const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
+    [ModuleName.CREATE_SURVEY]: true,
+    [ModuleName.MANAGE_SURVEYS]: true,
+    [ModuleName.VIEW_DASHBOARD]: true,
+    [ModuleName.ACCESS_GIVEAWAYS]: true,
+    [ModuleName.MANAGE_COMPANY_SETTINGS]: true,
+};
 
 export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => {
     const { session, loadingSession } = useAuthSession();
@@ -20,6 +29,28 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
     const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
     const [loadingAuth, setLoadingAuth] = useState(true);
     const [needsCompanySetup, setNeedsCompanySetup] = useState(false);
+    const [modulePermissions, setModulePermissions] = useState<Record<ModuleName, boolean>>(DEFAULT_MODULE_PERMISSIONS);
+
+    const fetchModulePermissions = useCallback(async (role: UserRole) => {
+        const { data, error } = await supabase
+            .from('module_permissions')
+            .select('*')
+            .eq('role', role);
+
+        if (error) {
+            console.error('Erro ao buscar permissões de módulo:', error);
+            setModulePermissions(DEFAULT_MODULE_PERMISSIONS); // Fallback to default
+            return;
+        }
+
+        const newPermissions: Record<ModuleName, boolean> = { ...DEFAULT_MODULE_PERMISSIONS };
+        data.forEach(p => {
+            if (Object.values(ModuleName).includes(p.module_name as ModuleName)) {
+                newPermissions[p.module_name as ModuleName] = p.enabled;
+            }
+        });
+        setModulePermissions(newPermissions);
+    }, []);
 
     const fetchUserData = useCallback(async (userId: string, userEmail: string) => {
         setLoadingAuth(true);
@@ -64,6 +95,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 profilePictureUrl: profileData.avatar_url || undefined,
             };
             setCurrentUser(user);
+            await fetchModulePermissions(user.role); // Fetch permissions for the user's role
 
             if (profileData.company) {
                 const company: Company = {
@@ -86,7 +118,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             }
         }
         setLoadingAuth(false);
-    }, [setCurrentView]);
+    }, [setCurrentView, fetchModulePermissions]);
 
     useEffect(() => {
         if (!loadingSession) {
@@ -97,6 +129,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 setCurrentCompany(null);
                 setLoadingAuth(false);
                 setNeedsCompanySetup(false);
+                setModulePermissions(DEFAULT_MODULE_PERMISSIONS); // Reset permissions on logout
             }
         }
     }, [session, loadingSession, fetchUserData]);
@@ -129,10 +162,11 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         setCurrentCompany(newCompanyData);
         setCurrentUser(prev => prev ? { ...prev, role: UserRole.ADMIN } : null);
+        await fetchModulePermissions(UserRole.ADMIN); // Fetch permissions for the new ADMIN role
         alert('Empresa criada e vinculada com sucesso!');
         setNeedsCompanySetup(false);
         setCurrentView(View.SURVEY_LIST);
-    }, [currentUser, setCurrentView]);
+    }, [currentUser, setCurrentView, fetchModulePermissions]);
 
     const handleUpdateProfile = useCallback(async (updatedUser: User) => {
         const { error } = await supabase
@@ -150,10 +184,14 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             console.error('Erro ao atualizar perfil:', error);
         } else {
             setCurrentUser(updatedUser);
+            // If role changes, permissions might change, so re-fetch
+            if (currentUser?.role !== updatedUser.role) {
+                await fetchModulePermissions(updatedUser.role);
+            }
             alert('Perfil atualizado com sucesso!');
             setCurrentView(View.SURVEY_LIST);
         }
-    }, [setCurrentView]);
+    }, [setCurrentView, currentUser?.role, fetchModulePermissions]);
 
     const handleUpdateCompany = useCallback(async (updatedCompany: Company) => {
         if (!currentCompany) return;
@@ -192,5 +230,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         handleUpdateCompany,
         fetchUserData,
         needsCompanySetup,
+        modulePermissions,
     };
 };
