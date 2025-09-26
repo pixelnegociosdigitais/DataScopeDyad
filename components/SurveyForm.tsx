@@ -37,6 +37,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
         }));
         
         const success = await onSaveResponse(formattedAnswers); // Aguardar o resultado do salvamento
+        console.log('Survey response save success:', success); // Adicionado para depuração
         if (success) {
             setShowConfirmationDialog(true);
         }
