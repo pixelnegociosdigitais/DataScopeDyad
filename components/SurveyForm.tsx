@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Importar useEffect
 import { Survey, Question, QuestionType, Answer } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { showError } from '../src/utils/toast'; // Importar showError
@@ -15,6 +15,11 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
 
     // Log do objeto survey para depuração do problema "3 respostas feitas"
     console.log('SurveyForm: Current survey prop:', survey);
+
+    // NOVO LOG DE DIAGNÓSTICO AQUI
+    useEffect(() => {
+        console.log('SurveyForm: showConfirmationDialog state:', showConfirmationDialog);
+    }, [showConfirmationDialog]);
 
     const handleInputChange = (questionId: string, value: any) => {
         console.log(`SurveyForm: Input changed for ${questionId}:`, value); // Novo log
