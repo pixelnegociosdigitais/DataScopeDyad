@@ -18,11 +18,12 @@ interface GiveawaysProps {
 
 const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) => {
     const [participants, setParticipants] = useState<GiveawayParticipant[]>([]);
-    const [winner, setWinner] = useState<GiveawayParticipant | null>(null);
+    const [displayWinner, setDisplayWinner] = useState<GiveawayParticipant | null>(null); // Vencedor a ser exibido
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null);
     const [availableSurveys, setAvailableSurveys] = useState<Survey[]>([]);
+    const [isDrawing, setIsDrawing] = useState(false); // Novo estado para controlar a animação
 
     // Efeito para buscar as pesquisas disponíveis para a empresa
     useEffect(() => {
@@ -58,7 +59,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     const fetchParticipants = useCallback(async () => {
         setLoading(true);
         setError(null);
-        setWinner(null); // Limpar vencedor ao buscar novos participantes
+        setDisplayWinner(null); // Limpar vencedor ao buscar novos participantes
 
         if (!selectedSurveyId) {
             setParticipants([]);
@@ -181,8 +182,17 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             return;
         }
 
-        const randomIndex = Math.floor(Math.random() * participants.length);
-        setWinner(participants[randomIndex]);
+        setDisplayWinner(null); // Limpa o vencedor anterior
+        setIsDrawing(true); // Inicia a animação
+
+        const animationDuration = 3000; // Duração da animação em milissegundos (3 segundos)
+
+        setTimeout(() => {
+            const randomIndex = Math.floor(Math.random() * participants.length);
+            const selectedWinner = participants[randomIndex];
+            setDisplayWinner(selectedWinner); // Define o vencedor real para exibição
+            setIsDrawing(false); // Para a animação
+        }, animationDuration);
     };
 
     return (
@@ -240,24 +250,36 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 <button
                     onClick={handleDraw}
                     className="px-8 py-3 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={participants.length === 0 || loading}
+                    disabled={participants.length === 0 || loading || isDrawing} // Desabilita durante o sorteio
                 >
-                    Sortear
+                    {isDrawing ? 'Sorteando...' : 'Sortear'}
                 </button>
             </div>
 
-            {winner && (
+            {isDrawing && (
+                <div className="bg-blue-50 border border-blue-200 text-blue-800 p-6 rounded-lg text-center shadow-inner">
+                    <h3 className="text-xl font-bold mb-3">Sorteando...</h3>
+                    <div className="flex flex-col items-center justify-center">
+                        <div className="h-24 w-24 p-4 bg-blue-200 rounded-full text-blue-600 flex items-center justify-center mb-4 animate-spin">
+                            <GiftIcon className="h-12 w-12" />
+                        </div>
+                        <p className="text-lg text-blue-700">Aguarde, estamos escolhendo o sortudo!</p>
+                    </div>
+                </div>
+            )}
+
+            {displayWinner && !isDrawing && ( // Só mostra o vencedor quando não está sorteando
                 <div className="bg-green-50 border border-green-200 text-green-800 p-6 rounded-lg text-center shadow-inner">
                     <h3 className="text-xl font-bold mb-3">🎉 Vencedor! 🎉</h3>
                     <div className="flex flex-col items-center justify-center">
                         <div className="h-24 w-24 p-4 bg-green-200 rounded-full text-green-600 flex items-center justify-center mb-4">
                             <GiftIcon className="h-12 w-12" />
                         </div>
-                        <p className="text-2xl font-bold text-green-900">{winner.name}</p>
-                        {winner.email && <p className="text-lg text-green-700">{winner.email}</p>}
+                        <p className="text-2xl font-bold text-green-900">{displayWinner.name}</p>
+                        {displayWinner.email && <p className="text-lg text-green-700">{displayWinner.email}</p>}
                     </div>
                     <button
-                        onClick={() => setWinner(null)}
+                        onClick={() => setDisplayWinner(null)}
                         className="mt-6 px-4 py-2 text-sm font-medium text-green-700 bg-green-100 rounded-md hover:bg-green-200 transition-colors"
                     >
                         Limpar Vencedor
