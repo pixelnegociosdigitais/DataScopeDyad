@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { User, Company, QuestionType } from '../types'; // Importar QuestionType
+import React, { useState, useEffect, useCallback } from 'react';
+import { User, Company, QuestionType, Survey } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
 import { GiftIcon } from './icons/GiftIcon';
+import { showError } from '../src/utils/toast'; // Importar showError
 
 // Nova interface para os participantes do sorteio
 interface GiveawayParticipant {
@@ -20,35 +21,58 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     const [winner, setWinner] = useState<GiveawayParticipant | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null);
+    const [availableSurveys, setAvailableSurveys] = useState<Survey[]>([]);
 
+    // Efeito para buscar as pesquisas disponíveis para a empresa
     useEffect(() => {
-        fetchParticipants();
-    }, [currentCompany.id]);
-
-    const fetchParticipants = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            // 1. Buscar todas as pesquisas da empresa atual
-            const { data: surveysData, error: surveysError } = await supabase
-                .from('surveys')
-                .select('id')
-                .eq('company_id', currentCompany.id);
-
-            if (surveysError) throw surveysError;
-            if (!surveysData || surveysData.length === 0) {
-                setParticipants([]);
-                setLoading(false);
+        const loadSurveys = async () => {
+            if (!currentCompany?.id) {
+                setAvailableSurveys([]);
+                setSelectedSurveyId(null);
                 return;
             }
+            const { data, error } = await supabase
+                .from('surveys')
+                .select('id, title')
+                .eq('company_id', currentCompany.id)
+                .order('title', { ascending: true });
 
-            const surveyIds = surveysData.map(s => s.id);
+            if (error) {
+                console.error('Erro ao buscar pesquisas disponíveis:', error);
+                showError('Não foi possível carregar a lista de pesquisas para seleção.');
+                setAvailableSurveys([]);
+                return;
+            }
+            setAvailableSurveys(data || []);
+            // Se não houver pesquisa selecionada e houver pesquisas disponíveis, pré-selecionar a primeira
+            if (data && data.length > 0 && !selectedSurveyId) {
+                setSelectedSurveyId(data[0].id);
+            } else if (data && data.length === 0) {
+                setSelectedSurveyId(null);
+            }
+        };
+        loadSurveys();
+    }, [currentCompany.id, selectedSurveyId]); // selectedSurveyId na dependência para reavaliar a pré-seleção
 
-            // 2. Buscar todas as perguntas dessas pesquisas para identificar 'Nome Completo' e 'E-mail'
+    const fetchParticipants = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        setWinner(null); // Limpar vencedor ao buscar novos participantes
+
+        if (!selectedSurveyId) {
+            setParticipants([]);
+            setError('Por favor, selecione uma pesquisa para carregar os participantes.');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            // 1. Buscar as perguntas da pesquisa selecionada
             const { data: questionsData, error: questionsError } = await supabase
                 .from('questions')
                 .select('id, text, type')
-                .in('survey_id', surveyIds);
+                .eq('survey_id', selectedSurveyId);
 
             if (questionsError) throw questionsError;
 
@@ -61,45 +85,54 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 .map(q => q.id);
 
             if (nameQuestionIds.length === 0) {
-                setError('Nenhuma pergunta de "Nome Completo" encontrada nas pesquisas da sua empresa. Certifique-se de que suas pesquisas incluem uma pergunta de "Nome Completo" (Texto Curto).');
+                setError('A pesquisa selecionada não possui uma pergunta de "Nome Completo" (Texto Curto).');
                 setParticipants([]);
                 setLoading(false);
                 return;
             }
 
-            // 3. Buscar todas as respostas relacionadas a essas perguntas de nome e e-mail
             const relevantQuestionIds = [...nameQuestionIds, ...emailQuestionIds];
             if (relevantQuestionIds.length === 0) {
-                 setParticipants([]);
-                 setLoading(false);
-                 return;
+                setParticipants([]);
+                setLoading(false);
+                return;
             }
 
-            const { data: answersData, error: answersError } = await supabase
-                .from('answers')
-                .select('response_id, question_id, value')
-                .in('question_id', relevantQuestionIds);
+            // 2. Buscar todas as respostas para a pesquisa selecionada, incluindo as respostas detalhadas
+            const { data: responsesData, error: responsesError } = await supabase
+                .from('survey_responses')
+                .select(`
+                    id,
+                    answers (
+                        question_id,
+                        value
+                    )
+                `)
+                .eq('survey_id', selectedSurveyId);
 
-            if (answersError) throw answersError;
+            if (responsesError) throw responsesError;
 
-            // 4. Agrupar respostas por response_id para formar potenciais participantes
             const responsesMap = new Map<string, { name?: string; email?: string }>();
 
-            answersData.forEach(answer => {
-                if (!responsesMap.has(answer.response_id)) {
-                    responsesMap.set(answer.response_id, {});
+            responsesData.forEach(response => {
+                const responseId = response.id;
+                if (!responsesMap.has(responseId)) {
+                    responsesMap.set(responseId, {});
                 }
-                const currentResponse = responsesMap.get(answer.response_id)!;
+                const currentResponse = responsesMap.get(responseId)!;
 
-                if (nameQuestionIds.includes(answer.question_id) && typeof answer.value === 'string') {
-                    currentResponse.name = answer.value.trim();
-                }
-                if (emailQuestionIds.includes(answer.question_id) && typeof answer.value === 'string') {
-                    currentResponse.email = answer.value.trim();
-                }
+                // Iterar sobre o array aninhado 'answers'
+                response.answers.forEach((answer: any) => {
+                    if (nameQuestionIds.includes(answer.question_id) && typeof answer.value === 'string') {
+                        currentResponse.name = answer.value.trim();
+                    }
+                    if (emailQuestionIds.includes(answer.question_id) && typeof answer.value === 'string') {
+                        currentResponse.email = answer.value.trim();
+                    }
+                });
             });
 
-            // 5. Deduplicar participantes com base no nome
+            // 3. Deduplicar participantes com base no nome
             const uniqueParticipants = new Map<string, GiveawayParticipant>();
 
             responsesMap.forEach((responseDetails, responseId) => {
@@ -107,12 +140,11 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                     const normalizedName = responseDetails.name.toLowerCase();
                     if (!uniqueParticipants.has(normalizedName)) {
                         uniqueParticipants.set(normalizedName, {
-                            id: `resp-${responseId}`, // Usar responseId para um ID único
+                            id: `resp-${responseId}`,
                             name: responseDetails.name,
                             email: responseDetails.email,
                         });
                     } else {
-                        // Se o nome já existe, atualizar o e-mail se um novo e-mail for encontrado
                         const existing = uniqueParticipants.get(normalizedName);
                         if (existing && responseDetails.email && !existing.email) {
                             existing.email = responseDetails.email;
@@ -130,7 +162,18 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedSurveyId]); // Dependências para useCallback
+
+    // Efeito para disparar a busca de participantes quando a pesquisa selecionada muda
+    useEffect(() => {
+        if (selectedSurveyId) {
+            fetchParticipants();
+        } else {
+            setParticipants([]);
+            setLoading(false);
+            setError('Por favor, selecione uma pesquisa para carregar os participantes.');
+        }
+    }, [selectedSurveyId, fetchParticipants]);
 
     const handleDraw = () => {
         if (participants.length === 0) {
@@ -141,14 +184,6 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         const randomIndex = Math.floor(Math.random() * participants.length);
         setWinner(participants[randomIndex]);
     };
-
-    if (loading) {
-        return <div className="text-center py-8 text-text-light">Carregando participantes...</div>;
-    }
-
-    if (error) {
-        return <div className="text-center py-8 text-red-600">{error}</div>;
-    }
 
     return (
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
@@ -161,28 +196,51 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             </p>
 
             <div className="mb-6">
-                <h3 className="text-lg font-semibold text-text-main mb-2">Participantes ({participants.length} pessoas)</h3>
-                {participants.length > 0 ? (
-                    <ul className="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-4 bg-gray-50">
-                        {participants.map(p => (
-                            <li key={p.id} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-b-0">
-                                <div className="h-8 w-8 p-1 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center text-xs">
-                                    <GiftIcon className="h-4 w-4" /> {/* Usar um ícone genérico para leads */}
-                                </div>
-                                <span className="text-gray-700">{p.name} {p.email && `(${p.email})`}</span>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p className="text-text-light text-sm">Nenhum participante encontrado. Certifique-se de que suas pesquisas incluem uma pergunta de "Nome Completo" e que há respostas cadastradas.</p>
-                )}
+                <label htmlFor="survey-select" className="block text-sm font-medium text-gray-700 mb-2">
+                    Selecionar Pesquisa para Sorteio:
+                </label>
+                <select
+                    id="survey-select"
+                    value={selectedSurveyId || ''}
+                    onChange={(e) => setSelectedSurveyId(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                >
+                    <option value="">-- Selecione uma pesquisa --</option>
+                    {availableSurveys.map(survey => (
+                        <option key={survey.id} value={survey.id}>{survey.title}</option>
+                    ))}
+                </select>
             </div>
+
+            {loading ? (
+                <div className="text-center py-8 text-text-light">Carregando participantes...</div>
+            ) : error ? (
+                <div className="text-center py-8 text-red-600">{error}</div>
+            ) : (
+                <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-text-main mb-2">Participantes ({participants.length} pessoas)</h3>
+                    {participants.length > 0 ? (
+                        <ul className="max-h-60 overflow-y-auto border border-gray-200 rounded-md p-4 bg-gray-50">
+                            {participants.map(p => (
+                                <li key={p.id} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-b-0">
+                                    <div className="h-8 w-8 p-1 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center text-xs">
+                                        <GiftIcon className="h-4 w-4" />
+                                    </div>
+                                    <span className="text-gray-700">{p.name} {p.email && `(${p.email})`}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-text-light text-sm">Nenhum participante encontrado para a pesquisa selecionada. Certifique-se de que a pesquisa inclui uma pergunta de "Nome Completo" e que há respostas cadastradas.</p>
+                    )}
+                </div>
+            )}
 
             <div className="flex justify-center mb-8">
                 <button
                     onClick={handleDraw}
                     className="px-8 py-3 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={participants.length === 0}
+                    disabled={participants.length === 0 || loading}
                 >
                     Sortear
                 </button>
