@@ -407,8 +407,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             // Após salvar uma resposta, atualize a contagem de respostas para a pesquisa na lista E no dashboard
             if (currentCompany?.id) {
                 console.log('useSurveys: handleSaveResponse - Chamando fetchSurveys e fetchSurveyResponses para atualizar contagens e dados do painel.');
-                await fetchSurveys(currentCompany.id);
-                await fetchSurveyResponses(selectedSurvey.id);
+                // await fetchSurveys(currentCompany.id); // TEMPORARILY COMMENTED OUT FOR DIAGNOSIS
+                // await fetchSurveyResponses(selectedSurvey.id); // TEMPORARILY COMMENTED OUT FOR DIAGNOSIS
             }
             showSuccess('Resposta enviada com sucesso!');
             console.log('useSurveys: handleSaveResponse - Retornando TRUE - sucesso total.');
