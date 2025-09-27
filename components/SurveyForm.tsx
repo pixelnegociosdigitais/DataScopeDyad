@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom'; // Importar ReactDOM para usar createPortal
 import { Survey, Question, QuestionType, Answer } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { showError } from '../src/utils/toast';
@@ -14,9 +15,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
 
-    useEffect(() => {
-        console.log('SurveyForm: showConfirmationDialog state:', showConfirmationDialog);
-    }, [showConfirmationDialog]);
+    // Removido o useEffect de diagnóstico.
 
     const handleInputChange = (questionId: string, value: any) => {
         setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -55,7 +54,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
                 setShowConfirmationDialog(true);
             }
         } catch (error: any) {
-            console.error('SurveyForm: Unexpected error during submission:', error);
+            console.error('SurveyForm: Ocorreu um erro inesperado ao enviar a resposta:', error);
             showError('Ocorreu um erro inesperado ao enviar a resposta: ' + error.message);
         }
     };
@@ -133,7 +132,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
                 </div>
             </form>
 
-            {showConfirmationDialog && (
+            {showConfirmationDialog && ReactDOM.createPortal(
                 <ConfirmationDialog
                     title="Resposta Enviada!"
                     message="O que você gostaria de fazer agora?"
@@ -147,7 +146,8 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
                         setShowConfirmationDialog(false);
                         onBack();
                     }}
-                />
+                />,
+                document.body // Renderiza o diálogo diretamente no body do documento
             )}
         </div>
     );
