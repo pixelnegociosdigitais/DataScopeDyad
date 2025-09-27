@@ -1,7 +1,7 @@
 import React, { useState, FormEvent } from 'react';
 import { Company } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
-import ConfirmationDialog from './ConfirmationDialog'; // Importar o novo componente
+import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
 import { showSuccess, showError } from '../src/utils/toast'; // Importar toasts
 
 interface CompanySettingsProps {

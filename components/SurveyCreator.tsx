@@ -5,7 +5,7 @@ import { ArrowUpIcon } from './icons/ArrowUpIcon';
 import { ArrowDownIcon } from './icons/ArrowDownIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { showError, showSuccess } from '../src/utils/toast'; // Importar showSuccess
-import ConfirmationDialog from './ConfirmationDialog'; // Importar o novo componente
+import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
 
 interface SurveyCreatorProps {
     onSave: (survey: Survey) => void;

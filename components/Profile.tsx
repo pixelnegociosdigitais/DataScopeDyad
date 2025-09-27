@@ -3,7 +3,7 @@ import { User } from '../types';
 import { UserIcon } from './icons/UserIcon';
 import { UploadIcon } from './icons/UploadIcon';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
-import ConfirmationDialog from './ConfirmationDialog'; // Importar o novo componente
+import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
 import { showSuccess, showError } from '../src/utils/toast'; // Importar toasts
 
 interface ProfileProps {

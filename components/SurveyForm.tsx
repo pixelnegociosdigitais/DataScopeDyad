@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Survey, Question, QuestionType, Answer } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { showError } from '../src/utils/toast';
-import ConfirmationDialog from './ConfirmationDialog'; // Importar o novo componente
+import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
 
 interface SurveyFormProps {
     survey: Survey;

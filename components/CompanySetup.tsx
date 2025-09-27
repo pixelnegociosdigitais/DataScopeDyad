@@ -2,7 +2,7 @@ import React, { useState, FormEvent } from 'react';
 import { User } from '../types';
 import { LogoIcon } from './icons/LogoIcon';
 import { showError } from '../src/utils/toast';
-import ConfirmationDialog from './ConfirmationDialog'; // Importar o novo componente
+import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
 
 interface CompanySetupProps {
     user: User;

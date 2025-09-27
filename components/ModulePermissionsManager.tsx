@@ -4,7 +4,7 @@ import { SettingsIcon } from './icons/SettingsIcon';
 import { UserRole, ModuleName, ModulePermission } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
 import { showSuccess, showError } from '../src/utils/toast';
-import ConfirmationDialog from './ConfirmationDialog'; // Importar o novo componente
+import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
 
 interface ModulePermissionsManagerProps {
     onBack: () => void;
