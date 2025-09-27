@@ -3,14 +3,15 @@ import { Question, QuestionType, Survey } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { ArrowUpIcon } from './icons/ArrowUpIcon';
 import { ArrowDownIcon } from './icons/ArrowDownIcon';
-import { TrashIcon } from './icons/TrashIcon'; // Adicionado para remover perguntas
-import { showError } from '../src/utils/toast'; // Importar showError
+import { TrashIcon } from './icons/TrashIcon';
+import { showError, showSuccess } from '../src/utils/toast'; // Importar showSuccess
+import ConfirmationDialog from './ConfirmationDialog'; // Importar o novo componente
 
 interface SurveyCreatorProps {
     onSave: (survey: Survey) => void;
     onBack: () => void;
     surveyToEdit?: Survey | null;
-    templates: Survey[]; // Novo prop para templates
+    templates: Survey[];
 }
 
 const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToEdit, templates }) => {
@@ -18,12 +19,13 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
     const [title, setTitle] = useState(surveyToEdit?.title || '');
     const [questions, setQuestions] = useState<Question[]>(surveyToEdit?.questions || []);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false); // Estado para o diálogo
 
     useEffect(() => {
         if (surveyToEdit) {
             setTitle(surveyToEdit.title);
             setQuestions(surveyToEdit.questions);
-            setSelectedTemplateId(''); // Limpa a seleção de template ao editar
+            setSelectedTemplateId('');
         } else {
             setTitle('');
             setQuestions([]);
@@ -38,7 +40,6 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
             const selectedTemplate = templates.find(t => t.id === templateId);
             if (selectedTemplate) {
                 setTitle(selectedTemplate.title);
-                // Clonar as perguntas do template para que não haja referência direta
                 setQuestions(selectedTemplate.questions.map(q => ({ ...q, id: `q${Date.now()}-${Math.random().toString(36).substring(7)}` })));
             }
         } else {
@@ -49,8 +50,8 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
 
     const addQuestion = (type: QuestionType, initialText: string = '') => {
         const newQuestion: Question = {
-            id: `q${Date.now()}-${Math.random().toString(36).substring(7)}`, // ID único para cada pergunta
-            text: initialText, // Usar initialText aqui
+            id: `q${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            text: initialText,
             type: type,
             ...((type === QuestionType.MULTIPLE_CHOICE || type === QuestionType.CHECKBOX) && { options: [''] })
         };
@@ -105,17 +106,19 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
         setQuestions(newQuestions);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!title.trim() || questions.length === 0 || questions.some(q => !q.text.trim())) {
             showError('Por favor, forneça um título e garanta que todas as perguntas tenham texto.');
             return;
         }
-        onSave({ 
-            id: surveyToEdit?.id || '', // ID será gerado em App.tsx se for nova pesquisa
+        await onSave({ 
+            id: surveyToEdit?.id || '',
             title, 
-            companyId: surveyToEdit?.companyId || '', // companyId será definido em App.tsx
+            companyId: surveyToEdit?.companyId || '',
             questions 
         });
+        showSuccess(isEditing ? 'Pesquisa atualizada com sucesso!' : 'Pesquisa criada com sucesso!');
+        setShowConfirmationDialog(true);
     };
 
     const renderQuestionInput = (q: Question, qIndex: number) => {
@@ -254,6 +257,27 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
                     {isEditing ? 'Salvar Alterações' : 'Salvar Pesquisa'}
                 </button>
             </div>
+
+            {showConfirmationDialog && (
+                <ConfirmationDialog
+                    title={isEditing ? "Pesquisa Atualizada!" : "Pesquisa Criada!"}
+                    message={isEditing ? "Sua pesquisa foi atualizada com sucesso. O que você gostaria de fazer agora?" : "Sua pesquisa foi criada com sucesso. O que você gostaria de fazer agora?"}
+                    confirmText="Ver Minhas Pesquisas"
+                    onConfirm={() => {
+                        setShowConfirmationDialog(false);
+                        onBack(); // Volta para a lista de pesquisas
+                    }}
+                    cancelText={isEditing ? "Continuar Editando" : "Criar Outra Pesquisa"}
+                    onCancel={() => {
+                        setShowConfirmationDialog(false);
+                        if (!isEditing) {
+                            setTitle('');
+                            setQuestions([]);
+                            setSelectedTemplateId('');
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };

@@ -1,33 +1,28 @@
-import React, { useState, useEffect } from 'react'; // Importar useEffect
+import React, { useState, useEffect } from 'react';
 import { Survey, Question, QuestionType, Answer } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
-import { showError } from '../src/utils/toast'; // Importar showError
+import { showError } from '../src/utils/toast';
+import ConfirmationDialog from './ConfirmationDialog'; // Importar o novo componente
 
 interface SurveyFormProps {
     survey: Survey;
-    onSaveResponse: (answers: Answer[]) => Promise<boolean>; // Atualizado para Promise<boolean>
+    onSaveResponse: (answers: Answer[]) => Promise<boolean>;
     onBack: () => void;
 }
 
 const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack }) => {
     const [answers, setAnswers] = useState<Record<string, any>>({});
-    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false); // Novo estado para o diálogo
+    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
 
-    // Log do objeto survey para depuração do problema "3 respostas feitas"
-    console.log('SurveyForm: Current survey prop:', survey);
-
-    // NOVO LOG DE DIAGNÓSTICO AQUI
     useEffect(() => {
         console.log('SurveyForm: showConfirmationDialog state:', showConfirmationDialog);
     }, [showConfirmationDialog]);
 
     const handleInputChange = (questionId: string, value: any) => {
-        console.log(`SurveyForm: Input changed for ${questionId}:`, value); // Novo log
         setAnswers(prev => ({ ...prev, [questionId]: value }));
     };
 
     const handleCheckboxChange = (questionId: string, option: string, checked: boolean) => {
-        console.log(`SurveyForm: Checkbox changed for ${questionId}, option ${option}:`, checked); // Novo log
         const currentAnswers = answers[questionId] || [];
         const newAnswers = checked
             ? [...currentAnswers, option]
@@ -37,23 +32,15 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
 
     const resetForm = () => {
         setAnswers({});
-        // Se houver outros estados de formulário que precisam ser limpos, adicione-os aqui
     };
 
-    const handleSubmit = async (e: React.FormEvent) => { // Tornar a função assíncrona
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('SurveyForm: handleSubmit called.');
-        console.log('SurveyForm: Current answers state before formatting:', answers); // Novo log
-
-        // Garantir que todas as perguntas sejam incluídas em formattedAnswers, mesmo que não respondidas
         const formattedAnswers: Answer[] = survey.questions.map(q => {
             let valueToSave = answers[q.id];
-            // Para caixas de seleção, se nada foi selecionado, garantir que seja um array vazio para validação
             if (q.type === QuestionType.CHECKBOX && valueToSave === undefined) {
                 valueToSave = [];
-            }
-            // Para outros tipos, se indefinido, definir como null para validação
-            else if (valueToSave === undefined) {
+            } else if (valueToSave === undefined) {
                 valueToSave = null;
             }
             return {
@@ -62,14 +49,10 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
             };
         });
         
-        console.log('SurveyForm: Formatted Answers before onSaveResponse:', formattedAnswers);
         try {
-            const success = await onSaveResponse(formattedAnswers); // Aguardar o resultado do salvamento
-            console.log('SurveyForm: onSaveResponse returned success:', success); // Log do valor de sucesso
+            const success = await onSaveResponse(formattedAnswers);
             if (success) {
                 setShowConfirmationDialog(true);
-            } else {
-                console.log('SurveyForm: Submission failed, check console for errors from useSurveys or App.tsx.');
             }
         } catch (error: any) {
             console.error('SurveyForm: Unexpected error during submission:', error);
@@ -151,32 +134,20 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
             </form>
 
             {showConfirmationDialog && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm mx-auto">
-                        <h3 className="text-xl font-bold text-text-main mb-4">Resposta Enviada!</h3>
-                        <p className="text-text-light mb-6">O que você gostaria de fazer agora?</p>
-                        <div className="flex justify-center gap-4">
-                            <button
-                                onClick={() => {
-                                    resetForm();
-                                    setShowConfirmationDialog(false);
-                                }}
-                                className="px-6 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark shadow-sm"
-                            >
-                                Enviar Nova Resposta
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setShowConfirmationDialog(false);
-                                    onBack(); // Navega de volta para a lista de pesquisas
-                                }}
-                                className="px-6 py-2 font-semibold text-primary border border-primary rounded-md hover:bg-primary/10 shadow-sm"
-                            >
-                                Fechar
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <ConfirmationDialog
+                    title="Resposta Enviada!"
+                    message="O que você gostaria de fazer agora?"
+                    confirmText="Enviar Nova Resposta"
+                    onConfirm={() => {
+                        resetForm();
+                        setShowConfirmationDialog(false);
+                    }}
+                    cancelText="Fechar"
+                    onCancel={() => {
+                        setShowConfirmationDialog(false);
+                        onBack();
+                    }}
+                />
             )}
         </div>
     );

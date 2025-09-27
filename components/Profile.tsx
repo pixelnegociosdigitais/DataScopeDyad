@@ -3,6 +3,8 @@ import { User } from '../types';
 import { UserIcon } from './icons/UserIcon';
 import { UploadIcon } from './icons/UploadIcon';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
+import ConfirmationDialog from './ConfirmationDialog'; // Importar o novo componente
+import { showSuccess, showError } from '../src/utils/toast'; // Importar toasts
 
 interface ProfileProps {
     user: User;
@@ -12,13 +14,13 @@ interface ProfileProps {
 
 const Profile: React.FC<ProfileProps> = ({ user, onUpdate, onBack }) => {
     const [formData, setFormData] = useState<User>(user);
+    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false); // Estado para o diálogo
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
     
-    // A mock handler for file change, as we don't have a backend to upload to.
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const reader = new FileReader();
@@ -33,7 +35,10 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdate, onBack }) => {
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        onUpdate(formData);
+        // Aqui você chamaria a lógica de atualização real, que no seu caso é `onUpdate`
+        onUpdate(formData); // Assumimos que onUpdate lida com o sucesso/erro
+        showSuccess('Perfil atualizado com sucesso!'); // Exibir toast de sucesso
+        setShowConfirmationDialog(true); // Mostrar o diálogo de confirmação
     };
 
     return (
@@ -87,6 +92,20 @@ const Profile: React.FC<ProfileProps> = ({ user, onUpdate, onBack }) => {
                     </button>
                 </div>
             </form>
+
+            {showConfirmationDialog && (
+                <ConfirmationDialog
+                    title="Perfil Atualizado!"
+                    message="Seu perfil foi salvo com sucesso. O que você gostaria de fazer agora?"
+                    confirmText="Voltar para Início"
+                    onConfirm={() => {
+                        setShowConfirmationDialog(false);
+                        onBack();
+                    }}
+                    cancelText="Continuar Editando"
+                    onCancel={() => setShowConfirmationDialog(false)}
+                />
+            )}
         </div>
     );
 };

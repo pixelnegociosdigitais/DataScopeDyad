@@ -1,7 +1,8 @@
 import React, { useState, FormEvent } from 'react';
 import { User } from '../types';
 import { LogoIcon } from './icons/LogoIcon';
-import { showError } from '../src/utils/toast'; // Importar showError
+import { showError } from '../src/utils/toast';
+import ConfirmationDialog from './ConfirmationDialog'; // Importar o novo componente
 
 interface CompanySetupProps {
     user: User;
@@ -10,11 +11,13 @@ interface CompanySetupProps {
 
 const CompanySetup: React.FC<CompanySetupProps> = ({ user, onCreateCompany }) => {
     const [companyName, setCompanyName] = useState('');
+    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false); // Estado para o diálogo
 
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         if (companyName.trim()) {
-            onCreateCompany(companyName);
+            onCreateCompany(companyName); // Assumimos que onCreateCompany lida com o sucesso/erro
+            setShowConfirmationDialog(true); // Mostrar o diálogo de confirmação
         } else {
             showError('Por favor, insira o nome da sua empresa.');
         }
@@ -49,6 +52,19 @@ const CompanySetup: React.FC<CompanySetupProps> = ({ user, onCreateCompany }) =>
                     </button>
                 </form>
             </div>
+
+            {showConfirmationDialog && (
+                <ConfirmationDialog
+                    title="Empresa Criada!"
+                    message="Sua empresa foi criada e vinculada com sucesso. Você já pode começar a usar o DataScope!"
+                    confirmText="Ir para Início"
+                    onConfirm={() => {
+                        setShowConfirmationDialog(false);
+                        // A navegação para SURVEY_LIST é tratada pelo useAuth após onCreateCompany
+                    }}
+                    showCancelButton={false} // Não há opção de cancelar aqui, pois a empresa já foi criada
+                />
+            )}
         </div>
     );
 };

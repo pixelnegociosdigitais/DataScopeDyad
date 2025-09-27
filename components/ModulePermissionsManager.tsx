@@ -3,7 +3,8 @@ import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { UserRole, ModuleName, ModulePermission } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
-import { showSuccess, showError } from '../src/utils/toast'; // Importar showSuccess e showError
+import { showSuccess, showError } from '../src/utils/toast';
+import ConfirmationDialog from './ConfirmationDialog'; // Importar o novo componente
 
 interface ModulePermissionsManagerProps {
     onBack: () => void;
@@ -23,6 +24,7 @@ const ModulePermissionsManager: React.FC<ModulePermissionsManagerProps> = ({ onB
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false); // Estado para o diálogo
 
     const fetchPermissions = useCallback(async () => {
         setLoading(true);
@@ -36,7 +38,6 @@ const ModulePermissionsManager: React.FC<ModulePermissionsManagerProps> = ({ onB
             setError('Não foi possível carregar as permissões.');
             setPermissions([]);
         } else {
-            // Ensure all combinations of roles and modules exist, defaulting to enabled if not found
             const fetchedPermissionsMap = new Map<string, ModulePermission>();
             data.forEach(p => fetchedPermissionsMap.set(`${p.role}-${p.module_name}`, p));
 
@@ -50,7 +51,7 @@ const ModulePermissionsManager: React.FC<ModulePermissionsManagerProps> = ({ onB
                         initialPermissions.push({
                             role: role,
                             module_name: module.name,
-                            enabled: true, // Default to enabled if not explicitly set
+                            enabled: true,
                         });
                     }
                 });
@@ -78,11 +79,9 @@ const ModulePermissionsManager: React.FC<ModulePermissionsManagerProps> = ({ onB
         setSaving(true);
         setError(null);
         try {
-            // Separate existing permissions from new ones
             const existingPermissions = permissions.filter(p => p.id);
             const newPermissions = permissions.filter(p => !p.id);
 
-            // Update existing permissions
             for (const p of existingPermissions) {
                 const { error } = await supabase
                     .from('module_permissions')
@@ -91,7 +90,6 @@ const ModulePermissionsManager: React.FC<ModulePermissionsManagerProps> = ({ onB
                 if (error) throw error;
             }
 
-            // Insert new permissions
             if (newPermissions.length > 0) {
                 const { error } = await supabase
                     .from('module_permissions')
@@ -104,7 +102,8 @@ const ModulePermissionsManager: React.FC<ModulePermissionsManagerProps> = ({ onB
             }
             
             showSuccess('Permissões salvas com sucesso!');
-            await fetchPermissions(); // Re-fetch to get IDs for newly inserted permissions
+            await fetchPermissions();
+            setShowConfirmationDialog(true); // Mostrar o diálogo de confirmação
         } catch (err: any) {
             console.error('Erro ao salvar permissões:', err.message);
             setError('Erro ao salvar permissões: ' + err.message);
@@ -150,7 +149,7 @@ const ModulePermissionsManager: React.FC<ModulePermissionsManagerProps> = ({ onB
                                 <td className="py-3 px-4 text-sm text-gray-800 font-medium">{module.label}</td>
                                 {ALL_ROLES.map(role => {
                                     const permission = permissions.find(p => p.role === role && p.module_name === module.name);
-                                    const isEnabled = permission ? permission.enabled : true; // Default to true if not found
+                                    const isEnabled = permission ? permission.enabled : true;
                                     return (
                                         <td key={`${role}-${module.name}`} className="py-3 px-4 text-center">
                                             <label className="inline-flex items-center cursor-pointer">
@@ -180,6 +179,20 @@ const ModulePermissionsManager: React.FC<ModulePermissionsManagerProps> = ({ onB
                     {saving ? 'Salvando...' : 'Salvar Permissões'}
                 </button>
             </div>
+
+            {showConfirmationDialog && (
+                <ConfirmationDialog
+                    title="Permissões Salvas!"
+                    message="As permissões dos módulos foram atualizadas com sucesso. O que você gostaria de fazer agora?"
+                    confirmText="Voltar para Configurações"
+                    onConfirm={() => {
+                        setShowConfirmationDialog(false);
+                        onBack();
+                    }}
+                    cancelText="Continuar Editando"
+                    onCancel={() => setShowConfirmationDialog(false)}
+                />
+            )}
         </div>
     );
 };
