@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom'; // Importar ReactDOM para usar createPortal
+import { createPortal } from 'react-dom'; // Importar createPortal diretamente
 import { Survey, Question, QuestionType, Answer } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { showError } from '../src/utils/toast';
-import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
+import ConfirmationDialog from '../src/components/ConfirmationDialog';
 
 interface SurveyFormProps {
     survey: Survey;
@@ -15,7 +15,10 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
 
-    // Removido o useEffect de diagnóstico.
+    // Log de diagnóstico para o estado do diálogo
+    useEffect(() => {
+        console.log('SurveyForm: showConfirmationDialog state changed to:', showConfirmationDialog);
+    }, [showConfirmationDialog]);
 
     const handleInputChange = (questionId: string, value: any) => {
         setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -132,7 +135,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
                 </div>
             </form>
 
-            {showConfirmationDialog && ReactDOM.createPortal(
+            {showConfirmationDialog && createPortal(
                 <ConfirmationDialog
                     title="Resposta Enviada!"
                     message="O que você gostaria de fazer agora?"
