@@ -23,7 +23,11 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     const [error, setError] = useState<string | null>(null);
     const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null);
     const [availableSurveys, setAvailableSurveys] = useState<Survey[]>([]);
-    const [isDrawing, setIsDrawing] = useState(false); // Novo estado para controlar a animação
+    const [isDrawing, setIsDrawing] = useState(false); // Estado para controlar a animação
+    const [countdown, setCountdown] = useState(0); // Estado para o contador regressivo
+    const [progress, setProgress] = useState(0); // Estado para a barra de progresso (0-100)
+
+    const animationDuration = 3000; // Duração da animação em milissegundos (3 segundos)
 
     // Efeito para buscar as pesquisas disponíveis para a empresa
     useEffect(() => {
@@ -54,7 +58,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             }
         };
         loadSurveys();
-    }, [currentCompany.id, selectedSurveyId]); // selectedSurveyId na dependência para reavaliar a pré-seleção
+    }, [currentCompany.id, selectedSurveyId]);
 
     const fetchParticipants = useCallback(async () => {
         setLoading(true);
@@ -163,7 +167,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         } finally {
             setLoading(false);
         }
-    }, [selectedSurveyId]); // Dependências para useCallback
+    }, [selectedSurveyId]);
 
     // Efeito para disparar a busca de participantes quando a pesquisa selecionada muda
     useEffect(() => {
@@ -176,16 +180,52 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         }
     }, [selectedSurveyId, fetchParticipants]);
 
+    // Efeito para gerenciar a animação do contador e da barra de progresso
+    useEffect(() => {
+        let countdownInterval: NodeJS.Timeout;
+        let progressInterval: NodeJS.Timeout;
+
+        if (isDrawing) {
+            setDisplayWinner(null); // Limpa o vencedor anterior
+            setCountdown(animationDuration / 1000); // Inicia o contador
+            setProgress(0); // Reseta a barra de progresso
+
+            const startTime = Date.now();
+
+            countdownInterval = setInterval(() => {
+                setCountdown(prev => {
+                    if (prev <= 1) {
+                        clearInterval(countdownInterval);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+
+            progressInterval = setInterval(() => {
+                const elapsedTime = Date.now() - startTime;
+                const newProgress = Math.min((elapsedTime / animationDuration) * 100, 100);
+                setProgress(newProgress);
+
+                if (newProgress >= 100) {
+                    clearInterval(progressInterval);
+                }
+            }, 50); // Atualiza a barra de progresso a cada 50ms para uma animação suave
+        }
+
+        return () => {
+            clearInterval(countdownInterval);
+            clearInterval(progressInterval);
+        };
+    }, [isDrawing]); // Roda este efeito apenas quando isDrawing muda
+
     const handleDraw = () => {
         if (participants.length === 0) {
             alert('Não há participantes para realizar o sorteio!');
             return;
         }
 
-        setDisplayWinner(null); // Limpa o vencedor anterior
         setIsDrawing(true); // Inicia a animação
-
-        const animationDuration = 3000; // Duração da animação em milissegundos (3 segundos)
 
         setTimeout(() => {
             const randomIndex = Math.floor(Math.random() * participants.length);
@@ -260,8 +300,12 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 <div className="bg-blue-50 border border-blue-200 text-blue-800 p-6 rounded-lg text-center shadow-inner">
                     <h3 className="text-xl font-bold mb-3">Sorteando...</h3>
                     <div className="flex flex-col items-center justify-center">
-                        <div className="h-24 w-24 p-4 bg-blue-200 rounded-full text-blue-600 flex items-center justify-center mb-4 animate-spin">
-                            <GiftIcon className="h-12 w-12" />
+                        <p className="text-5xl font-extrabold text-blue-700 mb-4">{countdown}</p>
+                        <div className="w-full bg-blue-200 rounded-full h-4 mb-4 overflow-hidden">
+                            <div
+                                className="bg-primary h-4 rounded-full transition-all duration-50 ease-linear"
+                                style={{ width: `${progress}%` }}
+                            ></div>
                         </div>
                         <p className="text-lg text-blue-700">Aguarde, estamos escolhendo o sortudo!</p>
                     </div>
