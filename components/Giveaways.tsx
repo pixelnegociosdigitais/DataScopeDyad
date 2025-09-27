@@ -316,9 +316,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 <div className="bg-green-50 border border-green-200 text-green-800 p-6 rounded-lg text-center shadow-inner">
                     <h3 className="text-xl font-bold mb-3">🎉 Vencedor! 🎉</h3>
                     <div className="flex flex-col items-center justify-center">
-                        <div className="h-24 w-24 p-4 bg-green-200 rounded-full text-green-600 flex items-center justify-center mb-4">
-                            <GiftIcon className="h-12 w-12" />
-                        </div>
+                        <img src="/assets/presente.png" alt="Caixa de presente" className="h-24 w-24 object-contain mb-4" />
                         <p className="text-2xl font-bold text-green-900">{displayWinner.name}</p>
                         {displayWinner.email && <p className="text-lg text-green-700">{displayWinner.email}</p>}
                     </div>
