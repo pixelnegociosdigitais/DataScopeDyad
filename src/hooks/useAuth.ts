@@ -124,6 +124,17 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 setCurrentCompany(null);
                 setNeedsCompanySetup(true);
             }
+
+            // Se o usuário for um DESENVOLVEDOR, ele não precisa de configuração de empresa.
+            if (user.role === UserRole.DEVELOPER) {
+                console.log('useAuth: Usuário é Desenvolvedor, ignorando configuração de empresa.');
+                setNeedsCompanySetup(false);
+                // Se um desenvolvedor não tiver uma empresa, ainda definimos currentCompany como null
+                // mas não o bloqueamos com o prompt de configuração.
+                if (!(profileData.company && Array.isArray(profileData.company) && profileData.company.length > 0)) {
+                    setCurrentCompany(null);
+                }
+            }
         }
         setLoadingAuth(false);
         console.log('useAuth: fetchUserData concluído. loadingAuth = false.');
