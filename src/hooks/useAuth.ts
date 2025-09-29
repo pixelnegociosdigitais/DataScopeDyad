@@ -306,9 +306,18 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             showError('Você não tem permissão para redefinir senhas.');
             return;
         }
+
+        const password = newPassword || `temp_${Math.random().toString(36).slice(-8)}`;
         
-        showSuccess(`Redefinição de senha para o usuário ${userId} solicitada. (Implementação via Edge Function pendente)`);
-        console.log(`Redefinição de senha para o usuário ${userId} com nova senha: ${newPassword || '[gerada]'}`);
+        const { error } = await supabase.functions.invoke('reset-user-password', {
+            body: { userId, newPassword: password },
+        });
+
+        if (error) {
+            showError(`Erro ao redefinir senha: ${error.message}`);
+        } else {
+            showSuccess(`Senha do usuário redefinida com sucesso! A nova senha temporária é: ${password}`);
+        }
     }, [currentUser, showError, showSuccess]);
 
     const handleCreateUserForCompany = useCallback(async (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword?: string) => {
@@ -317,8 +326,28 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             return;
         }
 
-        showSuccess(`Criação de usuário ${fullName} (${email}) com papel ${role} para a empresa ${companyId} solicitada. (Implementação via Edge Function pendente)`);
-        console.log(`Criar usuário: ${fullName}, Email: ${email}, Papel: ${role}, Empresa: ${companyId}, Senha Temporária: ${temporaryPassword || '[gerada]'}`);
+        if (!temporaryPassword) {
+            showError('A senha temporária é obrigatória.');
+            return;
+        }
+
+        const { data, error } = await supabase.functions.invoke('create-user', {
+            body: {
+                email,
+                password: temporaryPassword,
+                fullName,
+                role,
+                companyId,
+            },
+        });
+
+        if (error) {
+            showError(`Erro ao criar usuário: ${error.message}`);
+            console.error('Erro ao invocar a função create-user:', error);
+        } else {
+            showSuccess(`Usuário ${fullName} criado com sucesso!`);
+            console.log('Usuário criado:', data);
+        }
     }, [currentUser, showError, showSuccess]);
 
     const handleUpdateUserPermissions = useCallback(async (userId: string, permissions: Record<string, boolean>) => {
@@ -326,8 +355,18 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             showError('Você não tem permissão para atualizar permissões de usuário.');
             return;
         }
-        showSuccess(`Permissões do usuário ${userId} atualizadas. (Implementação pendente)`);
-        console.log(`Atualizar permissões para o usuário ${userId}:`, permissions);
+        
+        const { error } = await supabase
+            .from('profiles')
+            .update({ permissions: permissions })
+            .eq('id', userId);
+
+        if (error) {
+            showError('Erro ao atualizar permissões: ' + error.message);
+            console.error('Erro ao atualizar permissões:', error);
+        } else {
+            showSuccess(`Permissões do usuário ${userId} atualizadas com sucesso!`);
+        }
     }, [currentUser, showError, showSuccess]);
 
 

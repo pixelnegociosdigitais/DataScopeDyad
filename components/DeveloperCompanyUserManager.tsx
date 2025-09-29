@@ -34,7 +34,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     const [editingCompany, setEditingCompany] = useState<Company | null>(null); // Empresa sendo editada
     const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null); // Empresa a ser excluída
 
-    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateCompany: createCompanyAndAdmin } = useAuth(setCurrentView);
+    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany } = useAuth(setCurrentView);
 
     const fetchCompanies = useCallback(async () => {
         setLoading(true);
@@ -76,12 +76,25 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             return;
         }
 
-        // TODO: Chamar uma Edge Function para esta operação complexa e segura
-        // Por enquanto, vamos simular e mostrar um toast.
-        showSuccess('Criação de empresa e administrador solicitada. (Implementação via Edge Function pendente)');
-        console.log('Criar Empresa:', newCompanyName, 'Admin:', newAdminFullName, 'Email:', newAdminEmail, 'Senha:', newAdminPassword);
+        // Esta função agora precisa de um companyId, que ainda não existe.
+        // A lógica precisa ser: 1. Criar empresa, 2. Criar usuário com o ID da nova empresa.
+        // Isso deve ser uma única transação, idealmente em uma Edge Function.
         
-        // Simular a criação e atualização da lista
+        // Passo 1: Criar a empresa
+        const { data: newCompany, error: companyError } = await supabase
+            .from('companies')
+            .insert({ name: newCompanyName })
+            .select()
+            .single();
+
+        if (companyError || !newCompany) {
+            showError('Erro ao criar a empresa: ' + companyError?.message);
+            return;
+        }
+
+        // Passo 2: Criar o usuário administrador para a nova empresa
+        await handleCreateUserForCompany(newCompany.id, newAdminFullName, newAdminEmail, UserRole.ADMIN, newAdminPassword);
+        
         setShowCreateCompanyModal(false);
         setNewCompanyName('');
         setNewAdminFullName('');
@@ -107,10 +120,9 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
 
     const confirmResetAdminPassword = (adminId: string, adminName: string) => {
         setDialogTitle('Redefinir Senha do Administrador');
-        setDialogMessage(`Tem certeza que deseja redefinir a senha do administrador "${adminName}"? Uma nova senha temporária será gerada.`);
+        setDialogMessage(`Tem certeza que deseja redefinir a senha do administrador "${adminName}"? Uma nova senha temporária será gerada e exibida.`);
         setDialogConfirmAction(() => async () => {
-            // TODO: Chamar Edge Function para redefinir senha
-            await handleResetUserPassword(adminId, 'novaSenhaTemporaria123'); // Senha temporária gerada
+            await handleResetUserPassword(adminId);
             setShowConfirmationDialog(false);
         });
         setShowConfirmationDialog(true);

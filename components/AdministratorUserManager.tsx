@@ -105,9 +105,9 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
 
     const confirmResetUserPassword = (userId: string, userName: string) => {
         setDialogTitle('Redefinir Senha do Usuário');
-        setDialogMessage(`Tem certeza que deseja redefinir a senha do usuário "${userName}"? Uma nova senha temporária será gerada.`);
+        setDialogMessage(`Tem certeza que deseja redefinir a senha do usuário "${userName}"? Uma nova senha temporária será gerada e exibida.`);
         setDialogConfirmAction(() => async () => {
-            await handleResetUserPassword(userId, 'novaSenhaTemporaria123'); // Senha temporária gerada
+            await handleResetUserPassword(userId);
             setShowConfirmationDialog(false);
         });
         setShowConfirmationDialog(true);
