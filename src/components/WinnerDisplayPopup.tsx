@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { TrashIcon } from '../../components/icons/TrashIcon'; // Caminho corrigido
+// Não precisamos mais do TrashIcon aqui, pois o botão de fechar já está presente.
+// import { TrashIcon } from '../../components/icons/TrashIcon'; 
 
 interface GiveawayParticipant {
     id: string;
@@ -17,13 +18,7 @@ const WinnerDisplayPopup: React.FC<WinnerDisplayPopupProps> = ({ winner, onClose
     return createPortal(
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div className="bg-gradient-to-r from-red-500 to-red-700 text-white p-8 rounded-lg shadow-xl text-center max-w-sm w-full relative">
-                <button
-                    onClick={onClose}
-                    className="absolute top-3 right-3 p-2 rounded-full text-white hover:bg-red-800 transition-colors"
-                    aria-label="Fechar"
-                >
-                    <TrashIcon className="h-6 w-6" />
-                </button>
+                {/* O botão de fechar com o ícone de lixeira foi removido daqui */}
                 <h3 className="text-3xl font-bold mb-4">🎉 Vencedor! 🎉</h3>
                 <div className="flex flex-col items-center justify-center">
                     <img src="/assets/presente.png" alt="Caixa de presente" className="h-32 w-32 object-contain mb-6" />
