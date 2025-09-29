@@ -13,8 +13,8 @@ import CompanyCreationForm from './components/CompanyCreationForm';
 import Giveaways from './components/Giveaways';
 import SettingsPanel from './components/SettingsPanel';
 import ModulePermissionsManager from './components/ModulePermissionsManager';
-import DeveloperCompanyUserManager from './components/DeveloperCompanyUserManager'; // Importar novo componente
-import AdministratorUserManager from './components/AdministratorUserManager'; // Importar novo componente
+import DeveloperCompanyUserManager from './components/DeveloperCompanyUserManager';
+import AdministratorUserManager from './components/AdministratorUserManager';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
@@ -28,6 +28,7 @@ const App: React.FC = () => {
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+    const [companySettingsAccessDenied, setCompanySettingsAccessDenied] = useState(false); // Novo estado para controle de acesso
 
     const {
         currentUser,
@@ -58,6 +59,26 @@ const App: React.FC = () => {
             console.log('App: Global loading state inactive.');
         }
     }, [loadingSession, loadingAuth, loadingSurveys]);
+
+    // Efeito para lidar com a lógica de acesso às configurações da empresa
+    useEffect(() => {
+        // Só executa se a autenticação e o carregamento de dados estiverem completos
+        if (!loadingAuth && !loadingSession && session && currentUser) {
+            if (currentView === View.COMPANY_SETTINGS) {
+                // Verifica se o usuário tem uma empresa E não tem permissão para gerenciá-la
+                if (currentCompany && !modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS]) {
+                    setCompanySettingsAccessDenied(true);
+                    showError('Você não tem permissão para configurar a empresa.');
+                    setCurrentView(View.SURVEY_LIST); // Redireciona imediatamente
+                } else {
+                    setCompanySettingsAccessDenied(false); // Limpa o estado se as condições forem atendidas
+                }
+            } else {
+                // Se navegarmos para fora de COMPANY_SETTINGS, limpa qualquer estado de negação de acesso anterior
+                setCompanySettingsAccessDenied(false);
+            }
+        }
+    }, [currentView, currentCompany, modulePermissions, loadingAuth, loadingSession, session, currentUser, setCurrentView]);
 
     const handleSelectSurvey = useCallback(async (survey: Survey) => {
         if (!modulePermissions[ModuleName.VIEW_DASHBOARD]) {
@@ -162,9 +183,6 @@ const App: React.FC = () => {
         return <div className="h-screen w-screen flex items-center justify-center">Carregando dados do usuário...</div>;
     }
 
-    // A aplicação agora carrega o layout principal mesmo que não haja uma empresa associada.
-    // Componentes individuais precisarão lidar com o caso de currentCompany ser null.
-
     const canManageSurveys = modulePermissions[ModuleName.MANAGE_SURVEYS];
 
     const renderContent = () => {
@@ -188,18 +206,13 @@ const App: React.FC = () => {
                 }
                 return null;
             case View.COMPANY_SETTINGS:
-                // Se não houver empresa, mostra o formulário de criação
+                // Se o acesso foi negado e o usuário foi redirecionado, este caso não será renderizado.
+                // Se chegamos aqui, significa que ou não há empresa (formulário de criação)
+                // ou há empresa e o usuário tem permissão (formulário de edição).
                 if (!currentCompany) {
                     return <CompanyCreationForm user={currentUser} onCreateCompany={handleCreateCompany} onBack={handleBack} />;
                 }
-                // Se houver empresa e o usuário tiver permissão, mostra o formulário de edição
-                if (modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS]) {
-                    return <CompanySettings company={currentCompany} onUpdate={handleUpdateCompany} onBack={handleBack} />;
-                }
-                // Se houver empresa mas sem permissão, redireciona para a lista de pesquisas
-                showError('Você não tem permissão para configurar a empresa.');
-                setCurrentView(View.SURVEY_LIST);
-                return null;
+                return <CompanySettings company={currentCompany} onUpdate={handleUpdateCompany} onBack={handleBack} />;
             case View.GIVEAWAYS:
                 return <Giveaways currentUser={currentUser} currentCompany={currentCompany} />;
             case View.SETTINGS_PANEL:
