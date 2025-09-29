@@ -74,7 +74,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 address,
                 avatar_url,
                 permissions,
-                company:companies (
+                companies (
                     id,
                     name,
                     cnpj,
@@ -123,9 +123,9 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             await fetchModulePermissions(user.role);
 
             // Verifica se a empresa está vinculada ao perfil
-            if (profileData.company && Array.isArray(profileData.company) && profileData.company.length > 0) {
-                console.log('useAuth: Empresa encontrada:', profileData.company[0]);
-                const company: Company = profileData.company[0] as Company;
+            if (profileData.companies) {
+                console.log('useAuth: Empresa encontrada:', profileData.companies);
+                const company: Company = profileData.companies as Company;
                 setCurrentCompany(company);
             } else {
                 console.log('useAuth: Nenhuma empresa associada ao perfil.');
@@ -193,7 +193,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         const { error: profileUpdateError } = await supabase
             .from('profiles')
-            .update({ company_id: newCompany.id, role: roleToAssign })
+            .update({ company_id: newCompany.id })
             .eq('id', userId);
 
         if (profileUpdateError) {
