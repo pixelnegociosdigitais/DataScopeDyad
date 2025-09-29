@@ -9,11 +9,13 @@ import Profile from './components/Profile';
 import SurveyForm from './components/SurveyForm';
 import Login from './components/Login';
 import CompanySettings from './components/CompanySettings';
-import CompanyCreationForm from './components/CompanyCreationForm'; // Importar o novo componente
+import CompanyCreationForm from './components/CompanyCreationForm';
 import Giveaways from './components/Giveaways';
 import SettingsPanel from './components/SettingsPanel';
 import ModulePermissionsManager from './components/ModulePermissionsManager';
-import JoinCompanyPrompt from './components/JoinCompanyPrompt'; // Manter import para uso opcional
+import DeveloperCompanyUserManager from './components/DeveloperCompanyUserManager'; // Importar novo componente
+import AdministratorUserManager from './components/AdministratorUserManager'; // Importar novo componente
+import JoinCompanyPrompt from './components/JoinCompanyPrompt';
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
@@ -204,6 +206,10 @@ const App: React.FC = () => {
                 return <SettingsPanel onBack={handleBack} setView={setCurrentView} />;
             case View.MODULE_PERMISSIONS_MANAGER:
                 return <ModulePermissionsManager onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
+            case View.DEVELOPER_COMPANY_USER_MANAGER:
+                return <DeveloperCompanyUserManager onBack={handleBack} setCurrentView={setCurrentView} />;
+            case View.ADMIN_USER_MANAGER:
+                return <AdministratorUserManager onBack={handleBack} currentUser={currentUser} currentCompany={currentCompany} setCurrentView={setCurrentView} />;
             default:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
         }

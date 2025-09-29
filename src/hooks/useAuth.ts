@@ -13,6 +13,10 @@ interface UseAuthReturn {
     handleUpdateCompany: (updatedCompany: Company) => Promise<void>;
     fetchUserData: (userId: string, userEmail: string) => Promise<void>;
     modulePermissions: Record<ModuleName, boolean>;
+    handleToggleCompanyStatus: (companyId: string, newStatus: 'active' | 'inactive') => Promise<void>;
+    handleResetUserPassword: (userId: string, newPassword?: string) => Promise<void>;
+    handleCreateUserForCompany: (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword?: string) => Promise<void>;
+    handleUpdateUserPermissions: (userId: string, permissions: Record<string, boolean>) => Promise<void>;
 }
 
 const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
@@ -21,6 +25,8 @@ const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
     [ModuleName.VIEW_DASHBOARD]: true,
     [ModuleName.ACCESS_GIVEAWAYS]: true,
     [ModuleName.MANAGE_COMPANY_SETTINGS]: true,
+    [ModuleName.MANAGE_USERS]: true, // Novo módulo
+    [ModuleName.MANAGE_COMPANIES]: true, // Novo módulo
 };
 
 const DEVELOPER_EMAIL = 'santananegociosdigitais@gmail.com'; // E-mail do desenvolvedor hardcoded
@@ -67,6 +73,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 phone,
                 address,
                 avatar_url,
+                permissions,
                 company:companies (
                     id,
                     name,
@@ -76,7 +83,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                     address_neighborhood,
                     address_complement,
                     address_city,
-                    address_state
+                    address_state,
+                    status
                 )
             `)
             .eq('id', userId)
@@ -100,6 +108,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 phone: profileData.phone || undefined,
                 address: profileData.address || undefined,
                 profilePictureUrl: profileData.avatar_url || undefined,
+                permissions: profileData.permissions || {},
             };
 
             // Garantir que o e-mail do desenvolvedor sempre tenha o papel de Desenvolvedor
@@ -268,6 +277,85 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [currentCompany, setCurrentView, showError, showSuccess]);
 
+    const handleToggleCompanyStatus = useCallback(async (companyId: string, newStatus: 'active' | 'inactive') => {
+        if (currentUser?.role !== UserRole.DEVELOPER) {
+            showError('Você não tem permissão para alterar o status da empresa.');
+            return;
+        }
+        console.log(`useAuth: handleToggleCompanyStatus - Alterando status da empresa ${companyId} para ${newStatus}`);
+        const { error } = await supabase
+            .from('companies')
+            .update({ status: newStatus })
+            .eq('id', companyId);
+
+        if (error) {
+            showError('Erro ao atualizar o status da empresa: ' + error.message);
+            console.error('useAuth: Erro ao atualizar status da empresa:', error);
+        } else {
+            showSuccess(`Status da empresa atualizado para '${newStatus}' com sucesso!`);
+            // Se a empresa atual for a que teve o status alterado, atualiza o estado local
+            if (currentCompany?.id === companyId) {
+                setCurrentCompany(prev => prev ? { ...prev, status: newStatus } : null);
+            }
+            // O RLS já deve impedir o acesso a dados para usuários de empresas inativas.
+            // Para desativar logins, precisaríamos de uma Edge Function para banir usuários ou invalidar sessões.
+            // Por enquanto, confiamos no RLS para bloquear o acesso aos dados.
+        }
+    }, [currentUser, currentCompany, showError, showSuccess]);
+
+    const handleResetUserPassword = useCallback(async (userId: string, newPassword?: string) => {
+        if (currentUser?.role !== UserRole.DEVELOPER && currentUser?.role !== UserRole.ADMIN) {
+            showError('Você não tem permissão para redefinir senhas.');
+            return;
+        }
+
+        // Em um cenário real, você chamaria uma Edge Function aqui para redefinir a senha
+        // para evitar expor a chave de serviço ou a lógica de admin no cliente.
+        // Por simplicidade, vamos simular a chamada ou usar a API de admin diretamente (com cautela).
+        
+        // Para o Developer, pode redefinir qualquer Admin.
+        // Para o Admin, pode redefinir qualquer User da sua empresa.
+        
+        // A implementação real de redefinição de senha via admin API requer a chave de serviço,
+        // que NÃO deve estar no cliente. Portanto, uma Edge Function é MANDATÓRIA aqui.
+        // Por enquanto, vamos apenas mostrar um toast de sucesso e logar.
+        
+        // TODO: Implementar Edge Function para redefinição de senha.
+        // Exemplo de como seria a chamada para uma Edge Function:
+        // const { data, error } = await supabase.functions.invoke('reset-user-password', {
+        //     body: { userId, newPassword },
+        // });
+
+        showSuccess(`Redefinição de senha para o usuário ${userId} solicitada. (Implementação via Edge Function pendente)`);
+        console.log(`Redefinição de senha para o usuário ${userId} com nova senha: ${newPassword || '[gerada]'}`);
+    }, [currentUser, showError, showSuccess]);
+
+    const handleCreateUserForCompany = useCallback(async (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword?: string) => {
+        if (currentUser?.role !== UserRole.DEVELOPER && currentUser?.role !== UserRole.ADMIN) {
+            showError('Você não tem permissão para criar usuários.');
+            return;
+        }
+
+        // TODO: Implementar Edge Function para criar usuário e perfil, e enviar senha temporária.
+        // Isso é crucial para segurança e para usar a API de admin do Supabase.
+        // Por enquanto, vamos simular.
+        showSuccess(`Criação de usuário ${fullName} (${email}) com papel ${role} para a empresa ${companyId} solicitada. (Implementação via Edge Function pendente)`);
+        console.log(`Criar usuário: ${fullName}, Email: ${email}, Papel: ${role}, Empresa: ${companyId}, Senha Temporária: ${temporaryPassword || '[gerada]'}`);
+    }, [currentUser, showError, showSuccess]);
+
+    const handleUpdateUserPermissions = useCallback(async (userId: string, permissions: Record<string, boolean>) => {
+        if (currentUser?.role !== UserRole.ADMIN) {
+            showError('Você não tem permissão para atualizar permissões de usuário.');
+            return;
+        }
+        // TODO: Implementar Edge Function para atualizar permissões de usuário.
+        // Ou, se a RLS permitir, pode ser feito diretamente via cliente.
+        // Por enquanto, vamos simular.
+        showSuccess(`Permissões do usuário ${userId} atualizadas. (Implementação pendente)`);
+        console.log(`Atualizar permissões para o usuário ${userId}:`, permissions);
+    }, [currentUser, showError, showSuccess]);
+
+
     return {
         currentUser,
         currentCompany,
@@ -277,5 +365,9 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         handleUpdateCompany,
         fetchUserData,
         modulePermissions,
+        handleToggleCompanyStatus,
+        handleResetUserPassword,
+        handleCreateUserForCompany,
+        handleUpdateUserPermissions,
     };
 };

@@ -1,0 +1,285 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
+import { BuildingIcon } from './icons/BuildingIcon';
+import { UserIcon } from './icons/UserIcon';
+import { PencilIcon } from './icons/PencilIcon';
+import { TrashIcon } from './icons/TrashIcon';
+import { CreateIcon } from './icons/CreateIcon';
+import { Company, User, UserRole, View } from '../types';
+import { supabase } from '../src/integrations/supabase/client';
+import { showSuccess, showError } from '../src/utils/toast';
+import ConfirmationDialog from '../src/components/ConfirmationDialog';
+import { useAuth } from '../src/hooks/useAuth'; // Importar useAuth para as funções de gerenciamento
+
+interface DeveloperCompanyUserManagerProps {
+    onBack: () => void;
+    setCurrentView: (view: View) => void;
+}
+
+const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = ({ onBack, setCurrentView }) => {
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [showCreateCompanyModal, setShowCreateCompanyModal] = useState(false);
+    const [newCompanyName, setNewCompanyName] = useState('');
+    const [newAdminFullName, setNewAdminFullName] = useState('');
+    const [newAdminEmail, setNewAdminEmail] = useState('');
+    const [newAdminPassword, setNewAdminPassword] = useState('');
+    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+    const [dialogMessage, setDialogMessage] = useState('');
+    const [dialogTitle, setDialogTitle] = useState('');
+    const [dialogConfirmAction, setDialogConfirmAction] = useState<(() => void) | null>(null);
+
+    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateCompany: createCompanyAndAdmin } = useAuth(setCurrentView);
+
+    const fetchCompanies = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        const { data, error } = await supabase
+            .from('companies')
+            .select(`
+                *,
+                profiles (
+                    id,
+                    full_name,
+                    email,
+                    role
+                )
+            `);
+
+        if (error) {
+            console.error('Erro ao buscar empresas:', error);
+            setError('Não foi possível carregar as empresas.');
+            setCompanies([]);
+        } else {
+            // Mapear os perfis para cada empresa, filtrando apenas administradores
+            const companiesWithAdmins = data.map(company => ({
+                ...company,
+                administrators: company.profiles.filter((p: any) => p.role === UserRole.ADMIN)
+            }));
+            setCompanies(companiesWithAdmins as Company[]);
+        }
+        setLoading(false);
+    }, []);
+
+    useEffect(() => {
+        fetchCompanies();
+    }, [fetchCompanies]);
+
+    const handleCreateCompanyAndAdmin = async () => {
+        if (!newCompanyName.trim() || !newAdminFullName.trim() || !newAdminEmail.trim() || !newAdminPassword.trim()) {
+            showError('Por favor, preencha todos os campos para criar a empresa e o administrador.');
+            return;
+        }
+
+        // TODO: Chamar uma Edge Function para esta operação complexa e segura
+        // Por enquanto, vamos simular e mostrar um toast.
+        showSuccess('Criação de empresa e administrador solicitada. (Implementação via Edge Function pendente)');
+        console.log('Criar Empresa:', newCompanyName, 'Admin:', newAdminFullName, 'Email:', newAdminEmail, 'Senha:', newAdminPassword);
+        
+        // Simular a criação e atualização da lista
+        setShowCreateCompanyModal(false);
+        setNewCompanyName('');
+        setNewAdminFullName('');
+        setNewAdminEmail('');
+        setNewAdminPassword('');
+        fetchCompanies(); // Recarregar a lista para refletir a mudança
+    };
+
+    const confirmToggleStatus = (companyId: string, currentStatus: 'active' | 'inactive') => {
+        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        setDialogTitle(`Confirmar ${newStatus === 'inactive' ? 'Desativação' : 'Ativação'} da Empresa`);
+        setDialogMessage(
+            `Tem certeza que deseja ${newStatus === 'inactive' ? 'desativar' : 'ativar'} esta empresa? ` +
+            (newStatus === 'inactive' ? 'Todos os usuários vinculados terão o acesso aos dados bloqueado.' : '')
+        );
+        setDialogConfirmAction(() => async () => {
+            await handleToggleCompanyStatus(companyId, newStatus);
+            fetchCompanies(); // Recarregar a lista após a atualização
+            setShowConfirmationDialog(false);
+        });
+        setShowConfirmationDialog(true);
+    };
+
+    const confirmResetAdminPassword = (adminId: string, adminName: string) => {
+        setDialogTitle('Redefinir Senha do Administrador');
+        setDialogMessage(`Tem certeza que deseja redefinir a senha do administrador "${adminName}"? Uma nova senha temporária será gerada.`);
+        setDialogConfirmAction(() => async () => {
+            // TODO: Chamar Edge Function para redefinir senha
+            await handleResetUserPassword(adminId, 'novaSenhaTemporaria123'); // Senha temporária gerada
+            setShowConfirmationDialog(false);
+        });
+        setShowConfirmationDialog(true);
+    };
+
+    if (loading) {
+        return <div className="text-center py-8 text-text-light">Carregando gerenciamento de empresas...</div>;
+    }
+
+    return (
+        <div className="max-w-5xl mx-auto bg-white p-8 rounded-lg shadow-md">
+            <div className="flex items-center gap-4 mb-6">
+                <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Voltar">
+                    <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
+                </button>
+                <BuildingIcon className="h-8 w-8 text-primary" />
+                <h2 className="text-2xl font-bold text-text-main">Gerenciamento de Empresas e Administradores</h2>
+            </div>
+            <p className="text-text-light mb-6">
+                Como Desenvolvedor, você pode criar novas empresas, vincular administradores e gerenciar o status de todas as empresas.
+            </p>
+
+            {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
+
+            <div className="mb-6 flex justify-end">
+                <button
+                    onClick={() => setShowCreateCompanyModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark"
+                >
+                    <CreateIcon className="h-4 w-4" /> Criar Nova Empresa e Admin
+                </button>
+            </div>
+
+            <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                    <thead>
+                        <tr className="bg-gray-100 border-b border-gray-200">
+                            <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Empresa</th>
+                            <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Administrador</th>
+                            <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Status</th>
+                            <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {companies.map(company => (
+                            <tr key={company.id} className="border-b border-gray-100 last:border-b-0">
+                                <td className="py-3 px-4 text-sm text-gray-800 font-medium">{company.name}</td>
+                                <td className="py-3 px-4 text-sm text-gray-700">
+                                    {company.administrators && company.administrators.length > 0 ? (
+                                        company.administrators.map((admin: any) => (
+                                            <div key={admin.id}>
+                                                {admin.full_name} ({admin.email})
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <span className="text-gray-500">Nenhum administrador</span>
+                                    )}
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                        company.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                    }`}>
+                                        {company.status === 'active' ? 'Ativa' : 'Inativa'}
+                                    </span>
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                    <div className="flex justify-center gap-2">
+                                        <button
+                                            onClick={() => confirmToggleStatus(company.id, company.status || 'active')}
+                                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                                                company.status === 'active'
+                                                    ? 'bg-red-500 text-white hover:bg-red-600'
+                                                    : 'bg-green-500 text-white hover:bg-green-600'
+                                            }`}
+                                        >
+                                            {company.status === 'active' ? 'Desativar' : 'Ativar'}
+                                        </button>
+                                        {company.administrators && company.administrators.length > 0 && (
+                                            <button
+                                                onClick={() => confirmResetAdminPassword(company.administrators[0].id, company.administrators[0].full_name)}
+                                                className="px-3 py-1 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10"
+                                            >
+                                                Redefinir Senha Admin
+                                            </button>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {showCreateCompanyModal && (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
+                        <h3 className="text-xl font-bold text-text-main mb-4">Criar Nova Empresa e Administrador</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label htmlFor="newCompanyName" className="block text-sm font-medium text-gray-700">Nome da Empresa</label>
+                                <input
+                                    type="text"
+                                    id="newCompanyName"
+                                    value={newCompanyName}
+                                    onChange={(e) => setNewCompanyName(e.target.value)}
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="newAdminFullName" className="block text-sm font-medium text-gray-700">Nome Completo do Administrador</label>
+                                <input
+                                    type="text"
+                                    id="newAdminFullName"
+                                    value={newAdminFullName}
+                                    onChange={(e) => setNewAdminFullName(e.target.value)}
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="newAdminEmail" className="block text-sm font-medium text-gray-700">Email do Administrador</label>
+                                <input
+                                    type="email"
+                                    id="newAdminEmail"
+                                    value={newAdminEmail}
+                                    onChange={(e) => setNewAdminEmail(e.target.value)}
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="newAdminPassword" className="block text-sm font-medium text-gray-700">Senha Temporária do Administrador</label>
+                                <input
+                                    type="password"
+                                    id="newAdminPassword"
+                                    value={newAdminPassword}
+                                    onChange={(e) => setNewAdminPassword(e.target.value)}
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <div className="mt-6 flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowCreateCompanyModal(false)}
+                                className="px-4 py-2 font-semibold text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleCreateCompanyAndAdmin}
+                                className="px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                            >
+                                Criar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showConfirmationDialog && (
+                <ConfirmationDialog
+                    title={dialogTitle}
+                    message={dialogMessage}
+                    confirmText="Confirmar"
+                    onConfirm={dialogConfirmAction || (() => setShowConfirmationDialog(false))}
+                    cancelText="Cancelar"
+                    onCancel={() => setShowConfirmationDialog(false)}
+                />
+            )}
+        </div>
+    );
+};
+
+export default DeveloperCompanyUserManager;

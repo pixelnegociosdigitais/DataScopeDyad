@@ -6,6 +6,8 @@ import { GiftIcon } from './icons/GiftIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { MenuIcon } from './icons/MenuIcon'; // Importar o novo ícone
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon'; // Importar o novo ícone
+import { BuildingIcon } from './icons/BuildingIcon'; // Importar BuildingIcon para gerenciamento de empresas
+import { UserIcon } from './icons/UserIcon'; // Importar UserIcon para gerenciamento de usuários
 import { View, ModuleName, UserRole } from '../types';
 
 interface SidebarProps {
@@ -38,10 +40,22 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
             permission: modulePermissions[ModuleName.ACCESS_GIVEAWAYS],
         },
         {
+            label: 'Gerenciar Usuários',
+            icon: UserIcon,
+            view: View.ADMIN_USER_MANAGER,
+            permission: currentUserRole === UserRole.ADMIN, // Apenas Administradores
+        },
+        {
+            label: 'Gerenciar Empresas',
+            icon: BuildingIcon,
+            view: View.DEVELOPER_COMPANY_USER_MANAGER,
+            permission: currentUserRole === UserRole.DEVELOPER, // Apenas Desenvolvedores
+        },
+        {
             label: 'Configurações',
             icon: SettingsIcon,
             view: View.SETTINGS_PANEL,
-            permission: currentUserRole === UserRole.DEVELOPER, // Only developers can access settings panel
+            permission: currentUserRole === UserRole.DEVELOPER, // Apenas desenvolvedores podem acessar o painel de configurações
         },
     ];
 

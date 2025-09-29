@@ -12,6 +12,7 @@ export interface User {
     phone?: string;
     address?: string;
     profilePictureUrl?: string;
+    permissions?: Record<string, boolean>; // Adicionado para permissões granulares
 }
 
 export interface Company {
@@ -24,6 +25,7 @@ export interface Company {
     address_complement?: string;
     address_city?: string;
     address_state?: string;
+    status?: 'active' | 'inactive'; // Adicionado para o status da empresa
 }
 
 export enum QuestionType {
@@ -96,6 +98,8 @@ export enum View {
     GIVEAWAYS = 'GIVEAWAYS', // Nova view para sorteios
     SETTINGS_PANEL = 'SETTINGS_PANEL', // Nova view para o painel de configurações
     MODULE_PERMISSIONS_MANAGER = 'MODULE_PERMISSIONS_MANAGER', // Nova view para gerenciamento de permissões
+    DEVELOPER_COMPANY_USER_MANAGER = 'DEVELOPER_COMPANY_USER_MANAGER', // Nova view para o Developer
+    ADMIN_USER_MANAGER = 'ADMIN_USER_MANAGER', // Nova view para o Administrador
 }
 
 export enum ModuleName {
@@ -104,6 +108,8 @@ export enum ModuleName {
     VIEW_DASHBOARD = 'view_dashboard',
     ACCESS_GIVEAWAYS = 'access_giveaways',
     MANAGE_COMPANY_SETTINGS = 'manage_company_settings',
+    MANAGE_USERS = 'manage_users', // Para administradores gerenciarem usuários
+    MANAGE_COMPANIES = 'manage_companies', // Para desenvolvedores gerenciarem empresas
 }
 
 export interface ModulePermission {
