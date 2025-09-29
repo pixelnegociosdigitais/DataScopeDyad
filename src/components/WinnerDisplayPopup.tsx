@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { TrashIcon } from './icons/TrashIcon'; // Usar TrashIcon como um ícone de fechar
+import { TrashIcon } from '../../components/icons/TrashIcon'; // Caminho corrigido
 
 interface GiveawayParticipant {
     id: string;
