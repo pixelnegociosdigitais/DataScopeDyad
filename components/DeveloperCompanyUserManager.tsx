@@ -9,6 +9,7 @@ import { Company, User, UserRole, View } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
 import { showSuccess, showError } from '../src/utils/toast';
 import ConfirmationDialog from '../src/components/ConfirmationDialog';
+import CompanyEditModal from '../src/components/CompanyEditModal'; // Importar o novo modal de edição
 import { useAuth } from '../src/hooks/useAuth'; // Importar useAuth para as funções de gerenciamento
 
 interface DeveloperCompanyUserManagerProps {
@@ -29,6 +30,9 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     const [dialogMessage, setDialogMessage] = useState('');
     const [dialogTitle, setDialogTitle] = useState('');
     const [dialogConfirmAction, setDialogConfirmAction] = useState<(() => void) | null>(null);
+    const [showEditCompanyModal, setShowEditCompanyModal] = useState(false); // Estado para o modal de edição
+    const [editingCompany, setEditingCompany] = useState<Company | null>(null); // Empresa sendo editada
+    const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null); // Empresa a ser excluída
 
     const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateCompany: createCompanyAndAdmin } = useAuth(setCurrentView);
 
@@ -112,6 +116,86 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         setShowConfirmationDialog(true);
     };
 
+    const handleOpenEditModal = (company: Company) => {
+        setEditingCompany(company);
+        setShowEditCompanyModal(true);
+    };
+
+    const handleCloseEditModal = () => {
+        setEditingCompany(null);
+        setShowEditCompanyModal(false);
+    };
+
+    const handleUpdateCompanySuccess = (updatedCompany: Company) => {
+        setCompanies(prevCompanies => 
+            prevCompanies.map(c => c.id === updatedCompany.id ? { ...updatedCompany, administrators: c.administrators } : c)
+        );
+    };
+
+    const confirmDeleteCompany = (company: Company) => {
+        setCompanyToDelete(company);
+        setDialogTitle('Confirmar Exclusão da Empresa');
+        setDialogMessage(
+            `Tem certeza que deseja excluir a empresa "${company.name}"? ` +
+            `Esta ação é irreversível e excluirá TODOS os dados relacionados (pesquisas, respostas, prêmios, etc.) e desvinculará todos os usuários.`
+        );
+        setDialogConfirmAction(() => handleDeleteCompany);
+        setShowConfirmationDialog(true);
+    };
+
+    const handleDeleteCompany = async () => {
+        if (!companyToDelete) return;
+
+        try {
+            // 1. Obter IDs de pesquisas associadas à empresa
+            const { data: surveysData, error: surveysError } = await supabase
+                .from('surveys')
+                .select('id')
+                .eq('company_id', companyToDelete.id);
+            if (surveysError) throw surveysError;
+            const surveyIds = surveysData.map(s => s.id);
+
+            // 2. Obter IDs de respostas de pesquisas associadas às pesquisas
+            const { data: responsesData, error: responsesError } = await supabase
+                .from('survey_responses')
+                .select('id')
+                .in('survey_id', surveyIds);
+            if (responsesError) throw responsesError;
+            const responseIds = responsesData.map(r => r.id);
+
+            // Ordem de exclusão para respeitar chaves estrangeiras
+            // Excluir vencedores de sorteios
+            await supabase.from('giveaway_winners').delete().in('survey_id', surveyIds);
+            // Excluir respostas detalhadas
+            await supabase.from('answers').delete().in('response_id', responseIds);
+            // Excluir respostas de pesquisas
+            await supabase.from('survey_responses').delete().in('id', responseIds);
+            // Excluir perguntas
+            await supabase.from('questions').delete().in('survey_id', surveyIds);
+            // Excluir pesquisas
+            await supabase.from('surveys').delete().in('id', surveyIds);
+            // Excluir prêmios
+            await supabase.from('prizes').delete().eq('company_id', companyToDelete.id);
+            // Desvincular perfis de usuários da empresa
+            await supabase.from('profiles').update({ company_id: null, role: UserRole.USER }).eq('company_id', companyToDelete.id);
+            // Excluir a empresa
+            const { error: companyDeleteError } = await supabase
+                .from('companies')
+                .delete()
+                .eq('id', companyToDelete.id);
+            if (companyDeleteError) throw companyDeleteError;
+
+            showSuccess(`Empresa "${companyToDelete.name}" e todos os dados relacionados excluídos com sucesso!`);
+            fetchCompanies(); // Recarregar a lista
+            setShowConfirmationDialog(false);
+            setCompanyToDelete(null);
+        } catch (err: any) {
+            console.error('Erro ao excluir empresa e dados relacionados:', err.message);
+            showError('Erro ao excluir empresa: ' + err.message);
+        }
+    };
+
+
     if (loading) {
         return <div className="text-center py-8 text-text-light">Carregando gerenciamento de empresas...</div>;
     }
@@ -166,23 +250,35 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                     )}
                                 </td>
                                 <td className="py-3 px-4 text-center">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                        company.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                    }`}>
-                                        {company.status === 'active' ? 'Ativa' : 'Inativa'}
-                                    </span>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            value=""
+                                            className="sr-only peer"
+                                            checked={company.status === 'active'}
+                                            onChange={() => confirmToggleStatus(company.id, company.status || 'active')}
+                                        />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-light rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                        <span className="ml-3 text-sm font-medium text-gray-900">
+                                            {company.status === 'active' ? 'Ativa' : 'Inativa'}
+                                        </span>
+                                    </label>
                                 </td>
                                 <td className="py-3 px-4 text-center">
                                     <div className="flex justify-center gap-2">
                                         <button
-                                            onClick={() => confirmToggleStatus(company.id, company.status || 'active')}
-                                            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                                company.status === 'active'
-                                                    ? 'bg-red-500 text-white hover:bg-red-600'
-                                                    : 'bg-green-500 text-white hover:bg-green-600'
-                                            }`}
+                                            onClick={() => handleOpenEditModal(company)}
+                                            className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
+                                            aria-label="Editar empresa"
                                         >
-                                            {company.status === 'active' ? 'Desativar' : 'Ativar'}
+                                            <PencilIcon className="h-5 w-5" />
+                                        </button>
+                                        <button
+                                            onClick={() => confirmDeleteCompany(company)}
+                                            className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors"
+                                            aria-label="Excluir empresa"
+                                        >
+                                            <TrashIcon className="h-5 w-5" />
                                         </button>
                                         {company.administrators && company.administrators.length > 0 && (
                                             <button
@@ -266,6 +362,14 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showEditCompanyModal && editingCompany && (
+                <CompanyEditModal
+                    company={editingCompany}
+                    onClose={handleCloseEditModal}
+                    onUpdateSuccess={handleUpdateCompanySuccess}
+                />
             )}
 
             {showConfirmationDialog && (
