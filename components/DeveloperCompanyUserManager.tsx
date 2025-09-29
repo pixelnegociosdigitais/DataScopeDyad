@@ -34,7 +34,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     const [editingCompany, setEditingCompany] = useState<Company | null>(null); // Empresa sendo editada
     const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null); // Empresa a ser excluída
 
-    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateCompany: createCompanyAndAdmin } = useAuth(setCurrentView);
+    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateCompanyAndAdmin } = useAuth(setCurrentView);
 
     const fetchCompanies = useCallback(async () => {
         setLoading(true);
@@ -70,24 +70,22 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         fetchCompanies();
     }, [fetchCompanies]);
 
-    const handleCreateCompanyAndAdmin = async () => {
+    const handleCreateCompanyAndAdminSubmit = async () => {
         if (!newCompanyName.trim() || !newAdminFullName.trim() || !newAdminEmail.trim() || !newAdminPassword.trim()) {
             showError('Por favor, preencha todos os campos para criar a empresa e o administrador.');
             return;
         }
 
-        // TODO: Chamar uma Edge Function para esta operação complexa e segura
-        // Por enquanto, vamos simular e mostrar um toast.
-        showSuccess('Criação de empresa e administrador solicitada. (Implementação via Edge Function pendente)');
-        console.log('Criar Empresa:', newCompanyName, 'Admin:', newAdminFullName, 'Email:', newAdminEmail, 'Senha:', newAdminPassword);
+        const success = await handleCreateCompanyAndAdmin(newCompanyName, newAdminFullName, newAdminEmail, newAdminPassword);
         
-        // Simular a criação e atualização da lista
-        setShowCreateCompanyModal(false);
-        setNewCompanyName('');
-        setNewAdminFullName('');
-        setNewAdminEmail('');
-        setNewAdminPassword('');
-        fetchCompanies(); // Recarregar a lista para refletir a mudança
+        if (success) {
+            setShowCreateCompanyModal(false);
+            setNewCompanyName('');
+            setNewAdminFullName('');
+            setNewAdminEmail('');
+            setNewAdminPassword('');
+            fetchCompanies(); // Recarregar a lista para refletir a mudança
+        }
     };
 
     const confirmToggleStatus = (companyId: string, currentStatus: 'active' | 'inactive') => {
@@ -354,7 +352,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                 Cancelar
                             </button>
                             <button
-                                onClick={handleCreateCompanyAndAdmin}
+                                onClick={handleCreateCompanyAndAdminSubmit}
                                 className="px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
                             >
                                 Criar
