@@ -38,6 +38,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     const [editingPrize, setEditingPrize] = useState<Prize | null>(null);
     const [prizeFormName, setPrizeFormName] = useState('');
     const [prizeFormDescription, setPrizeFormDescription] = useState('');
+    const [prizeFormRank, setPrizeFormRank] = useState<number | string>(''); // Novo estado para o rank
     const [showDeletePrizeDialog, setShowDeletePrizeDialog] = useState(false);
     const [prizeToDelete, setPrizeToDelete] = useState<Prize | null>(null);
 
@@ -85,7 +86,8 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             .from('prizes')
             .select('*')
             .eq('company_id', currentCompany.id)
-            .order('name', { ascending: true });
+            .order('rank', { ascending: true, nullsFirst: true }) // Ordenar por rank primeiro
+            .order('name', { ascending: true }); // Depois por nome
 
         if (error) {
             console.error('Erro ao buscar prêmios:', error);
@@ -287,6 +289,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             const winners: GiveawayWinner[] = [];
             const selectedWinnerIds = new Set<string>();
 
+            // Os prêmios já estão ordenados por rank devido ao fetchPrizes e handlePrizeSelectionForDraw
             for (let i = 0; i < selectedPrizesForDraw.length; i++) {
                 const prize = selectedPrizesForDraw[i];
                 let winnerFound = false;
@@ -301,7 +304,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                             winner_name: participant.name,
                             winner_email: participant.email,
                             winner_phone: participant.phone,
-                            rank: i + 1,
+                            rank: i + 1, // O rank aqui é a ordem do sorteio, não o rank do prêmio
                             prize: prize, // Incluir o objeto prize para exibição no popup
                         });
                         selectedWinnerIds.add(participant.id);
@@ -347,7 +350,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
 
     const handlePrizeSelectionForDraw = (prize: Prize, isChecked: boolean) => {
         if (isChecked) {
-            setSelectedPrizesForDraw(prev => [...prev, prize].sort((a, b) => a.name.localeCompare(b.name)));
+            setSelectedPrizesForDraw(prev => [...prev, prize].sort((a, b) => (a.rank || Infinity) - (b.rank || Infinity)));
         } else {
             setSelectedPrizesForDraw(prev => prev.filter(p => p.id !== prize.id));
         }
@@ -357,6 +360,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         setEditingPrize(prize);
         setPrizeFormName(prize?.name || '');
         setPrizeFormDescription(prize?.description || '');
+        setPrizeFormRank(prize?.rank || ''); // Inicializa o rank
         setShowPrizeModal(true);
     };
 
@@ -365,6 +369,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         setEditingPrize(null);
         setPrizeFormName('');
         setPrizeFormDescription('');
+        setPrizeFormRank(''); // Limpa o rank ao fechar
     };
 
     const handleSavePrize = async () => {
@@ -378,17 +383,19 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         }
 
         try {
+            const rankValue = prizeFormRank === '' ? null : Number(prizeFormRank);
+
             if (editingPrize) {
                 const { error } = await supabase
                     .from('prizes')
-                    .update({ name: prizeFormName, description: prizeFormDescription })
+                    .update({ name: prizeFormName, description: prizeFormDescription, rank: rankValue })
                     .eq('id', editingPrize.id);
                 if (error) throw error;
                 showSuccess('Prêmio atualizado com sucesso!');
             } else {
                 const { error } = await supabase
                     .from('prizes')
-                    .insert({ company_id: currentCompany.id, name: prizeFormName, description: prizeFormDescription });
+                    .insert({ company_id: currentCompany.id, name: prizeFormName, description: prizeFormDescription, rank: rankValue });
                 if (error) throw error;
                 showSuccess('Prêmio criado com sucesso!');
             }
@@ -452,7 +459,9 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                             {prizes.map(prize => (
                                 <li key={prize.id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm border border-gray-100">
                                     <div>
-                                        <p className="font-medium text-gray-800">{prize.name}</p>
+                                        <p className="font-medium text-gray-800">
+                                            {prize.rank ? `${prize.rank}º Lugar: ` : ''}{prize.name}
+                                        </p>
                                         {prize.description && <p className="text-sm text-gray-500">{prize.description}</p>}
                                     </div>
                                     <div className="flex gap-2">
@@ -537,7 +546,9 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                                     className="form-checkbox h-5 w-5 text-primary rounded focus:ring-primary"
                                 />
                                 <div className="ml-3">
-                                    <p className="font-medium text-gray-800">{prize.name}</p>
+                                    <p className="font-medium text-gray-800">
+                                        {prize.rank ? `${prize.rank}º Lugar: ` : ''}{prize.name}
+                                    </p>
                                     {prize.description && <p className="text-sm text-gray-500">{prize.description}</p>}
                                 </div>
                             </label>
@@ -615,6 +626,18 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                                     rows={3}
                                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
                                 />
+                            </div>
+                            <div>
+                                <label htmlFor="prize-rank" className="block text-sm font-medium text-gray-700">Ordem (Lugar)</label>
+                                <input
+                                    type="number"
+                                    id="prize-rank"
+                                    value={prizeFormRank}
+                                    onChange={(e) => setPrizeFormRank(e.target.value === '' ? '' : Number(e.target.value))}
+                                    min="1"
+                                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Defina a ordem deste prêmio no sorteio (ex: 1 para 1º lugar).</p>
                             </div>
                         </div>
                         <div className="mt-6 flex justify-end gap-3">

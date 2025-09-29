@@ -67,6 +67,7 @@ export interface Prize {
     company_id: string;
     name: string;
     description?: string;
+    rank?: number; // Adicionado para definir a ordem do prêmio
     created_at?: string;
 }
 
