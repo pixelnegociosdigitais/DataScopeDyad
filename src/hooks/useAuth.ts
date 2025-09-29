@@ -17,7 +17,6 @@ interface UseAuthReturn {
     handleResetUserPassword: (userId: string, newPassword?: string) => Promise<void>;
     handleCreateUserForCompany: (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword?: string) => Promise<void>;
     handleUpdateUserPermissions: (userId: string, permissions: Record<string, boolean>) => Promise<void>;
-    handleCreateCompanyAndAdmin: (companyName: string, adminFullName: string, adminEmail: string, adminPassword: string) => Promise<boolean>; // Nova função
 }
 
 const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
@@ -356,38 +355,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         console.log(`Atualizar permissões para o usuário ${userId}:`, permissions);
     }, [currentUser, showError, showSuccess]);
 
-    const handleCreateCompanyAndAdmin = useCallback(async (companyName: string, adminFullName: string, adminEmail: string, adminPassword: string): Promise<boolean> => {
-        if (currentUser?.role !== UserRole.DEVELOPER) {
-            showError('Você não tem permissão para criar empresas e administradores.');
-            return false;
-        }
-
-        try {
-            const { data, error } = await supabase.functions.invoke('create-company-and-admin', {
-                body: { companyName, adminFullName, adminEmail, adminPassword },
-            });
-
-            if (error) {
-                console.error('Error invoking Edge Function:', error);
-                showError('Erro ao criar empresa e administrador: ' + error.message);
-                return false;
-            }
-
-            if (data.error) {
-                console.error('Edge Function returned error:', data.error);
-                showError('Erro ao criar empresa e administrador: ' + data.error);
-                return false;
-            }
-
-            showSuccess('Empresa e administrador criados com sucesso!');
-            return true;
-        } catch (err: any) {
-            console.error('Unhandled error during Edge Function invocation:', err.message);
-            showError('Ocorreu um erro inesperado: ' + err.message);
-            return false;
-        }
-    }, [currentUser, showError, showSuccess]);
-
 
     return {
         currentUser,
@@ -402,6 +369,5 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         handleResetUserPassword,
         handleCreateUserForCompany,
         handleUpdateUserPermissions,
-        handleCreateCompanyAndAdmin,
     };
 };
