@@ -157,15 +157,20 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             console.error('handleCreateCompany: currentUser é nulo ou indefinido.');
             return;
         }
-        const userId = currentUser.id; // Captura o ID do usuário
-        const userEmail = currentUser.email; // Captura o email do usuário
+        const userId = currentUser.id;
+        const userEmail = currentUser.email;
 
         console.log('useAuth: handleCreateCompany - Criando empresa:', companyData.name, 'para userId:', userId);
 
+        const companyToInsert = {
+            ...companyData,
+            created_by: userId,
+        };
+
         const { data: newCompanyDataArray, error: companyError } = await supabase
             .from('companies')
-            .insert(companyData) // Inserir dados completos da empresa
-            .select(); // Removido .single() para evitar erro de 'coerce' se o retorno não for exatamente 1
+            .insert(companyToInsert)
+            .select();
 
         if (companyError) {
             showError('Erro ao criar a empresa: ' + companyError.message);
@@ -179,18 +184,17 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             return;
         }
 
-        const newCompany = newCompanyDataArray[0]; // Pega o primeiro item do array
+        const newCompany = newCompanyDataArray[0];
 
         let roleToAssign = UserRole.ADMIN;
-        // Proteger o papel do e-mail do desenvolvedor
-        if (userEmail === DEVELOPER_EMAIL) { // Usa o email capturado
+        if (userEmail === DEVELOPER_EMAIL) {
             roleToAssign = UserRole.DEVELOPER;
         }
 
         const { error: profileUpdateError } = await supabase
             .from('profiles')
-            .update({ company_id: newCompany.id, role: roleToAssign }) // Atribuir o papel determinado
-            .eq('id', userId); // Usa o ID capturado
+            .update({ company_id: newCompany.id, role: roleToAssign })
+            .eq('id', userId);
 
         if (profileUpdateError) {
             showError('Erro ao vincular a empresa ao seu perfil: ' + profileUpdateError.message);
@@ -199,8 +203,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
 
         setCurrentCompany(newCompany);
-        setCurrentUser(prev => prev ? { ...prev, role: roleToAssign } : null); // Atualizar o papel do usuário local
-        await fetchModulePermissions(roleToAssign); // Buscar permissões para o novo papel
+        setCurrentUser(prev => prev ? { ...prev, role: roleToAssign } : null);
+        await fetchModulePermissions(roleToAssign);
         showSuccess('Empresa criada e vinculada com sucesso!');
         setCurrentView(View.SURVEY_LIST);
         console.log('useAuth: Empresa criada e perfil atualizado com sucesso.');
@@ -210,11 +214,9 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         console.log('useAuth: handleUpdateProfile - Atualizando perfil para:', updatedUser.id);
 
         let roleToUpdate = updatedUser.role;
-        // Proteger o papel do e-mail do desenvolvedor
         if (updatedUser.email === DEVELOPER_EMAIL && updatedUser.role !== UserRole.DEVELOPER) {
             showError(`Não é permitido alterar o papel do usuário ${DEVELOPER_EMAIL}.`);
             console.warn(`Tentativa de alterar o papel de ${DEVELOPER_EMAIL} para ${updatedUser.role} foi bloqueada.`);
-            // Reverter para o papel original para fins de exibição se a atualização for bloqueada
             setCurrentUser(prev => prev ? { ...prev, role: UserRole.DEVELOPER } : null);
             return;
         }
@@ -226,7 +228,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 phone: updatedUser.phone,
                 address: updatedUser.address,
                 avatar_url: updatedUser.profilePictureUrl,
-                role: roleToUpdate, // Atualizar o papel se não for protegido
+                role: roleToUpdate,
             })
             .eq('id', updatedUser.id);
 
@@ -293,13 +295,9 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             console.error('useAuth: Erro ao atualizar status da empresa:', error);
         } else {
             showSuccess(`Status da empresa atualizado para '${newStatus}' com sucesso!`);
-            // Se a empresa atual for a que teve o status alterado, atualiza o estado local
             if (currentCompany?.id === companyId) {
                 setCurrentCompany(prev => prev ? { ...prev, status: newStatus } : null);
             }
-            // O RLS já deve impedir o acesso a dados para usuários de empresas inativas.
-            // Para desativar logins, precisaríamos de uma Edge Function para banir usuários ou invalidar sessões.
-            // Por enquanto, confiamos no RLS para bloquear o acesso aos dados.
         }
     }, [currentUser, currentCompany, showError, showSuccess]);
 
@@ -308,24 +306,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             showError('Você não tem permissão para redefinir senhas.');
             return;
         }
-
-        // Em um cenário real, você chamaria uma Edge Function aqui para redefinir a senha
-        // para evitar expor a chave de serviço ou a lógica de admin no cliente.
-        // Por simplicidade, vamos simular a chamada ou usar a API de admin diretamente (com cautela).
         
-        // Para o Developer, pode redefinir qualquer Admin.
-        // Para o Admin, pode redefinir qualquer User da sua empresa.
-        
-        // A implementação real de redefinição de senha via admin API requer a chave de serviço,
-        // que NÃO deve estar no cliente. Portanto, uma Edge Function é MANDATÓRIA aqui.
-        // Por enquanto, vamos apenas mostrar um toast de sucesso e logar.
-        
-        // TODO: Implementar Edge Function para redefinição de senha.
-        // Exemplo de como seria a chamada para uma Edge Function:
-        // const { data, error } = await supabase.functions.invoke('reset-user-password', {
-        //     body: { userId, newPassword },
-        // });
-
         showSuccess(`Redefinição de senha para o usuário ${userId} solicitada. (Implementação via Edge Function pendente)`);
         console.log(`Redefinição de senha para o usuário ${userId} com nova senha: ${newPassword || '[gerada]'}`);
     }, [currentUser, showError, showSuccess]);
@@ -336,9 +317,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             return;
         }
 
-        // TODO: Implementar Edge Function para criar usuário e perfil, e enviar senha temporária.
-        // Isso é crucial para segurança e para usar a API de admin do Supabase.
-        // Por enquanto, vamos simular.
         showSuccess(`Criação de usuário ${fullName} (${email}) com papel ${role} para a empresa ${companyId} solicitada. (Implementação via Edge Function pendente)`);
         console.log(`Criar usuário: ${fullName}, Email: ${email}, Papel: ${role}, Empresa: ${companyId}, Senha Temporária: ${temporaryPassword || '[gerada]'}`);
     }, [currentUser, showError, showSuccess]);
@@ -348,9 +326,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             showError('Você não tem permissão para atualizar permissões de usuário.');
             return;
         }
-        // TODO: Implementar Edge Function para atualizar permissões de usuário.
-        // Ou, se a RLS permitir, pode ser feito diretamente via cliente.
-        // Por enquanto, vamos simular.
         showSuccess(`Permissões do usuário ${userId} atualizadas. (Implementação pendente)`);
         console.log(`Atualizar permissões para o usuário ${userId}:`, permissions);
     }, [currentUser, showError, showSuccess]);
