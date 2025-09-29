@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import { Company } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import ConfirmationDialog from '../src/components/ConfirmationDialog';
@@ -13,6 +13,11 @@ interface CompanySettingsProps {
 const CompanySettings: React.FC<CompanySettingsProps> = ({ company, onUpdate, onBack }) => {
     const [formData, setFormData] = useState<Company>(company);
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+
+    // Atualiza o formData sempre que a prop 'company' mudar
+    useEffect(() => {
+        setFormData(company);
+    }, [company]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
