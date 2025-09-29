@@ -62,6 +62,27 @@ export interface SurveyResponse {
     answers: Answer[];
 }
 
+export interface Prize {
+    id: string;
+    company_id: string;
+    name: string;
+    description?: string;
+    created_at?: string;
+}
+
+export interface GiveawayWinner {
+    id: string;
+    survey_id: string;
+    prize_id: string;
+    winner_response_id: string;
+    winner_name: string;
+    winner_email?: string;
+    winner_phone?: string;
+    rank: number;
+    created_at?: string;
+    prize?: Prize; // Para incluir detalhes do prêmio ao buscar
+}
+
 export enum View {
     SURVEY_LIST = 'SURVEY_LIST',
     CREATE_SURVEY = 'CREATE_SURVEY',
