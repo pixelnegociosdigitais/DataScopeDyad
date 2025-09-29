@@ -1,8 +1,8 @@
 import React, { useState, FormEvent } from 'react';
 import { Company } from '../types';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
-import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
-import { showSuccess, showError } from '../src/utils/toast'; // Importar toasts
+import ConfirmationDialog from '../src/components/ConfirmationDialog';
+import { showSuccess, showError } from '../src/utils/toast';
 
 interface CompanySettingsProps {
     company: Company;
@@ -12,7 +12,7 @@ interface CompanySettingsProps {
 
 const CompanySettings: React.FC<CompanySettingsProps> = ({ company, onUpdate, onBack }) => {
     const [formData, setFormData] = useState<Company>(company);
-    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false); // Estado para o diálogo
+    const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -22,9 +22,9 @@ const CompanySettings: React.FC<CompanySettingsProps> = ({ company, onUpdate, on
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         if (formData.name.trim()) {
-            onUpdate(formData); // Assumimos que onUpdate lida com o sucesso/erro
-            showSuccess('Configurações da empresa atualizadas com sucesso!'); // Exibir toast de sucesso
-            setShowConfirmationDialog(true); // Mostrar o diálogo de confirmação
+            onUpdate(formData);
+            showSuccess('Configurações da empresa atualizadas com sucesso!');
+            setShowConfirmationDialog(true);
         } else {
             showError('O nome da empresa não pode estar vazio.');
         }
