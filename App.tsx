@@ -223,7 +223,6 @@ const App: React.FC = () => {
                     company={currentCompany}
                     onLogout={() => supabase.auth.signOut()}
                     setView={setCurrentView}
-                    currentView={currentView}
                     modulePermissions={modulePermissions}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">

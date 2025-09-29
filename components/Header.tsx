@@ -3,39 +3,58 @@ import { User, Company, View, ModuleName } from '../types';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
-import { SettingsIcon } from './icons/SettingsIcon'; // Manter para o botão de configurações da empresa
 
 interface HeaderProps {
     user: User;
-    company: Company | null; // Permitir que company seja null
+    company: Company | null;
     onLogout: () => void;
     setView: (view: View) => void;
-    currentView: View;
     modulePermissions: Record<ModuleName, boolean>;
 }
 
 const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modulePermissions }) => {
     const canManageCompany = modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS] && company !== null;
 
+    const handleCompanyClick = () => {
+        if (company === null) {
+            setView(View.COMPANY_SETUP);
+        } else if (canManageCompany) {
+            setView(View.COMPANY_SETTINGS);
+        }
+        // Se a empresa não for nula, mas canManageCompany for falso, não faz nada (é um div estático)
+    };
+
     return (
         <header className="bg-white shadow-sm p-4 flex justify-end items-center w-full">
             <div className="flex items-center gap-6">
-                 {canManageCompany ? (
-                    <button 
-                        onClick={() => setView(View.COMPANY_SETTINGS)}
+                {company === null ? (
+                    // Caso 1: Nenhuma empresa associada, vai para COMPANY_SETUP
+                    <button
+                        onClick={handleCompanyClick}
+                        className="flex items-center gap-2 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"
+                        aria-label="Configurar empresa"
+                    >
+                        <BuildingIcon className="h-5 w-5" />
+                        <span>Nenhuma Empresa</span>
+                    </button>
+                ) : canManageCompany ? (
+                    // Caso 2: Empresa associada e usuário tem permissão, vai para COMPANY_SETTINGS
+                    <button
+                        onClick={handleCompanyClick}
                         className="flex items-center gap-2 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"
                         aria-label="Configurações da empresa"
                     >
                         <BuildingIcon className="h-5 w-5" />
-                        <span>{company?.name}</span>
+                        <span>{company.name}</span>
                     </button>
                 ) : (
+                    // Caso 3: Empresa associada, mas sem permissão, exibe texto estático
                     <div className="flex items-center gap-2 text-sm text-text-light">
                         <BuildingIcon className="h-5 w-5" />
-                        <span>{company?.name || 'Nenhuma Empresa'}</span>
+                        <span>{company.name}</span>
                     </div>
                 )}
-                <button 
+                <button
                     onClick={() => setView(View.PROFILE)}
                     className="flex items-center gap-3 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"
                     aria-label="Abrir perfil do usuário"
