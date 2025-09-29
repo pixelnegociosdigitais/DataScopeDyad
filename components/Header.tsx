@@ -7,7 +7,7 @@ import { SettingsIcon } from './icons/SettingsIcon'; // Manter para o botão de 
 
 interface HeaderProps {
     user: User;
-    company: Company;
+    company: Company | null; // Permitir que company seja null
     onLogout: () => void;
     setView: (view: View) => void;
     currentView: View;
@@ -15,22 +15,24 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modulePermissions }) => {
+    const canManageCompany = modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS] && company !== null;
+
     return (
         <header className="bg-white shadow-sm p-4 flex justify-end items-center w-full">
             <div className="flex items-center gap-6">
-                 {modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS] ? (
+                 {canManageCompany ? (
                     <button 
                         onClick={() => setView(View.COMPANY_SETTINGS)}
                         className="flex items-center gap-2 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"
                         aria-label="Configurações da empresa"
                     >
                         <BuildingIcon className="h-5 w-5" />
-                        <span>{company.name}</span>
+                        <span>{company?.name}</span>
                     </button>
                 ) : (
                     <div className="flex items-center gap-2 text-sm text-text-light">
                         <BuildingIcon className="h-5 w-5" />
-                        <span>{company.name}</span>
+                        <span>{company?.name || 'Nenhuma Empresa'}</span>
                     </div>
                 )}
                 <button 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Survey } from '../types';
+import { Survey, Company } from '../types';
 import { SurveyIcon } from './icons/SurveyIcon';
 import { DashboardIcon } from './icons/DashboardIcon';
 import { PencilIcon } from './icons/PencilIcon';
@@ -12,13 +12,18 @@ interface SurveyListProps {
     onEditSurvey: (survey: Survey) => void;
     onDeleteSurvey: (surveyId: string) => void;
     canManage: boolean;
+    currentCompany: Company | null; // Adicionar currentCompany
 }
 
-const SurveyList: React.FC<SurveyListProps> = ({ surveys, onSelectSurvey, onStartResponse, onEditSurvey, onDeleteSurvey, canManage }) => {
+const SurveyList: React.FC<SurveyListProps> = ({ surveys, onSelectSurvey, onStartResponse, onEditSurvey, onDeleteSurvey, canManage, currentCompany }) => {
     return (
         <div>
             <h2 className="text-2xl font-bold mb-6 text-text-main">Minhas Pesquisas</h2>
-            {surveys.length > 0 ? (
+            {!currentCompany ? (
+                <div className="text-center py-12 bg-white rounded-lg shadow-md">
+                    <p className="text-text-light">Você não tem uma empresa associada. Crie ou vincule-se a uma empresa para ver e criar pesquisas.</p>
+                </div>
+            ) : surveys.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {surveys.map(survey => (
                         <div

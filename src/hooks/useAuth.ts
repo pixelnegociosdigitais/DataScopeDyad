@@ -12,7 +12,6 @@ interface UseAuthReturn {
     handleUpdateProfile: (updatedUser: User) => Promise<void>;
     handleUpdateCompany: (updatedCompany: Company) => Promise<void>;
     fetchUserData: (userId: string, userEmail: string) => Promise<void>;
-    needsCompanySetup: boolean;
     modulePermissions: Record<ModuleName, boolean>;
 }
 
@@ -31,7 +30,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
     const [loadingAuth, setLoadingAuth] = useState(true);
-    const [needsCompanySetup, setNeedsCompanySetup] = useState(false);
     const [modulePermissions, setModulePermissions] = useState<Record<ModuleName, boolean>>(DEFAULT_MODULE_PERMISSIONS);
 
     const fetchModulePermissions = useCallback(async (role: UserRole) => {
@@ -87,6 +85,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         if (profileError) {
             console.error('useAuth: Erro ao buscar perfil:', profileError);
             setLoadingAuth(false);
+            setCurrentUser(null); // Garante que currentUser é null em caso de erro no perfil
+            setCurrentCompany(null);
             return;
         }
 
@@ -118,22 +118,9 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 console.log('useAuth: Empresa encontrada:', profileData.company[0]);
                 const company: Company = profileData.company[0] as Company;
                 setCurrentCompany(company);
-                setNeedsCompanySetup(false);
             } else {
-                console.log('useAuth: Nenhuma empresa associada ao perfil. Necessita configuração.');
+                console.log('useAuth: Nenhuma empresa associada ao perfil.');
                 setCurrentCompany(null);
-                setNeedsCompanySetup(true);
-            }
-
-            // Se o usuário for um DESENVOLVEDOR, ele não precisa de configuração de empresa.
-            if (user.role === UserRole.DEVELOPER) {
-                console.log('useAuth: Usuário é Desenvolvedor, ignorando configuração de empresa.');
-                setNeedsCompanySetup(false);
-                // Se um desenvolvedor não tiver uma empresa, ainda definimos currentCompany como null
-                // mas não o bloqueamos com o prompt de configuração.
-                if (!(profileData.company && Array.isArray(profileData.company) && profileData.company.length > 0)) {
-                    setCurrentCompany(null);
-                }
             }
         }
         setLoadingAuth(false);
@@ -150,7 +137,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 setCurrentUser(null);
                 setCurrentCompany(null);
                 setLoadingAuth(false);
-                setNeedsCompanySetup(false);
                 setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
             }
         }
@@ -200,10 +186,9 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         setCurrentUser(prev => prev ? { ...prev, role: roleToAssign } : null); // Atualizar o papel do usuário local
         await fetchModulePermissions(roleToAssign); // Buscar permissões para o novo papel
         showSuccess('Empresa criada e vinculada com sucesso!');
-        setNeedsCompanySetup(false);
         setCurrentView(View.SURVEY_LIST);
         console.log('useAuth: Empresa criada e perfil atualizado com sucesso.');
-    }, [currentUser, setCurrentView, fetchModulePermissions, showError, showSuccess]); // Adicionado showError e showSuccess
+    }, [currentUser, setCurrentView, fetchModulePermissions, showError, showSuccess]);
 
     const handleUpdateProfile = useCallback(async (updatedUser: User) => {
         console.log('useAuth: handleUpdateProfile - Atualizando perfil para:', updatedUser.id);
@@ -241,10 +226,13 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             setCurrentView(View.SURVEY_LIST);
             console.log('useAuth: Perfil atualizado com sucesso.');
         }
-    }, [setCurrentView, currentUser?.role, fetchModulePermissions, showError, showSuccess]); // Adicionado showError e showSuccess
+    }, [setCurrentView, currentUser?.role, fetchModulePermissions, showError, showSuccess]);
 
     const handleUpdateCompany = useCallback(async (updatedCompany: Company) => {
-        if (!currentCompany) return;
+        if (!currentCompany) {
+            showError('Nenhuma empresa selecionada para atualizar.');
+            return;
+        }
         console.log('useAuth: handleUpdateCompany - Atualizando empresa:', currentCompany.id);
         const { data, error } = await supabase
             .from('companies')
@@ -271,7 +259,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             setCurrentView(View.SURVEY_LIST);
             console.log('useAuth: Empresa atualizada com sucesso.');
         }
-    }, [currentCompany, setCurrentView, showError, showSuccess]); // Adicionado showError e showSuccess
+    }, [currentCompany, setCurrentView, showError, showSuccess]);
 
     return {
         currentUser,
@@ -281,7 +269,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         handleUpdateProfile,
         handleUpdateCompany,
         fetchUserData,
-        needsCompanySetup,
         modulePermissions,
     };
 };

@@ -114,7 +114,7 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
         await onSave({ 
             id: surveyToEdit?.id || '',
             title, 
-            companyId: surveyToEdit?.companyId || '',
+            companyId: surveyToEdit?.companyId || '', // companyId será validado e preenchido no useSurveys
             questions 
         });
         showSuccess(isEditing ? 'Pesquisa atualizada com sucesso!' : 'Pesquisa criada com sucesso!');

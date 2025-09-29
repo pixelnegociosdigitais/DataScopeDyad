@@ -9,11 +9,11 @@ import Profile from './components/Profile';
 import SurveyForm from './components/SurveyForm';
 import Login from './components/Login';
 import CompanySettings from './components/CompanySettings';
-import CompanySetup from './components/CompanySetup';
+import CompanySetup from './components/CompanySetup'; // Manter import para uso opcional
 import Giveaways from './components/Giveaways';
 import SettingsPanel from './components/SettingsPanel';
 import ModulePermissionsManager from './components/ModulePermissionsManager';
-import JoinCompanyPrompt from './components/JoinCompanyPrompt'; // Importar o novo componente
+import JoinCompanyPrompt from './components/JoinCompanyPrompt'; // Manter import para uso opcional
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
@@ -34,7 +34,6 @@ const App: React.FC = () => {
         handleCreateCompany,
         handleUpdateProfile,
         handleUpdateCompany,
-        needsCompanySetup,
         modulePermissions,
     } = useAuth(setCurrentView);
 
@@ -104,6 +103,10 @@ const App: React.FC = () => {
     }, [handleDeleteSurvey, selectedSurvey, editingSurvey, modulePermissions]);
 
     const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey) => {
+        if (!currentCompany) {
+            showError('Você precisa ter uma empresa associada para criar ou editar pesquisas.');
+            return;
+        }
         if (!modulePermissions[ModuleName.CREATE_SURVEY] && !editingSurvey) {
             showError('Você não tem permissão para criar pesquisas.');
             return;
@@ -115,7 +118,7 @@ const App: React.FC = () => {
         await handleSaveSurvey(surveyData, editingSurvey?.id);
         setEditingSurvey(null);
         setCurrentView(View.SURVEY_LIST);
-    }, [handleSaveSurvey, editingSurvey, modulePermissions]);
+    }, [handleSaveSurvey, editingSurvey, modulePermissions, currentCompany]);
 
     const handleSaveResponseWrapper = useCallback(async (answers: any[]) => {
         console.log('App: handleSaveResponseWrapper called with answers:', answers);
@@ -157,28 +160,15 @@ const App: React.FC = () => {
         return <div className="h-screen w-screen flex items-center justify-center">Carregando dados do usuário...</div>;
     }
 
-    // Lidar com a configuração da empresa com base no papel do usuário
-    if (needsCompanySetup) {
-        if (currentUser.role === UserRole.ADMIN) {
-            return <CompanySetup user={currentUser} onCreateCompany={handleCreateCompany} />;
-        } else {
-            // Para papéis de DESENVOLVEDOR ou USUÁRIO sem uma empresa, mostrar um prompt para se juntar
-            return <JoinCompanyPrompt user={currentUser} onLogout={() => supabase.auth.signOut()} />;
-        }
-    }
-
-    if (!currentCompany) {
-        // Este caso idealmente não deve ser alcançado se needsCompanySetup for tratado acima,
-        // mas como um fallback, indica uma inconsistência de dados ou problema de carregamento.
-        return <div className="h-screen w-screen flex items-center justify-center">Carregando dados da empresa...</div>;
-    }
+    // A aplicação agora carrega o layout principal mesmo que não haja uma empresa associada.
+    // Componentes individuais precisarão lidar com o caso de currentCompany ser null.
 
     const canManageSurveys = modulePermissions[ModuleName.MANAGE_SURVEYS];
 
     const renderContent = () => {
         switch (currentView) {
             case View.SURVEY_LIST:
-                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} />;
+                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
             case View.CREATE_SURVEY:
                 return <SurveyCreator onSave={handleSaveSurveyWrapper} onBack={handleBack} templates={templates} />;
             case View.EDIT_SURVEY:
@@ -196,15 +186,24 @@ const App: React.FC = () => {
                 }
                 return null;
             case View.COMPANY_SETTINGS:
-                return <CompanySettings company={currentCompany} onUpdate={handleUpdateCompany} onBack={handleBack} />;
+                // Só permite acessar se houver uma empresa
+                if (currentCompany) {
+                    return <CompanySettings company={currentCompany} onUpdate={handleUpdateCompany} onBack={handleBack} />;
+                }
+                showError('Nenhuma empresa associada para configurar.');
+                setCurrentView(View.SURVEY_LIST); // Redireciona de volta
+                return null;
             case View.GIVEAWAYS:
                 return <Giveaways currentUser={currentUser} currentCompany={currentCompany} />;
             case View.SETTINGS_PANEL:
                 return <SettingsPanel onBack={handleBack} setView={setCurrentView} />;
             case View.MODULE_PERMISSIONS_MANAGER:
                 return <ModulePermissionsManager onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
+            // Adicionar uma view opcional para criar empresa, se necessário
+            case View.COMPANY_SETUP:
+                return <CompanySetup user={currentUser} onCreateCompany={handleCreateCompany} />;
             default:
-                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} />;
+                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
         }
     };
 

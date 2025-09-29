@@ -156,7 +156,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
     const handleSaveSurvey = useCallback(async (surveyData: Survey, editingSurveyId?: string) => {
         if (!currentUser || !currentCompany) {
-            showError('Usuário ou empresa não identificados.');
+            showError('Usuário ou empresa não identificados para salvar a pesquisa.');
             console.error('useSurveys: handleSaveSurvey - Usuário ou empresa ausentes.');
             return;
         }

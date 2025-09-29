@@ -20,7 +20,7 @@ interface GiveawayParticipant {
 
 interface GiveawaysProps {
     currentUser: User;
-    currentCompany: Company;
+    currentCompany: Company | null; // Permitir que currentCompany seja null
 }
 
 const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) => {
@@ -45,7 +45,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
 
     const animationDuration = 3000;
 
-    const canManagePrizes = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
+    const canManagePrizes = (currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER) && currentCompany !== null;
 
     // Efeito para buscar as pesquisas disponíveis para a empresa
     useEffect(() => {
@@ -75,7 +75,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             }
         };
         loadSurveys();
-    }, [currentCompany.id, selectedSurveyId]);
+    }, [currentCompany?.id, selectedSurveyId]);
 
     // Função para buscar prêmios
     const fetchPrizes = useCallback(async () => {
@@ -270,6 +270,10 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     }, [isDrawing]);
 
     const handleDraw = async () => {
+        if (!currentCompany) {
+            showError('Você precisa ter uma empresa associada para realizar sorteios.');
+            return;
+        }
         if (participants.length === 0) {
             showError('Não há participantes para realizar o sorteio!');
             return;
@@ -358,6 +362,10 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     };
 
     const handleOpenPrizeModal = (prize: Prize | null = null) => {
+        if (!currentCompany) {
+            showError('Você precisa ter uma empresa associada para gerenciar prêmios.');
+            return;
+        }
         setEditingPrize(prize);
         setPrizeFormName(prize?.name || '');
         setPrizeFormDescription(prize?.description || '');
@@ -427,9 +435,25 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     };
 
     const confirmDeletePrize = (prize: Prize) => {
+        if (!currentCompany) {
+            showError('Você precisa ter uma empresa associada para gerenciar prêmios.');
+            return;
+        }
         setPrizeToDelete(prize);
         setShowDeletePrizeDialog(true);
     };
+
+    if (!currentCompany) {
+        return (
+            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
+                <GiftIcon className="h-12 w-12 text-primary mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-text-main mb-4">Sorteios da Empresa</h2>
+                <p className="text-text-light mb-6">
+                    Você não tem uma empresa associada. Crie ou vincule-se a uma empresa para gerenciar e realizar sorteios.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
