@@ -163,7 +163,7 @@ const App: React.FC = () => {
             return <CompanySetup user={currentUser} onCreateCompany={handleCreateCompany} />;
         } else {
             // Para papéis de DESENVOLVEDOR ou USUÁRIO sem uma empresa, mostrar um prompt para se juntar
-            return <JoinCompanyPrompt user={currentUser} />;
+            return <JoinCompanyPrompt user={currentUser} onLogout={() => supabase.auth.signOut()} />;
         }
     }
 
