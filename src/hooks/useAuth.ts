@@ -125,7 +125,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             // Verifica se a empresa está vinculada ao perfil
             if (profileData.companies) {
                 console.log('useAuth: Empresa encontrada:', profileData.companies);
-                const company: Company = profileData.companies as Company;
+                const company: Company = profileData.companies as unknown as Company;
                 setCurrentCompany(company);
             } else {
                 console.log('useAuth: Nenhuma empresa associada ao perfil.');

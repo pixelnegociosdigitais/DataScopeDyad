@@ -250,7 +250,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             showError('Não foi possível carregar o histórico de sorteios.');
             setPastWinners([]);
         } else {
-            setPastWinners(data as PastWinner[]);
+            setPastWinners(data as unknown as PastWinner[]);
         }
     }, []);
 
