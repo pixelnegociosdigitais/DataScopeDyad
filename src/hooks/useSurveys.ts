@@ -39,7 +39,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     options,
                     position
                 ),
-                survey_responses(*) // Buscar todas as respostas para contagem no cliente
+                survey_responses(*)
             `)
             .eq('company_id', companyId)
             .order('created_at', { ascending: false });
@@ -51,7 +51,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             return [];
         } else if (data) {
             console.log('useSurveys: fetchSurveys - Dados de pesquisas recebidos:', data);
-            const fetchedSurveys: Survey[] = data.map(s => ({
+            const fetchedSurveys: Survey[] = data.map((s: any) => ({ // Adicionado 'any' para tipagem temporária
                 id: s.id,
                 title: s.title,
                 companyId: s.company_id,
@@ -60,8 +60,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     text: q.text,
                     type: q.type,
                     options: q.options || undefined,
+                    position: q.position || 0, // Adicionado position
                 })).sort((a, b) => (a.position || 0) - (b.position || 0)),
-                responseCount: s.survey_responses ? s.survey_responses.length : 0, // Contar no cliente
+                responseCount: s.survey_responses ? s.survey_responses.length : 0,
             }));
             console.log('useSurveys: fetchSurveys - Pesquisas processadas e definidas:', fetchedSurveys);
             setSurveys(fetchedSurveys);
@@ -293,6 +294,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         text: q.text,
                         type: q.type,
                         options: q.options || undefined,
+                        position: q.position || 0, // Adicionado position
                     })).sort((a, b) => (a.position || 0) - (b.position || 0)),
                     responseCount: updatedSurveyData.survey_responses ? updatedSurveyData.survey_responses.length : 0,
                 };

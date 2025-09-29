@@ -8,6 +8,7 @@ import { CreateIcon } from './icons/CreateIcon';
 import { showError, showSuccess } from '../src/utils/toast';
 import WinnerDisplayPopup from '../src/components/WinnerDisplayPopup';
 import ConfirmationDialog from '../src/components/ConfirmationDialog';
+import CountdownPopup from '../src/components/CountdownPopup'; // Importar o novo componente de popup de contagem
 
 // Nova interface para os participantes do sorteio
 interface GiveawayParticipant {
@@ -282,7 +283,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             return;
         }
 
-        setIsDrawing(true);
+        setIsDrawing(true); // Inicia o popup de contagem regressiva
 
         setTimeout(async () => {
             const shuffledParticipants = [...participants].sort(() => 0.5 - Math.random());
@@ -340,7 +341,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                     setDrawResults(winners); // Define os vencedores para exibição no popup
                 }
             }
-            setIsDrawing(false);
+            setIsDrawing(false); // Para o popup de contagem regressiva, permitindo que o popup de vencedores apareça
         }, animationDuration);
     };
 
@@ -578,25 +579,13 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 </button>
             </div>
 
-            {/* Animação de Sorteio */}
+            {/* Popup de Contagem Regressiva */}
             {isDrawing && (
-                <div className="bg-blue-50 border border-blue-200 text-blue-800 p-6 rounded-lg text-center shadow-inner">
-                    <h3 className="text-xl font-bold mb-3">Sorteando...</h3>
-                    <div className="flex flex-col items-center justify-center">
-                        <p className="text-5xl font-extrabold text-blue-700 mb-4">{countdown}</p>
-                        <div className="w-full bg-blue-200 rounded-full h-4 mb-4 overflow-hidden">
-                            <div
-                                className="bg-primary h-4 rounded-full transition-all duration-50 ease-linear"
-                                style={{ width: `${progress}%` }}
-                            ></div>
-                        </div>
-                        <p className="text-lg text-blue-700">Aguarde, estamos escolhendo o sortudo(s)!</p>
-                    </div>
-                </div>
+                <CountdownPopup countdown={countdown} progress={progress} />
             )}
 
             {/* Popup de Vencedor(es) */}
-            {drawResults.length > 0 && !isDrawing && (
+            {drawResults.length > 0 && !isDrawing && ( // Garante que o popup de vencedor só aparece após o sorteio ser concluído
                 <WinnerDisplayPopup winners={drawResults} onClose={handleCloseWinnerPopup} />
             )}
 

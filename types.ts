@@ -41,6 +41,7 @@ export interface Question {
     text: string;
     type: QuestionType;
     options?: string[];
+    position?: number; // Adicionado para corrigir o erro de tipagem
 }
 
 export interface Survey {

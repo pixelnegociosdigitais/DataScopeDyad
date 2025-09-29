@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User, Company, UserRole, View, ModuleName, ModulePermission } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
-import { useAuthSession } from '@/src/context/AuthSessionContext';
-import { showSuccess, showError } from '@/src/utils/toast'; // Importar showSuccess e showError
+import { useAuthSession } from '@/src/context/AuthSessionContext'; // Importação adicionada
+import { showSuccess, showError } from '@/src/utils/toast';
 
 interface UseAuthReturn {
     currentUser: User | null;
@@ -13,7 +13,7 @@ interface UseAuthReturn {
     handleUpdateCompany: (updatedCompany: Company) => Promise<void>;
     fetchUserData: (userId: string, userEmail: string) => Promise<void>;
     needsCompanySetup: boolean;
-    modulePermissions: Record<ModuleName, boolean>; // Adicionar permissões de módulo
+    modulePermissions: Record<ModuleName, boolean>;
 }
 
 const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
@@ -41,7 +41,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         if (error) {
             console.error('useAuth: Erro ao buscar permissões de módulo:', error);
-            setModulePermissions(DEFAULT_MODULE_PERMISSIONS); // Fallback to default
+            setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
             return;
         }
 
@@ -100,21 +100,12 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 profilePictureUrl: profileData.avatar_url || undefined,
             };
             setCurrentUser(user);
-            await fetchModulePermissions(user.role); // Fetch permissions for the user's role
+            await fetchModulePermissions(user.role);
 
-            if (profileData.company) {
-                console.log('useAuth: Empresa encontrada:', profileData.company);
-                const company: Company = {
-                    id: profileData.company.id,
-                    name: profileData.company.name,
-                    cnpj: profileData.company.cnpj || undefined,
-                    phone: profileData.company.phone || undefined,
-                    address_street: profileData.company.address_street || undefined,
-                    address_neighborhood: profileData.company.address_neighborhood || undefined,
-                    address_complement: profileData.company.address_complement || undefined,
-                    address_city: profileData.company.address_city || undefined,
-                    address_state: profileData.company.address_state || undefined,
-                };
+            // Corrigido: profileData.company é um array, mesmo que com um único elemento
+            if (profileData.company && Array.isArray(profileData.company) && profileData.company.length > 0) {
+                console.log('useAuth: Empresa encontrada:', profileData.company[0]);
+                const company: Company = profileData.company[0] as Company;
                 setCurrentCompany(company);
                 setNeedsCompanySetup(false);
             } else {
@@ -139,7 +130,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 setCurrentCompany(null);
                 setLoadingAuth(false);
                 setNeedsCompanySetup(false);
-                setModulePermissions(DEFAULT_MODULE_PERMISSIONS); // Reset permissions on logout
+                setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
             }
         }
     }, [session, loadingSession, fetchUserData]);
@@ -173,7 +164,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         setCurrentCompany(newCompanyData);
         setCurrentUser(prev => prev ? { ...prev, role: UserRole.ADMIN } : null);
-        await fetchModulePermissions(UserRole.ADMIN); // Fetch permissions for the new ADMIN role
+        await fetchModulePermissions(UserRole.ADMIN);
         showSuccess('Empresa criada e vinculada com sucesso!');
         setNeedsCompanySetup(false);
         setCurrentView(View.SURVEY_LIST);
@@ -197,7 +188,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             console.error('useAuth: Erro ao atualizar perfil:', error);
         } else {
             setCurrentUser(updatedUser);
-            // If role changes, permissions might change, so re-fetch
             if (currentUser?.role !== updatedUser.role) {
                 await fetchModulePermissions(updatedUser.role);
             }
