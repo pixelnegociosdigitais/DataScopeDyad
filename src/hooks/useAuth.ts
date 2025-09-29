@@ -157,8 +157,15 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
     }, [session, loadingSession, fetchUserData]);
 
     const handleCreateCompany = useCallback(async (companyData: Omit<Company, 'id' | 'created_at'>) => {
-        if (!currentUser) return;
-        console.log('useAuth: handleCreateCompany - Criando empresa:', companyData.name);
+        if (!currentUser) {
+            showError('Erro: Dados do usuário não disponíveis para criar a empresa.');
+            console.error('handleCreateCompany: currentUser é nulo ou indefinido.');
+            return;
+        }
+        const userId = currentUser.id; // Captura o ID do usuário
+        const userEmail = currentUser.email; // Captura o email do usuário
+
+        console.log('useAuth: handleCreateCompany - Criando empresa:', companyData.name, 'para userId:', userId);
 
         const { data: newCompanyData, error: companyError } = await supabase
             .from('companies')
@@ -174,14 +181,14 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         let roleToAssign = UserRole.ADMIN;
         // Proteger o papel do e-mail do desenvolvedor
-        if (currentUser.email === DEVELOPER_EMAIL) {
+        if (userEmail === DEVELOPER_EMAIL) { // Usa o email capturado
             roleToAssign = UserRole.DEVELOPER;
         }
 
         const { error: profileUpdateError } = await supabase
             .from('profiles')
             .update({ company_id: newCompanyData.id, role: roleToAssign }) // Atribuir o papel determinado
-            .eq('id', currentUser.id);
+            .eq('id', userId); // Usa o ID capturado
 
         if (profileUpdateError) {
             showError('Erro ao vincular a empresa ao seu perfil: ' + profileUpdateError.message);
@@ -196,7 +203,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         setNeedsCompanySetup(false);
         setCurrentView(View.SURVEY_LIST);
         console.log('useAuth: Empresa criada e perfil atualizado com sucesso.');
-    }, [currentUser, setCurrentView, fetchModulePermissions]);
+    }, [currentUser, setCurrentView, fetchModulePermissions, showError, showSuccess]); // Adicionado showError e showSuccess
 
     const handleUpdateProfile = useCallback(async (updatedUser: User) => {
         console.log('useAuth: handleUpdateProfile - Atualizando perfil para:', updatedUser.id);
@@ -234,7 +241,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             setCurrentView(View.SURVEY_LIST);
             console.log('useAuth: Perfil atualizado com sucesso.');
         }
-    }, [setCurrentView, currentUser?.role, fetchModulePermissions]);
+    }, [setCurrentView, currentUser?.role, fetchModulePermissions, showError, showSuccess]); // Adicionado showError e showSuccess
 
     const handleUpdateCompany = useCallback(async (updatedCompany: Company) => {
         if (!currentCompany) return;
@@ -264,7 +271,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             setCurrentView(View.SURVEY_LIST);
             console.log('useAuth: Empresa atualizada com sucesso.');
         }
-    }, [currentCompany, setCurrentView]);
+    }, [currentCompany, setCurrentView, showError, showSuccess]); // Adicionado showError e showSuccess
 
     return {
         currentUser,
