@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { GiveawayWinner } from '../../types'; // Importar GiveawayWinner
+import { TrophyIcon } from '../components/icons/TrophyIcon'; // Importar o novo ícone de troféu
 
 interface WinnerDisplayPopupProps {
     winners: GiveawayWinner[]; // Agora aceita um array de vencedores
@@ -11,7 +12,11 @@ const WinnerDisplayPopup: React.FC<WinnerDisplayPopupProps> = ({ winners, onClos
     return createPortal(
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div className="bg-gradient-to-r from-red-500 to-red-700 text-white p-8 rounded-lg shadow-xl text-center max-w-lg w-full relative">
-                <h3 className="text-3xl font-bold mb-4">🎉 Vencedor(es)! 🎉</h3>
+                <div className="flex items-center justify-center gap-2 mb-4">
+                    <TrophyIcon className="h-8 w-8 text-yellow-300" />
+                    <h3 className="text-3xl font-bold">Vencedor(es)!</h3>
+                    <TrophyIcon className="h-8 w-8 text-yellow-300" />
+                </div>
                 <div className="flex flex-col items-center justify-center space-y-6 max-h-96 overflow-y-auto pr-2">
                     {winners.map((winnerEntry, index) => (
                         <div key={winnerEntry.id} className="bg-red-600 p-4 rounded-lg w-full">
@@ -20,7 +25,6 @@ const WinnerDisplayPopup: React.FC<WinnerDisplayPopupProps> = ({ winners, onClos
                             </p>
                             <p className="text-3xl font-extrabold text-white mb-1">{winnerEntry.winner_name}</p>
                             {winnerEntry.winner_phone && <p className="text-xl text-red-100">{winnerEntry.winner_phone}</p>}
-                            {/* Removido o campo de e-mail conforme solicitado */}
                         </div>
                     ))}
                 </div>
