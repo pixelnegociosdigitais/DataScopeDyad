@@ -62,8 +62,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
     return (
         <aside className={`fixed inset-y-0 left-0 ${isExpanded ? 'w-64' : 'w-20'} bg-gray-800 text-white p-4 flex flex-col shadow-lg z-30 transition-all duration-300 ease-in-out`}>
             <div className={`flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} gap-3 mb-8 px-2`}>
-                <LogoIcon className="h-10 w-10 text-primary" />
-                {isExpanded && <h1 className="text-2xl font-bold text-white whitespace-nowrap">DataScope</h1>}
+                <LogoIcon className="h-8 w-8 text-primary" />
+                {isExpanded && <h1 className="text-xl font-bold text-white whitespace-nowrap">DataScope</h1>}
             </div>
 
             <nav className="flex-1 space-y-2">
@@ -77,8 +77,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
                                         : 'hover:bg-gray-700 text-gray-300'}
                                     ${isExpanded ? 'justify-start' : 'justify-center'}`}
                     >
-                        <item.icon className="h-10 w-10 mr-4" /> {/* Aumentado para h-10 w-10 */}
-                        {isExpanded && <span className="text-lg whitespace-nowrap">{item.label}</span>}
+                        <item.icon className="h-6 w-6 mr-4" />
+                        {isExpanded && <span className="text-base whitespace-nowrap">{item.label}</span>}
                     </button>
                 ))}
             </nav>
@@ -89,7 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
                     className="p-2 rounded-full text-gray-300 hover:bg-gray-700 transition-colors"
                     aria-label={isExpanded ? "Recolher menu" : "Expandir menu"}
                 >
-                    {isExpanded ? <ChevronLeftIcon className="h-10 w-10" /> : <MenuIcon className="h-10 w-10" />} {/* Aumentado para h-10 w-10 */}
+                    {isExpanded ? <ChevronLeftIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
                 </button>
             </div>
         </aside>
