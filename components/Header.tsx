@@ -16,19 +16,16 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modul
     const canManageCompany = modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS] && company !== null;
 
     const handleCompanyClick = () => {
-        if (company === null) {
-            setView(View.COMPANY_SETUP);
-        } else if (canManageCompany) {
-            setView(View.COMPANY_SETTINGS);
-        }
-        // Se a empresa não for nula, mas canManageCompany for falso, não faz nada (é um div estático)
+        // Agora, ambos os casos (sem empresa ou com empresa e permissão) levam para COMPANY_SETTINGS
+        // A lógica de qual formulário (criação ou edição) será exibido é tratada em App.tsx
+        setView(View.COMPANY_SETTINGS);
     };
 
     return (
         <header className="bg-white shadow-sm p-4 flex justify-end items-center w-full">
             <div className="flex items-center gap-6">
                 {company === null ? (
-                    // Caso 1: Nenhuma empresa associada, vai para COMPANY_SETUP
+                    // Caso 1: Nenhuma empresa associada, vai para COMPANY_SETTINGS (para criar)
                     <button
                         onClick={handleCompanyClick}
                         className="flex items-center gap-2 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"
@@ -38,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modul
                         <span>Nenhuma Empresa</span>
                     </button>
                 ) : canManageCompany ? (
-                    // Caso 2: Empresa associada e usuário tem permissão, vai para COMPANY_SETTINGS
+                    // Caso 2: Empresa associada e usuário tem permissão, vai para COMPANY_SETTINGS (para editar)
                     <button
                         onClick={handleCompanyClick}
                         className="flex items-center gap-2 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"

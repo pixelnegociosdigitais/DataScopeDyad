@@ -93,7 +93,6 @@ export enum View {
     PROFILE = 'PROFILE',
     RESPOND_SURVEY = 'RESPOND_SURVEY',
     COMPANY_SETTINGS = 'COMPANY_SETTINGS',
-    COMPANY_SETUP = 'COMPANY_SETUP',
     GIVEAWAYS = 'GIVEAWAYS', // Nova view para sorteios
     SETTINGS_PANEL = 'SETTINGS_PANEL', // Nova view para o painel de configurações
     MODULE_PERMISSIONS_MANAGER = 'MODULE_PERMISSIONS_MANAGER', // Nova view para gerenciamento de permissões

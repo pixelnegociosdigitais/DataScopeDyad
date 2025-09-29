@@ -9,7 +9,7 @@ import Profile from './components/Profile';
 import SurveyForm from './components/SurveyForm';
 import Login from './components/Login';
 import CompanySettings from './components/CompanySettings';
-import CompanySetup from './components/CompanySetup'; // Manter import para uso opcional
+import CompanyCreationForm from './components/CompanyCreationForm'; // Importar o novo componente
 import Giveaways from './components/Giveaways';
 import SettingsPanel from './components/SettingsPanel';
 import ModulePermissionsManager from './components/ModulePermissionsManager';
@@ -186,12 +186,17 @@ const App: React.FC = () => {
                 }
                 return null;
             case View.COMPANY_SETTINGS:
-                // Só permite acessar se houver uma empresa
-                if (currentCompany) {
+                // Se não houver empresa, mostra o formulário de criação
+                if (!currentCompany) {
+                    return <CompanyCreationForm user={currentUser} onCreateCompany={handleCreateCompany} onBack={handleBack} />;
+                }
+                // Se houver empresa e o usuário tiver permissão, mostra o formulário de edição
+                if (modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS]) {
                     return <CompanySettings company={currentCompany} onUpdate={handleUpdateCompany} onBack={handleBack} />;
                 }
-                showError('Nenhuma empresa associada para configurar.');
-                setCurrentView(View.SURVEY_LIST); // Redireciona de volta
+                // Se houver empresa mas sem permissão, redireciona para a lista de pesquisas
+                showError('Você não tem permissão para configurar a empresa.');
+                setCurrentView(View.SURVEY_LIST);
                 return null;
             case View.GIVEAWAYS:
                 return <Giveaways currentUser={currentUser} currentCompany={currentCompany} />;
@@ -199,9 +204,6 @@ const App: React.FC = () => {
                 return <SettingsPanel onBack={handleBack} setView={setCurrentView} />;
             case View.MODULE_PERMISSIONS_MANAGER:
                 return <ModulePermissionsManager onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
-            // Adicionar uma view opcional para criar empresa, se necessário
-            case View.COMPANY_SETUP:
-                return <CompanySetup user={currentUser} onCreateCompany={handleCreateCompany} />;
             default:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
         }

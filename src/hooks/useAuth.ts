@@ -153,17 +153,24 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         console.log('useAuth: handleCreateCompany - Criando empresa:', companyData.name, 'para userId:', userId);
 
-        const { data: newCompanyData, error: companyError } = await supabase
+        const { data: newCompanyDataArray, error: companyError } = await supabase
             .from('companies')
             .insert(companyData) // Inserir dados completos da empresa
-            .select()
-            .single();
+            .select(); // Removido .single() para evitar erro de 'coerce' se o retorno não for exatamente 1
 
         if (companyError) {
             showError('Erro ao criar a empresa: ' + companyError.message);
             console.error('useAuth: Erro ao criar a empresa:', companyError);
             return;
         }
+
+        if (!newCompanyDataArray || newCompanyDataArray.length === 0) {
+            showError('Erro: Nenhuma empresa foi retornada após a criação.');
+            console.error('useAuth: Nenhuma empresa retornada após insert.');
+            return;
+        }
+
+        const newCompany = newCompanyDataArray[0]; // Pega o primeiro item do array
 
         let roleToAssign = UserRole.ADMIN;
         // Proteger o papel do e-mail do desenvolvedor
@@ -173,7 +180,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         const { error: profileUpdateError } = await supabase
             .from('profiles')
-            .update({ company_id: newCompanyData.id, role: roleToAssign }) // Atribuir o papel determinado
+            .update({ company_id: newCompany.id, role: roleToAssign }) // Atribuir o papel determinado
             .eq('id', userId); // Usa o ID capturado
 
         if (profileUpdateError) {
@@ -182,7 +189,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             return;
         }
 
-        setCurrentCompany(newCompanyData);
+        setCurrentCompany(newCompany);
         setCurrentUser(prev => prev ? { ...prev, role: roleToAssign } : null); // Atualizar o papel do usuário local
         await fetchModulePermissions(roleToAssign); // Buscar permissões para o novo papel
         showSuccess('Empresa criada e vinculada com sucesso!');
