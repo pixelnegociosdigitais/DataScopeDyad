@@ -3,6 +3,7 @@ import { User, Company, QuestionType, Survey } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
 import { GiftIcon } from './icons/GiftIcon';
 import { showError } from '../src/utils/toast'; // Importar showError
+import WinnerDisplayPopup from '../src/components/WinnerDisplayPopup'; // Importar o novo componente de popup
 
 // Nova interface para os participantes do sorteio
 interface GiveawayParticipant {
@@ -250,6 +251,10 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         }, animationDuration);
     };
 
+    const handleCloseWinnerPopup = () => {
+        setDisplayWinner(null);
+    };
+
     return (
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
             <div className="flex items-center gap-4 mb-6">
@@ -327,21 +332,8 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 </div>
             )}
 
-            {displayWinner && !isDrawing && ( // Só mostra o vencedor quando não está sorteando
-                <div className="bg-gradient-to-r from-red-500 to-red-700 border border-red-500 text-white p-6 rounded-lg text-center shadow-inner">
-                    <h3 className="text-xl font-bold mb-3">🎉 Vencedor! 🎉</h3>
-                    <div className="flex flex-col items-center justify-center">
-                        <img src="/assets/presente.png" alt="Caixa de presente" className="h-24 w-24 object-contain mb-4" />
-                        <p className="text-2xl font-bold text-white">{displayWinner.name}</p>
-                        {displayWinner.phone && <p className="text-lg text-white">{displayWinner.phone}</p>} {/* Exibe telefone aqui */}
-                    </div>
-                    <button
-                        onClick={() => setDisplayWinner(null)}
-                        className="mt-6 px-4 py-2 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
-                    >
-                        Limpar Vencedor
-                    </button>
-                </div>
+            {displayWinner && !isDrawing && (
+                <WinnerDisplayPopup winner={displayWinner} onClose={handleCloseWinnerPopup} />
             )}
         </div>
     );
