@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User, Company, UserRole, View, ModuleName, ModulePermission } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
-import { useAuthSession } from '@/src/context/AuthSessionContext'; // Importação adicionada
+import { useAuthSession } from '@/src/context/AuthSessionContext';
 import { showSuccess, showError } from '@/src/utils/toast';
 
 interface UseAuthReturn {
     currentUser: User | null;
     currentCompany: Company | null;
     loadingAuth: boolean;
-    handleCreateCompany: (companyName: string) => Promise<void>;
+    handleCreateCompany: (companyData: Omit<Company, 'id' | 'created_at'>) => Promise<void>;
     handleUpdateProfile: (updatedUser: User) => Promise<void>;
     handleUpdateCompany: (updatedCompany: Company) => Promise<void>;
     fetchUserData: (userId: string, userEmail: string) => Promise<void>;
@@ -23,6 +23,8 @@ const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
     [ModuleName.ACCESS_GIVEAWAYS]: true,
     [ModuleName.MANAGE_COMPANY_SETTINGS]: true,
 };
+
+const DEVELOPER_EMAIL = 'santananegociosdigitais@gmail.com'; // E-mail do desenvolvedor hardcoded
 
 export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => {
     const { session, loadingSession } = useAuthSession();
@@ -68,7 +70,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 address,
                 avatar_url,
                 company:companies (
-                    id, 
+                    id,
                     name,
                     cnpj,
                     phone,
@@ -99,10 +101,19 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 address: profileData.address || undefined,
                 profilePictureUrl: profileData.avatar_url || undefined,
             };
+
+            // Garantir que o e-mail do desenvolvedor sempre tenha o papel de Desenvolvedor
+            if (user.email === DEVELOPER_EMAIL && user.role !== UserRole.DEVELOPER) {
+                console.warn(`useAuth: Forçando o papel de 'Desenvolvedor' para ${DEVELOPER_EMAIL}.`);
+                user.role = UserRole.DEVELOPER;
+                // Opcionalmente, atualizar o DB aqui se estiver fora de sincronia, mas por enquanto, apenas atualiza o estado local
+                // await supabase.from('profiles').update({ role: UserRole.DEVELOPER }).eq('id', user.id);
+            }
+
             setCurrentUser(user);
             await fetchModulePermissions(user.role);
 
-            // Corrigido: profileData.company é um array, mesmo que com um único elemento
+            // Verifica se a empresa está vinculada ao perfil
             if (profileData.company && Array.isArray(profileData.company) && profileData.company.length > 0) {
                 console.log('useAuth: Empresa encontrada:', profileData.company[0]);
                 const company: Company = profileData.company[0] as Company;
@@ -112,12 +123,11 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 console.log('useAuth: Nenhuma empresa associada ao perfil. Necessita configuração.');
                 setCurrentCompany(null);
                 setNeedsCompanySetup(true);
-                setCurrentView(View.COMPANY_SETUP);
             }
         }
         setLoadingAuth(false);
         console.log('useAuth: fetchUserData concluído. loadingAuth = false.');
-    }, [setCurrentView, fetchModulePermissions]);
+    }, [fetchModulePermissions]);
 
     useEffect(() => {
         console.log('useAuth: useEffect - loadingSession:', loadingSession, 'session:', session);
@@ -135,13 +145,13 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [session, loadingSession, fetchUserData]);
 
-    const handleCreateCompany = useCallback(async (companyName: string) => {
+    const handleCreateCompany = useCallback(async (companyData: Omit<Company, 'id' | 'created_at'>) => {
         if (!currentUser) return;
-        console.log('useAuth: handleCreateCompany - Criando empresa:', companyName);
+        console.log('useAuth: handleCreateCompany - Criando empresa:', companyData.name);
 
         const { data: newCompanyData, error: companyError } = await supabase
             .from('companies')
-            .insert({ name: companyName })
+            .insert(companyData) // Inserir dados completos da empresa
             .select()
             .single();
 
@@ -151,9 +161,15 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             return;
         }
 
+        let roleToAssign = UserRole.ADMIN;
+        // Proteger o papel do e-mail do desenvolvedor
+        if (currentUser.email === DEVELOPER_EMAIL) {
+            roleToAssign = UserRole.DEVELOPER;
+        }
+
         const { error: profileUpdateError } = await supabase
             .from('profiles')
-            .update({ company_id: newCompanyData.id, role: UserRole.ADMIN })
+            .update({ company_id: newCompanyData.id, role: roleToAssign }) // Atribuir o papel determinado
             .eq('id', currentUser.id);
 
         if (profileUpdateError) {
@@ -163,8 +179,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
 
         setCurrentCompany(newCompanyData);
-        setCurrentUser(prev => prev ? { ...prev, role: UserRole.ADMIN } : null);
-        await fetchModulePermissions(UserRole.ADMIN);
+        setCurrentUser(prev => prev ? { ...prev, role: roleToAssign } : null); // Atualizar o papel do usuário local
+        await fetchModulePermissions(roleToAssign); // Buscar permissões para o novo papel
         showSuccess('Empresa criada e vinculada com sucesso!');
         setNeedsCompanySetup(false);
         setCurrentView(View.SURVEY_LIST);
@@ -173,6 +189,17 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
     const handleUpdateProfile = useCallback(async (updatedUser: User) => {
         console.log('useAuth: handleUpdateProfile - Atualizando perfil para:', updatedUser.id);
+
+        let roleToUpdate = updatedUser.role;
+        // Proteger o papel do e-mail do desenvolvedor
+        if (updatedUser.email === DEVELOPER_EMAIL && updatedUser.role !== UserRole.DEVELOPER) {
+            showError(`Não é permitido alterar o papel do usuário ${DEVELOPER_EMAIL}.`);
+            console.warn(`Tentativa de alterar o papel de ${DEVELOPER_EMAIL} para ${updatedUser.role} foi bloqueada.`);
+            // Reverter para o papel original para fins de exibição se a atualização for bloqueada
+            setCurrentUser(prev => prev ? { ...prev, role: UserRole.DEVELOPER } : null);
+            return;
+        }
+
         const { error } = await supabase
             .from('profiles')
             .update({
@@ -180,6 +207,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 phone: updatedUser.phone,
                 address: updatedUser.address,
                 avatar_url: updatedUser.profilePictureUrl,
+                role: roleToUpdate, // Atualizar o papel se não for protegido
             })
             .eq('id', updatedUser.id);
 
@@ -202,7 +230,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         console.log('useAuth: handleUpdateCompany - Atualizando empresa:', currentCompany.id);
         const { data, error } = await supabase
             .from('companies')
-            .update({ 
+            .update({
                 name: updatedCompany.name,
                 cnpj: updatedCompany.cnpj,
                 phone: updatedCompany.phone,

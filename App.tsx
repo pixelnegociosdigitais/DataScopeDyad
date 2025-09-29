@@ -13,6 +13,7 @@ import CompanySetup from './components/CompanySetup';
 import Giveaways from './components/Giveaways';
 import SettingsPanel from './components/SettingsPanel';
 import ModulePermissionsManager from './components/ModulePermissionsManager';
+import JoinCompanyPrompt from './components/JoinCompanyPrompt'; // Importar o novo componente
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
@@ -48,7 +49,7 @@ const App: React.FC = () => {
         handleSaveResponse,
     } = useSurveys(currentCompany, currentUser);
 
-    // Diagnostic log for global loading state
+    // Log de diagnóstico para o estado de carregamento global
     useEffect(() => {
         if (loadingSession || loadingAuth || loadingSurveys) {
             console.log('App: Global loading state active. loadingSession:', loadingSession, 'loadingAuth:', loadingAuth, 'loadingSurveys:', loadingSurveys);
@@ -156,11 +157,19 @@ const App: React.FC = () => {
         return <div className="h-screen w-screen flex items-center justify-center">Carregando dados do usuário...</div>;
     }
 
+    // Lidar com a configuração da empresa com base no papel do usuário
     if (needsCompanySetup) {
-        return <CompanySetup user={currentUser} onCreateCompany={handleCreateCompany} />;
+        if (currentUser.role === UserRole.ADMIN) {
+            return <CompanySetup user={currentUser} onCreateCompany={handleCreateCompany} />;
+        } else {
+            // Para papéis de DESENVOLVEDOR ou USUÁRIO sem uma empresa, mostrar um prompt para se juntar
+            return <JoinCompanyPrompt user={currentUser} />;
+        }
     }
 
     if (!currentCompany) {
+        // Este caso idealmente não deve ser alcançado se needsCompanySetup for tratado acima,
+        // mas como um fallback, indica uma inconsistência de dados ou problema de carregamento.
         return <div className="h-screen w-screen flex items-center justify-center">Carregando dados da empresa...</div>;
     }
 
