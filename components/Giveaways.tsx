@@ -328,16 +328,16 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             )}
 
             {displayWinner && !isDrawing && ( // Só mostra o vencedor quando não está sorteando
-                <div className="bg-green-50 border border-green-200 text-green-800 p-6 rounded-lg text-center shadow-inner">
+                <div className="bg-gradient-to-r from-red-500 to-red-700 border border-red-500 text-white p-6 rounded-lg text-center shadow-inner">
                     <h3 className="text-xl font-bold mb-3">🎉 Vencedor! 🎉</h3>
                     <div className="flex flex-col items-center justify-center">
                         <img src="/assets/presente.png" alt="Caixa de presente" className="h-24 w-24 object-contain mb-4" />
-                        <p className="text-2xl font-bold text-green-900">{displayWinner.name}</p>
-                        {displayWinner.phone && <p className="text-lg text-green-700">{displayWinner.phone}</p>} {/* Exibe telefone aqui */}
+                        <p className="text-2xl font-bold text-white">{displayWinner.name}</p>
+                        {displayWinner.phone && <p className="text-lg text-white">{displayWinner.phone}</p>} {/* Exibe telefone aqui */}
                     </div>
                     <button
                         onClick={() => setDisplayWinner(null)}
-                        className="mt-6 px-4 py-2 text-sm font-medium text-green-700 bg-green-100 rounded-md hover:bg-green-200 transition-colors"
+                        className="mt-6 px-4 py-2 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
                     >
                         Limpar Vencedor
                     </button>
