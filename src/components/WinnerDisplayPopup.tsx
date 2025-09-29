@@ -20,7 +20,7 @@ const WinnerDisplayPopup: React.FC<WinnerDisplayPopupProps> = ({ winners, onClos
                             </p>
                             <p className="text-3xl font-extrabold text-white mb-1">{winnerEntry.winner_name}</p>
                             {winnerEntry.winner_phone && <p className="text-xl text-red-100">{winnerEntry.winner_phone}</p>}
-                            {winnerEntry.winner_email && <p className="text-lg text-red-100">{winnerEntry.winner_email}</p>}
+                            {/* Removido o campo de e-mail conforme solicitado */}
                         </div>
                     ))}
                 </div>
