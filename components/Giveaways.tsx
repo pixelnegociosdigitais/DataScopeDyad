@@ -9,6 +9,7 @@ interface GiveawayParticipant {
     id: string;
     name: string;
     email?: string;
+    phone?: string; // Adicionado campo de telefone
 }
 
 interface GiveawaysProps {
@@ -88,6 +89,10 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             const emailQuestionIds: string[] = questionsData
                 .filter(q => q.text === 'E-mail' && q.type === QuestionType.EMAIL)
                 .map(q => q.id);
+            
+            const phoneQuestionIds: string[] = questionsData // Buscar perguntas de telefone
+                .filter(q => q.text === 'Telefone' && q.type === QuestionType.PHONE)
+                .map(q => q.id);
 
             if (nameQuestionIds.length === 0) {
                 setError('A pesquisa selecionada não possui uma pergunta de "Nome Completo" (Texto Curto).');
@@ -96,7 +101,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 return;
             }
 
-            const relevantQuestionIds = [...nameQuestionIds, ...emailQuestionIds];
+            const relevantQuestionIds = [...nameQuestionIds, ...emailQuestionIds, ...phoneQuestionIds]; // Incluir telefone
             if (relevantQuestionIds.length === 0) {
                 setParticipants([]);
                 setLoading(false);
@@ -117,7 +122,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
 
             if (responsesError) throw responsesError;
 
-            const responsesMap = new Map<string, { name?: string; email?: string }>();
+            const responsesMap = new Map<string, { name?: string; email?: string; phone?: string }>(); // Adicionado phone
 
             responsesData.forEach(response => {
                 const responseId = response.id;
@@ -134,6 +139,9 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                     if (emailQuestionIds.includes(answer.question_id) && typeof answer.value === 'string') {
                         currentResponse.email = answer.value.trim();
                     }
+                    if (phoneQuestionIds.includes(answer.question_id) && typeof answer.value === 'string') { // Processar telefone
+                        currentResponse.phone = answer.value.trim();
+                    }
                 });
             });
 
@@ -148,11 +156,18 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                             id: `resp-${responseId}`,
                             name: responseDetails.name,
                             email: responseDetails.email,
+                            phone: responseDetails.phone, // Incluir telefone
                         });
                     } else {
                         const existing = uniqueParticipants.get(normalizedName);
-                        if (existing && responseDetails.email && !existing.email) {
-                            existing.email = responseDetails.email;
+                        // Atualizar email ou telefone se o existente não tiver e o novo tiver
+                        if (existing) {
+                            if (responseDetails.email && !existing.email) {
+                                existing.email = responseDetails.email;
+                            }
+                            if (responseDetails.phone && !existing.phone) {
+                                existing.phone = responseDetails.phone;
+                            }
                             uniqueParticipants.set(normalizedName, existing);
                         }
                     }
@@ -276,7 +291,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                                     <div className="h-8 w-8 p-1 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center text-xs">
                                         <GiftIcon className="h-4 w-4" />
                                     </div>
-                                    <span className="text-gray-700">{p.name} {p.email && `(${p.email})`}</span>
+                                    <span className="text-gray-700">{p.name} {p.phone && `(${p.phone})`}</span> {/* Exibe telefone aqui */}
                                 </li>
                             ))}
                         </ul>
@@ -318,7 +333,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                     <div className="flex flex-col items-center justify-center">
                         <img src="/assets/presente.png" alt="Caixa de presente" className="h-24 w-24 object-contain mb-4" />
                         <p className="text-2xl font-bold text-green-900">{displayWinner.name}</p>
-                        {displayWinner.email && <p className="text-lg text-green-700">{displayWinner.email}</p>}
+                        {displayWinner.phone && <p className="text-lg text-green-700">{displayWinner.phone}</p>} {/* Exibe telefone aqui */}
                     </div>
                     <button
                         onClick={() => setDisplayWinner(null)}
