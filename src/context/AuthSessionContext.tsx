@@ -16,17 +16,23 @@ export const AuthSessionProvider: React.FC<{ children: ReactNode }> = ({ childre
     useEffect(() => {
         const getSession = async () => {
             console.log('AuthSessionContext: Iniciando busca da sessão...');
-            const { data: { session } } = await supabase.auth.getSession();
-            setSession(session);
+            const { data: { session: initialSession } } = await supabase.auth.getSession();
+            // Only update if the session is truly different
+            if (JSON.stringify(initialSession) !== JSON.stringify(session)) { // Deep comparison for stability
+                setSession(initialSession);
+            }
             setLoadingSession(false);
-            console.log('AuthSessionContext: Sessão buscada. loadingSession = false. Sessão:', session);
+            console.log('AuthSessionContext: Sessão buscada. loadingSession = false. Sessão:', initialSession);
         };
 
         getSession();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            console.log('AuthSessionContext: Evento onAuthStateChange. Evento:', _event, 'Sessão:', session);
-            setSession(session);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+            console.log('AuthSessionContext: Evento onAuthStateChange. Evento:', _event, 'Sessão:', newSession);
+            // Only update if the session is truly different
+            if (JSON.stringify(newSession) !== JSON.stringify(session)) { // Deep comparison for stability
+                setSession(newSession);
+            }
             setLoadingSession(false);
             console.log('AuthSessionContext: onAuthStateChange concluído. loadingSession = false.');
         });
@@ -35,7 +41,7 @@ export const AuthSessionProvider: React.FC<{ children: ReactNode }> = ({ childre
             console.log('AuthSessionContext: Desinscrevendo do onAuthStateChange.');
             subscription.unsubscribe();
         };
-    }, []);
+    }, [session]); // Adicionar session como dependência para garantir que a comparação seja feita com o estado atual
 
     return (
         <AuthSessionContext.Provider value={{ session, loadingSession }}>

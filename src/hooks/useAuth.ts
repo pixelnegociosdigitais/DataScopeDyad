@@ -137,23 +137,30 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 logActivity('WARN', `Papel de 'Desenvolvedor' forçado para o usuário ${userEmail}.`, 'AUTH', userId, userEmail);
             }
 
-            setCurrentUser(user);
+            // Only update currentUser if content has changed
+            if (JSON.stringify(user) !== JSON.stringify(currentUser)) {
+                setCurrentUser(user);
+            }
+            
             await fetchModulePermissions(user.role, user.permissions);
 
-            if (profileData.companies) {
-                console.log('useAuth: Empresa encontrada:', profileData.companies);
-                const company: Company = profileData.companies as unknown as Company;
+            const company: Company | null = profileData.companies ? (profileData.companies as unknown as Company) : null;
+            // Only update currentCompany if content has changed
+            if (JSON.stringify(company) !== JSON.stringify(currentCompany)) {
                 setCurrentCompany(company);
+            }
+
+            if (company) {
+                console.log('useAuth: Empresa encontrada:', profileData.companies);
                 logActivity('INFO', `Usuário ${user.fullName} logado e vinculado à empresa ${company.name}.`, 'AUTH', userId, userEmail, company.id);
             } else {
                 console.log('useAuth: Nenhuma empresa associada ao perfil.');
-                setCurrentCompany(null);
                 logActivity('INFO', `Usuário ${user.fullName} logado, mas sem empresa vinculada.`, 'AUTH', userId, userEmail);
             }
         }
         setLoadingAuth(false);
         console.log('useAuth: fetchUserData concluído. loadingAuth = false.');
-    }, [fetchModulePermissions]);
+    }, [fetchModulePermissions, currentUser, currentCompany]); // Adicionar currentUser e currentCompany às dependências para a comparação
 
     useEffect(() => {
         console.log('useAuth: useEffect - loadingSession:', loadingSession, 'session:', session);
