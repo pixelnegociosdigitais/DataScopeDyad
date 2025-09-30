@@ -18,7 +18,7 @@ import AdministratorUserManager from './components/AdministratorUserManager';
 import LogsAndAuditPanel from './components/LogsAndAuditPanel';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
 import NoticeCreator from './src/components/NoticeCreator'; // Importar NoticeCreator
-import NoticeDisplay from './src/components/NoticeDisplay'; // Importar NoticeDisplay
+// import NoticeDisplay from './src/components/NoticeDisplay'; // REMOVIDO
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
@@ -32,7 +32,7 @@ const App: React.FC = () => {
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const [companySettingsAccessDenied, setCompanySettingsAccessDenied] = useState(false);
-    const [displayedNotices, setDisplayedNotices] = useState<Notice[]>([]); // Estado para avisos
+    const [activeNotice, setActiveNotice] = useState<Notice | null>(null); // Estado para o aviso ativo
 
     const {
         currentUser,
@@ -167,14 +167,17 @@ const App: React.FC = () => {
         setCurrentView(View.SURVEY_LIST);
         setSelectedSurvey(null);
         setEditingSurvey(null);
+        setActiveNotice(null); // Limpa o aviso ativo ao voltar
     }, []);
 
     const toggleSidebar = useCallback(() => {
         setIsSidebarExpanded(prev => !prev);
     }, []);
 
-    const handleNoticeDismiss = useCallback((noticeId: string) => {
-        setDisplayedNotices(prev => prev.filter(notice => notice.id !== noticeId));
+    const handleNoticeClick = useCallback((notice: Notice) => {
+        setActiveNotice(notice); // Define o aviso clicado como ativo
+        // Poderíamos mudar para uma view específica de aviso aqui, se necessário
+        // Por enquanto, apenas o define como ativo para ser exibido em um modal ou similar
     }, []);
 
     const loading = loadingSession || loadingAuth || loadingSurveys;
@@ -194,6 +197,26 @@ const App: React.FC = () => {
     const canManageSurveys = modulePermissions[ModuleName.MANAGE_SURVEYS];
 
     const renderContent = () => {
+        if (activeNotice) {
+            // Renderiza um modal ou um painel para o aviso ativo
+            return (
+                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full relative">
+                        <h3 className="text-xl font-bold text-text-main mb-4">Aviso Importante</h3>
+                        <p className="text-text-light mb-4">{activeNotice.message}</p>
+                        <p className="text-sm text-gray-500">De: {activeNotice.sender_email}</p>
+                        <p className="text-xs text-gray-500">Enviado em: {new Date(activeNotice.created_at).toLocaleString('pt-BR')}</p>
+                        <button
+                            onClick={() => setActiveNotice(null)}
+                            className="mt-6 px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark"
+                        >
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
         switch (currentView) {
             case View.SURVEY_LIST:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
@@ -254,10 +277,9 @@ const App: React.FC = () => {
                     onLogout={() => supabase.auth.signOut()}
                     setView={setCurrentView}
                     modulePermissions={modulePermissions}
+                    onNoticeClick={handleNoticeClick} // Passar a função para o Header
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
-                    {/* Renderiza os avisos aqui */}
-                    <NoticeDisplay onNoticeDismiss={handleNoticeDismiss} />
                     {renderContent()}
                 </main>
             </div>

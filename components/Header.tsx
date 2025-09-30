@@ -1,8 +1,9 @@
 import React from 'react';
-import { User, Company, View, ModuleName } from '../types';
+import { User, Company, View, ModuleName, Notice } from '../types';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
+import NotificationBell from '../src/components/NotificationBell'; // Importar NotificationBell
 
 interface HeaderProps {
     user: User;
@@ -10,9 +11,10 @@ interface HeaderProps {
     onLogout: () => void;
     setView: (view: View) => void;
     modulePermissions: Record<ModuleName, boolean>;
+    onNoticeClick: (notice: Notice) => void; // Adicionar prop para lidar com o clique no aviso
 }
 
-const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modulePermissions }) => {
+const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modulePermissions, onNoticeClick }) => {
     const canManageCompany = modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS] && company !== null;
 
     const handleCompanyClick = () => {
@@ -24,6 +26,7 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modul
     return (
         <header className="bg-white shadow-sm p-4 flex justify-end items-center w-full">
             <div className="flex items-center gap-6">
+                <NotificationBell onNoticeClick={onNoticeClick} /> {/* Adicionar o NotificationBell aqui */}
                 {company === null ? (
                     // Caso 1: Nenhuma empresa associada, vai para COMPANY_SETTINGS (para criar)
                     <button

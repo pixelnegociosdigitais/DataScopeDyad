@@ -98,6 +98,12 @@ export interface Notice {
     company_id?: string; // Opcional, para avisos específicos da empresa
 }
 
+export interface UserNotice {
+    user_id: string;
+    notice_id: string;
+    read_at: string;
+}
+
 export enum View {
     SURVEY_LIST = 'SURVEY_LIST',
     CREATE_SURVEY = 'CREATE_SURVEY',
@@ -123,7 +129,7 @@ export enum ModuleName {
     PERFORM_GIVEAWAYS = 'perform_giveaways', // Nova permissão: Realizar sorteios e gerenciar prêmios
     VIEW_GIVEAWAY_DATA = 'view_giveaway_data', // Nova permissão: Visualizar histórico de sorteios
     MANAGE_COMPANY_SETTINGS = 'manage_company_settings',
-    MANAGE_USERS = 'manage_users', // Para administradores gerenciarem usuários
+        MANAGE_USERS = 'manage_users', // Para administradores gerenciarem usuários
     MANAGE_COMPANIES = 'manage_companies', // Para desenvolvedores gerenciarem empresas
     MANAGE_NOTICES = 'manage_notices', // Nova permissão: Gerenciar avisos
 }
