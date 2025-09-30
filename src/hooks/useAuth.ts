@@ -3,7 +3,7 @@ import { User, Company, UserRole, View, ModuleName, ModulePermission } from '@/t
 import { supabase } from '@/src/integrations/supabase/client';
 import { useAuthSession } from '@/src/context/AuthSessionContext';
 import { showSuccess, showError } from '@/src/utils/toast';
-import { logActivity } from '@/src/utils/logger'; // Importar o utilitário de log
+import { logActivity } from '@/src/utils/logger';
 
 interface UseAuthReturn {
     currentUser: User | null;
@@ -18,23 +18,23 @@ interface UseAuthReturn {
     handleResetUserPassword: (userId: string, newPassword?: string) => Promise<void>;
     handleCreateUserForCompany: (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword?: string) => Promise<void>;
     handleUpdateUserPermissions: (userId: string, permissions: Record<string, boolean>) => Promise<void>;
-    handleAdminUpdateUserProfile: (userId: string, updatedFields: Partial<User>) => Promise<void>; // Nova função
-    handleDeleteUser: (userId: string, userEmail: string) => Promise<void>; // Nova função
+    handleAdminUpdateUserProfile: (userId: string, updatedFields: Partial<User>) => Promise<void>;
+    handleDeleteUser: (userId: string, userEmail: string) => Promise<void>;
 }
 
 const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
     [ModuleName.CREATE_SURVEY]: true,
     [ModuleName.MANAGE_SURVEYS]: true,
     [ModuleName.VIEW_DASHBOARD]: true,
-    [ModuleName.ACCESS_GIVEAWAYS]: false, // Desativar o módulo antigo
-    [ModuleName.PERFORM_GIVEAWAYS]: true, // Novo módulo, ativado por padrão para admins/devs
-    [ModuleName.VIEW_GIVEAWAY_DATA]: true, // Novo módulo, ativado por padrão para admins/devs
+    [ModuleName.ACCESS_GIVEAWAYS]: false,
+    [ModuleName.PERFORM_GIVEAWAYS]: true,
+    [ModuleName.VIEW_GIVEAWAY_DATA]: true,
     [ModuleName.MANAGE_COMPANY_SETTINGS]: true,
-    [ModuleName.MANAGE_USERS]: true, // Novo módulo
-    [ModuleName.MANAGE_COMPANIES]: true, // Novo módulo
+    [ModuleName.MANAGE_USERS]: true,
+    [ModuleName.MANAGE_COMPANIES]: true,
 };
 
-const DEVELOPER_EMAIL = 'santananegociosdigitais@gmail.com'; // E-mail do desenvolvedor hardcoded
+const DEVELOPER_EMAIL = 'santananegociosdigitais@gmail.com';
 
 export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => {
     const { session, loadingSession } = useAuthSession();
@@ -43,33 +43,41 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
     const [loadingAuth, setLoadingAuth] = useState(true);
     const [modulePermissions, setModulePermissions] = useState<Record<ModuleName, boolean>>(DEFAULT_MODULE_PERMISSIONS);
 
-    // fetchModulePermissions agora é estável, pois não depende de estados mutáveis para sua recriação.
-    // As variáveis currentUser e currentCompany são acessadas do closure para fins de log.
-    const fetchModulePermissions = useCallback(async (role: UserRole) => {
-        console.log('useAuth: fetchModulePermissions - Buscando permissões para o papel:', role);
+    const fetchModulePermissions = useCallback(async (userRole: UserRole, userSpecificPermissions: Record<string, boolean> = {}) => {
+        console.log('useAuth: fetchModulePermissions - Buscando permissões para o papel:', userRole, 'e aplicando overrides:', userSpecificPermissions);
+        
+        let combinedPermissions: Record<ModuleName, boolean> = { ...DEFAULT_MODULE_PERMISSIONS };
+
+        // 1. Apply role-based permissions from the 'module_permissions' table
         const { data, error } = await supabase
             .from('module_permissions')
-            .select('*');
+            .select('*')
+            .eq('role', userRole);
 
         if (error) {
-            console.error('useAuth: Erro ao buscar permissões de módulo:', error);
-            logActivity('ERROR', `Erro ao buscar permissões de módulo para o papel ${role}: ${error.message}`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
-            setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
-            return;
+            console.error('useAuth: Erro ao buscar permissões de módulo baseadas no papel:', error);
+            logActivity('ERROR', `Erro ao buscar permissões de módulo para o papel ${userRole}: ${error.message}`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
+        } else {
+            data.forEach(p => {
+                if (Object.values(ModuleName).includes(p.module_name as ModuleName)) {
+                    combinedPermissions[p.module_name as ModuleName] = p.enabled;
+                }
+            });
         }
 
-        const newPermissions: Record<ModuleName, boolean> = { ...DEFAULT_MODULE_PERMISSIONS };
-        data.forEach(p => {
-            if (Object.values(ModuleName).includes(p.module_name as ModuleName)) {
-                newPermissions[p.module_name as ModuleName] = p.enabled;
+        // 2. Apply user-specific overrides from 'profiles.permissions'
+        // These overrides are primarily for 'Usuário' role to grant/revoke specific access
+        for (const moduleName in userSpecificPermissions) {
+            if (Object.values(ModuleName).includes(moduleName as ModuleName)) {
+                combinedPermissions[moduleName as ModuleName] = userSpecificPermissions[moduleName];
             }
-        });
-        setModulePermissions(newPermissions);
-        console.log('useAuth: Permissões de módulo buscadas:', newPermissions);
-        logActivity('INFO', `Permissões de módulo carregadas para o papel ${role}.`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
-    }, []); // Dependência vazia para estabilidade
+        }
+        
+        setModulePermissions(combinedPermissions);
+        console.log('useAuth: Permissões de módulo combinadas e definidas:', combinedPermissions);
+        logActivity('INFO', `Permissões de módulo carregadas e combinadas para o papel ${userRole}.`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
+    }, [currentUser, currentCompany]);
 
-    // fetchUserData agora é estável, pois depende apenas de fetchModulePermissions (que é estável).
     const fetchUserData = useCallback(async (userId: string, userEmail: string) => {
         setLoadingAuth(true);
         console.log('useAuth: fetchUserData - Iniciando busca de dados do usuário para ID:', userId);
@@ -104,7 +112,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             console.error('useAuth: Erro ao buscar perfil:', profileError);
             logActivity('ERROR', `Erro ao buscar perfil para o usuário ${userEmail}: ${profileError.message}`, 'AUTH', userId, userEmail);
             setLoadingAuth(false);
-            setCurrentUser(null); // Garante que currentUser é null em caso de erro no perfil
+            setCurrentUser(null);
             setCurrentCompany(null);
             return;
         }
@@ -120,10 +128,9 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 address: profileData.address || undefined,
                 profilePictureUrl: profileData.avatar_url || undefined,
                 permissions: profileData.permissions || {},
-                status: profileData.status || 'active', // Adicionado status
+                status: profileData.status || 'active',
             };
 
-            // Garantir que o e-mail do desenvolvedor sempre tenha o papel de Desenvolvedor
             if (user.email === DEVELOPER_EMAIL && user.role !== UserRole.DEVELOPER) {
                 console.warn(`useAuth: Forçando o papel de 'Desenvolvedor' para ${DEVELOPER_EMAIL}.`);
                 user.role = UserRole.DEVELOPER;
@@ -131,9 +138,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             }
 
             setCurrentUser(user);
-            await fetchModulePermissions(user.role); // Chama a versão estável
+            await fetchModulePermissions(user.role, user.permissions);
 
-            // Verifica se a empresa está vinculada ao perfil
             if (profileData.companies) {
                 console.log('useAuth: Empresa encontrada:', profileData.companies);
                 const company: Company = profileData.companies as unknown as Company;
@@ -147,7 +153,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
         setLoadingAuth(false);
         console.log('useAuth: fetchUserData concluído. loadingAuth = false.');
-    }, [fetchModulePermissions]); // Dependência na função estável
+    }, [fetchModulePermissions]);
 
     useEffect(() => {
         console.log('useAuth: useEffect - loadingSession:', loadingSession, 'session:', session);
@@ -163,7 +169,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
             }
         }
-    }, [session, loadingSession, fetchUserData]); // fetchUserData agora é estável, este useEffect só roda quando session/loadingSession mudam.
+    }, [session, loadingSession, fetchUserData]);
 
     const handleCreateCompany = useCallback(async (companyData: Omit<Company, 'id' | 'created_at'>) => {
         if (!currentUser) {
@@ -249,7 +255,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 address: updatedUser.address,
                 avatar_url: updatedUser.profilePictureUrl,
                 role: roleToUpdate,
-                status: updatedUser.status, // Adicionado status
+                status: updatedUser.status,
             })
             .eq('id', updatedUser.id);
 
@@ -260,7 +266,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         } else {
             setCurrentUser(updatedUser);
             if (currentUser?.role !== updatedUser.role) {
-                await fetchModulePermissions(updatedUser.role);
+                await fetchModulePermissions(updatedUser.role, updatedUser.permissions); // Passar as permissões do usuário
             }
             showSuccess('Perfil atualizado com sucesso!');
             setCurrentView(View.SURVEY_LIST);
@@ -387,7 +393,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
     }, [currentUser, showError, showSuccess, currentCompany]);
 
     const handleUpdateUserPermissions = useCallback(async (userId: string, permissions: Record<string, boolean>) => {
-        if (currentUser?.role !== UserRole.ADMIN) {
+        if (currentUser?.role !== UserRole.ADMIN && currentUser?.role !== UserRole.DEVELOPER) {
             showError('Você não tem permissão para atualizar permissões de usuário.');
             logActivity('WARN', `Tentativa de atualizar permissões do usuário ${userId} por usuário sem permissão (${currentUser?.email}).`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
             return;
@@ -405,8 +411,11 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         } else {
             showSuccess(`Permissões do usuário ${userId} atualizadas com sucesso!`);
             logActivity('INFO', `Permissões do usuário ${userId} atualizadas com sucesso.`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
+            if (currentUser?.id === userId && currentUser.email) {
+                await fetchUserData(userId, currentUser.email);
+            }
         }
-    }, [currentUser, showError, showSuccess, currentCompany]);
+    }, [currentUser, showError, showSuccess, currentCompany, fetchUserData]);
 
     const handleAdminUpdateUserProfile = useCallback(async (userId: string, updatedFields: Partial<User>) => {
         if (currentUser?.role !== UserRole.ADMIN && currentUser?.role !== UserRole.DEVELOPER) {
@@ -415,12 +424,10 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             return;
         }
 
-        // Prevenir que administradores alterem o próprio papel ou o papel de outros
-        // ou o email, que deve ser tratado separadamente.
         const fieldsToUpdate: Partial<User> = { ...updatedFields };
         delete fieldsToUpdate.email;
         delete fieldsToUpdate.role;
-        delete fieldsToUpdate.id; // ID não deve ser atualizado
+        delete fieldsToUpdate.id;
 
         const { error } = await supabase
             .from('profiles')
@@ -451,7 +458,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
 
         try {
-            // A exclusão de um usuário em auth.users deve cascatear para a tabela profiles
             const { error } = await supabase.auth.admin.deleteUser(userId);
 
             if (error) {
@@ -483,7 +489,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         handleResetUserPassword,
         handleCreateUserForCompany,
         handleUpdateUserPermissions,
-        handleAdminUpdateUserProfile, // Exportar a nova função
-        handleDeleteUser, // Exportar a nova função
+        handleAdminUpdateUserProfile,
+        handleDeleteUser,
     };
 };
