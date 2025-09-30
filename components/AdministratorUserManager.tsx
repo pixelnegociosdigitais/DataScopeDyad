@@ -9,6 +9,7 @@ import { supabase } from '../src/integrations/supabase/client';
 import { showSuccess, showError } from '../src/utils/toast';
 import ConfirmationDialog from '../src/components/ConfirmationDialog';
 import { useAuth } from '../src/hooks/useAuth'; // Importar useAuth para as funções de gerenciamento
+import UserEditModal from '../src/components/UserEditModal'; // Importar o novo modal de edição
 
 interface AdministratorUserManagerProps {
     onBack: () => void;
@@ -32,8 +33,11 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
     const [showPermissionsModal, setShowPermissionsModal] = useState(false);
     const [editingUserPermissions, setEditingUserPermissions] = useState<User | null>(null);
     const [currentPermissions, setCurrentPermissions] = useState<Record<string, boolean>>({});
+    const [showEditUserModal, setShowEditUserModal] = useState(false); // Estado para o modal de edição
+    const [editingUser, setEditingUser] = useState<User | null>(null); // Usuário sendo editado
+    const [userToDelete, setUserToDelete] = useState<User | null>(null); // Usuário a ser excluído
 
-    const { handleResetUserPassword, handleCreateUserForCompany, handleUpdateUserPermissions } = useAuth(setCurrentView);
+    const { handleResetUserPassword, handleCreateUserForCompany, handleUpdateUserPermissions, handleAdminUpdateUserProfile, handleDeleteUser } = useAuth(setCurrentView);
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -55,7 +59,8 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                 phone,
                 address,
                 avatar_url,
-                permissions
+                permissions,
+                status
             `)
             .eq('company_id', currentCompany.id)
             .neq('role', UserRole.DEVELOPER); // Administradores não gerenciam Desenvolvedores
@@ -74,6 +79,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                 address: p.address || undefined,
                 profilePictureUrl: p.avatar_url || undefined,
                 permissions: p.permissions || {},
+                status: p.status || 'active', // Adicionado status
             }));
             setUsers(fetchedUsers);
         }
@@ -136,6 +142,39 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
         fetchUsers(); // Recarregar usuários para refletir as permissões atualizadas
     };
 
+    const handleOpenEditUserModal = (user: User) => {
+        setEditingUser(user);
+        setShowEditUserModal(true);
+    };
+
+    const handleCloseEditUserModal = () => {
+        setEditingUser(null);
+        setShowEditUserModal(false);
+    };
+
+    const handleUpdateUserSuccess = (updatedUser: User) => {
+        setUsers(prevUsers => prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
+        fetchUsers(); // Re-fetch para garantir que todos os dados estejam atualizados
+    };
+
+    const confirmDeleteUser = (user: User) => {
+        setUserToDelete(user);
+        setDialogTitle('Confirmar Exclusão de Usuário');
+        setDialogMessage(`Tem certeza que deseja excluir o usuário "${user.fullName}" (${user.email})? Esta ação é irreversível.`);
+        setDialogConfirmAction(() => async () => {
+            await handleDeleteUser(user.id, user.email);
+            setShowConfirmationDialog(false);
+            fetchUsers(); // Recarregar a lista após a exclusão
+        });
+        setShowConfirmationDialog(true);
+    };
+
+    const handleToggleUserStatus = async (user: User) => {
+        const newStatus = user.status === 'active' ? 'inactive' : 'active';
+        await handleAdminUpdateUserProfile(user.id, { status: newStatus });
+        fetchUsers(); // Recarregar a lista para refletir a mudança de status
+    };
+
     if (loading) {
         return <div className="text-center py-8 text-text-light">Carregando gerenciamento de usuários...</div>;
     }
@@ -183,6 +222,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                             <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Nome</th>
                             <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Email</th>
                             <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700">Papel</th>
+                            <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Status</th>
                             <th className="py-3 px-4 text-center text-sm font-semibold text-gray-700">Ações</th>
                         </tr>
                     </thead>
@@ -193,7 +233,30 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                                 <td className="py-3 px-4 text-sm text-gray-700">{user.email}</td>
                                 <td className="py-3 px-4 text-sm text-gray-700">{user.role}</td>
                                 <td className="py-3 px-4 text-center">
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            value=""
+                                            className="sr-only peer"
+                                            checked={user.status === 'active'}
+                                            onChange={() => handleToggleUserStatus(user)}
+                                            disabled={user.id === currentUser.id || user.role === UserRole.ADMIN} // Admins não podem desativar a si mesmos ou outros admins
+                                        />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-light rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                                        <span className="ml-3 text-sm font-medium text-gray-900">
+                                            {user.status === 'active' ? 'Ativo' : 'Inativo'}
+                                        </span>
+                                    </label>
+                                </td>
+                                <td className="py-3 px-4 text-center">
                                     <div className="flex justify-center gap-2">
+                                        <button
+                                            onClick={() => handleOpenEditUserModal(user)}
+                                            className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
+                                            aria-label="Editar usuário"
+                                        >
+                                            <PencilIcon className="h-5 w-5" />
+                                        </button>
                                         <button
                                             onClick={() => confirmResetUserPassword(user.id, user.fullName)}
                                             className="px-3 py-1 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10"
@@ -208,6 +271,14 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                                                 Permissões
                                             </button>
                                         )}
+                                        <button
+                                            onClick={() => confirmDeleteUser(user)}
+                                            className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors"
+                                            aria-label="Excluir usuário"
+                                            disabled={user.id === currentUser.id || user.role === UserRole.ADMIN} // Admins não podem excluir a si mesmos ou outros admins
+                                        >
+                                            <TrashIcon className="h-5 w-5" />
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -306,6 +377,15 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showEditUserModal && editingUser && (
+                <UserEditModal
+                    user={editingUser}
+                    onClose={handleCloseEditUserModal}
+                    onUpdateSuccess={handleUpdateUserSuccess}
+                    onAdminUpdateUserProfile={handleAdminUpdateUserProfile}
+                />
             )}
 
             {showConfirmationDialog && (

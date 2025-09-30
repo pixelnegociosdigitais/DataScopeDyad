@@ -18,6 +18,8 @@ interface UseAuthReturn {
     handleResetUserPassword: (userId: string, newPassword?: string) => Promise<void>;
     handleCreateUserForCompany: (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword?: string) => Promise<void>;
     handleUpdateUserPermissions: (userId: string, permissions: Record<string, boolean>) => Promise<void>;
+    handleAdminUpdateUserProfile: (userId: string, updatedFields: Partial<User>) => Promise<void>; // Nova função
+    handleDeleteUser: (userId: string, userEmail: string) => Promise<void>; // Nova função
 }
 
 const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
@@ -45,8 +47,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         console.log('useAuth: fetchModulePermissions - Buscando permissões para o papel:', role);
         const { data, error } = await supabase
             .from('module_permissions')
-            .select('*')
-            .eq('role', role);
+            .select('*');
 
         if (error) {
             console.error('useAuth: Erro ao buscar permissões de módulo:', error);
@@ -80,6 +81,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 address,
                 avatar_url,
                 permissions,
+                status,
                 companies (
                     id,
                     name,
@@ -116,6 +118,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 address: profileData.address || undefined,
                 profilePictureUrl: profileData.avatar_url || undefined,
                 permissions: profileData.permissions || {},
+                status: profileData.status || 'active', // Adicionado status
             };
 
             // Garantir que o e-mail do desenvolvedor sempre tenha o papel de Desenvolvedor
@@ -244,6 +247,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 address: updatedUser.address,
                 avatar_url: updatedUser.profilePictureUrl,
                 role: roleToUpdate,
+                status: updatedUser.status, // Adicionado status
             })
             .eq('id', updatedUser.id);
 
@@ -402,6 +406,67 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [currentUser, showError, showSuccess, currentCompany]);
 
+    const handleAdminUpdateUserProfile = useCallback(async (userId: string, updatedFields: Partial<User>) => {
+        if (currentUser?.role !== UserRole.ADMIN && currentUser?.role !== UserRole.DEVELOPER) {
+            showError('Você não tem permissão para atualizar perfis de usuário.');
+            logActivity('WARN', `Tentativa de admin atualizar perfil do usuário ${userId} por usuário sem permissão (${currentUser?.email}).`, 'ADMIN_USER_MANAGER', currentUser?.id, currentUser?.email, currentCompany?.id);
+            return;
+        }
+
+        // Prevenir que administradores alterem o próprio papel ou o papel de outros
+        // ou o email, que deve ser tratado separadamente.
+        const fieldsToUpdate: Partial<User> = { ...updatedFields };
+        delete fieldsToUpdate.email;
+        delete fieldsToUpdate.role;
+        delete fieldsToUpdate.id; // ID não deve ser atualizado
+
+        const { error } = await supabase
+            .from('profiles')
+            .update(fieldsToUpdate)
+            .eq('id', userId);
+
+        if (error) {
+            showError('Erro ao atualizar perfil do usuário: ' + error.message);
+            console.error('Erro ao atualizar perfil do usuário:', error);
+            logActivity('ERROR', `Erro ao admin atualizar perfil do usuário ${userId}: ${error.message}`, 'ADMIN_USER_MANAGER', currentUser?.id, currentUser?.email, currentCompany?.id);
+        } else {
+            showSuccess('Perfil do usuário atualizado com sucesso!');
+            logActivity('INFO', `Perfil do usuário ${userId} atualizado por admin.`, 'ADMIN_USER_MANAGER', currentUser?.id, currentUser?.email, currentCompany?.id);
+        }
+    }, [currentUser, showError, showSuccess, currentCompany]);
+
+    const handleDeleteUser = useCallback(async (userId: string, userEmail: string) => {
+        if (currentUser?.role !== UserRole.ADMIN && currentUser?.role !== UserRole.DEVELOPER) {
+            showError('Você não tem permissão para excluir usuários.');
+            logActivity('WARN', `Tentativa de excluir usuário ${userId} por usuário sem permissão (${currentUser?.email}).`, 'ADMIN_USER_MANAGER', currentUser?.id, currentUser?.email, currentCompany?.id);
+            return;
+        }
+
+        if (userId === currentUser?.id) {
+            showError('Você não pode excluir seu próprio usuário.');
+            logActivity('WARN', `Tentativa de auto-exclusão bloqueada para o usuário ${currentUser?.email}.`, 'ADMIN_USER_MANAGER', currentUser?.id, currentUser?.email, currentCompany?.id);
+            return;
+        }
+
+        try {
+            // A exclusão de um usuário em auth.users deve cascatear para a tabela profiles
+            const { error } = await supabase.auth.admin.deleteUser(userId);
+
+            if (error) {
+                showError(`Erro ao excluir usuário: ${error.message}`);
+                console.error('Erro ao excluir usuário:', error);
+                logActivity('ERROR', `Erro ao excluir usuário ${userEmail} (ID: ${userId}): ${error.message}`, 'ADMIN_USER_MANAGER', currentUser?.id, currentUser?.email, currentCompany?.id);
+            } else {
+                showSuccess(`Usuário ${userEmail} excluído com sucesso!`);
+                logActivity('INFO', `Usuário ${userEmail} (ID: ${userId}) excluído com sucesso.`, 'ADMIN_USER_MANAGER', currentUser?.id, currentUser?.email, currentCompany?.id);
+            }
+        } catch (err: any) {
+            showError(`Erro inesperado ao excluir usuário: ${err.message}`);
+            console.error('Erro inesperado ao excluir usuário:', err);
+            logActivity('ERROR', `Erro inesperado ao excluir usuário ${userEmail} (ID: ${userId}): ${err.message}`, 'ADMIN_USER_MANAGER', currentUser?.id, currentUser?.email, currentCompany?.id);
+        }
+    }, [currentUser, showError, showSuccess, currentCompany]);
+
 
     return {
         currentUser,
@@ -416,5 +481,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         handleResetUserPassword,
         handleCreateUserForCompany,
         handleUpdateUserPermissions,
+        handleAdminUpdateUserProfile, // Exportar a nova função
+        handleDeleteUser, // Exportar a nova função
     };
 };

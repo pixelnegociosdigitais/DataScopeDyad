@@ -13,6 +13,7 @@ export interface User {
     address?: string;
     profilePictureUrl?: string;
     permissions?: Record<string, boolean>; // Adicionado para permissões granulares
+    status?: 'active' | 'inactive'; // Adicionado para o status do usuário
 }
 
 export interface Company {
