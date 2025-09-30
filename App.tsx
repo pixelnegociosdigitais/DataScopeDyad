@@ -15,6 +15,7 @@ import SettingsPanel from './components/SettingsPanel';
 import ModulePermissionsManager from './components/ModulePermissionsManager';
 import DeveloperCompanyUserManager from './components/DeveloperCompanyUserManager';
 import AdministratorUserManager from './components/AdministratorUserManager';
+import LogsAndAuditPanel from './components/LogsAndAuditPanel'; // Importar o novo componente
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
@@ -223,6 +224,8 @@ const App: React.FC = () => {
                 return <DeveloperCompanyUserManager onBack={handleBack} setCurrentView={setCurrentView} />;
             case View.ADMIN_USER_MANAGER:
                 return <AdministratorUserManager onBack={handleBack} currentUser={currentUser} currentCompany={currentCompany} setCurrentView={setCurrentView} />;
+            case View.LOGS_AND_AUDIT: // Novo caso para Logs e Auditoria
+                return <LogsAndAuditPanel onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
             default:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
         }

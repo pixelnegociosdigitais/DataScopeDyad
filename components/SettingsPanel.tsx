@@ -14,6 +14,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
         setView(View.MODULE_PERMISSIONS_MANAGER);
     };
 
+    const handleViewLogs = () => {
+        setView(View.LOGS_AND_AUDIT);
+    };
+
     return (
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
             <div className="flex items-center gap-4 mb-6">
@@ -43,11 +47,14 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                    <h3 className="text-lg font-semibold text-text-main mb-2">Logs e Auditoria (Em Breve)</h3>
+                    <h3 className="text-lg font-semibold text-text-main mb-2">Logs e Auditoria</h3>
                     <p className="text-text-light text-sm">
                         Visualize logs de atividades e auditoria do sistema para monitorar o uso e identificar problemas.
                     </p>
-                    <button className="mt-4 px-4 py-2 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary/10 transition-colors" disabled>
+                    <button 
+                        onClick={handleViewLogs}
+                        className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                    >
                         Ver Logs
                     </button>
                 </div>

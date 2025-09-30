@@ -100,6 +100,7 @@ export enum View {
     MODULE_PERMISSIONS_MANAGER = 'MODULE_PERMISSIONS_MANAGER', // Nova view para gerenciamento de permissões
     DEVELOPER_COMPANY_USER_MANAGER = 'DEVELOPER_COMPANY_USER_MANAGER', // Nova view para o Developer
     ADMIN_USER_MANAGER = 'ADMIN_USER_MANAGER', // Nova view para o Administrador
+    LOGS_AND_AUDIT = 'LOGS_AND_AUDIT', // Nova view para Logs e Auditoria
 }
 
 export enum ModuleName {
