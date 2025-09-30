@@ -7,7 +7,8 @@ interface PastWinner {
     winner_name: string;
     winner_phone: string | null;
     rank: number;
-    prizes: { name: string }[]; // Updated to match the actual data structure
+    prize_id: string; // Adicionado para depuração e clareza
+    prizes: { name: string } | null; // Alterado para um objeto único ou null
 }
 
 interface PastWinnersHistoryProps {
@@ -22,7 +23,14 @@ const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyI
         setLoading(true);
         const { data, error } = await supabase
             .from('giveaway_winners')
-            .select(`created_at, winner_name, winner_phone, rank, prizes ( name )`)
+            .select(`
+                created_at,
+                winner_name,
+                winner_phone,
+                rank,
+                prize_id,
+                prizes!left(name)
+            `) // Usar left join para garantir que o winner seja retornado mesmo sem prêmio
             .eq('survey_id', selectedSurveyId)
             .order('created_at', { ascending: false })
             .order('rank', { ascending: true });
@@ -31,7 +39,9 @@ const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyI
             showError('Não foi possível carregar o histórico de sorteios.');
             setPastWinners([]);
         } else {
-            setPastWinners(data || []); // Now properly typed
+            // O Supabase retorna 'prizes' como um objeto se for um relacionamento one-to-one/many-to-one
+            // ou null se não houver correspondência (devido ao !left)
+            setPastWinners(data as PastWinner[] || []);
         }
         setLoading(false);
     }, [selectedSurveyId]);
@@ -64,7 +74,7 @@ const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyI
                                     <td className="py-3 px-4 text-sm text-gray-800 font-medium">{winner.winner_name}</td>
                                     <td className="py-3 px-4 text-sm text-gray-700">{winner.winner_phone || 'N/A'}</td>
                                     <td className="py-3 px-4 text-sm text-gray-700 text-center">{winner.rank}º</td>
-                                    <td className="py-3 px-4 text-sm text-gray-700">{winner.prizes[0]?.name || 'Prêmio desconhecido'}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-700">{winner.prizes?.name || 'Prêmio desconhecido'}</td>
                                 </tr>
                             ))}
                         </tbody>
