@@ -1,11 +1,12 @@
 import React from 'react';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
-import { View } from '../types'; // Importar View
+import { BellIcon } from './icons/BellIcon'; // Importar o novo ícone
+import { View } from '../types';
 
 interface SettingsPanelProps {
     onBack: () => void;
-    setView: (view: View) => void; // Adicionar setView para navegação
+    setView: (view: View) => void;
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
@@ -16,6 +17,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
 
     const handleViewLogs = () => {
         setView(View.LOGS_AND_AUDIT);
+    };
+
+    const handleManageNotices = () => {
+        setView(View.MANAGE_NOTICES);
     };
 
     return (
@@ -56,6 +61,19 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
                         className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
                     >
                         Ver Logs
+                    </button>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                    <h3 className="text-lg font-semibold text-text-main mb-2">Gerenciamento de Avisos</h3>
+                    <p className="text-text-light text-sm">
+                        Crie e gerencie avisos para Administradores e Usuários da plataforma.
+                    </p>
+                    <button 
+                        onClick={handleManageNotices}
+                        className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                    >
+                        <BellIcon className="h-4 w-4 inline-block mr-2" /> Gerenciar Avisos
                     </button>
                 </div>
             </div>

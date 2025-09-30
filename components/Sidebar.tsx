@@ -4,10 +4,11 @@ import { HomeIcon } from './icons/HomeIcon';
 import { CreateIcon } from './icons/CreateIcon';
 import { GiftIcon } from './icons/GiftIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
-import { MenuIcon } from './icons/MenuIcon'; // Importar o novo ícone
-import { ChevronLeftIcon } from './icons/ChevronLeftIcon'; // Importar o novo ícone
-import { BuildingIcon } from './icons/BuildingIcon'; // Importar BuildingIcon para gerenciamento de empresas
-import { UserIcon } from './icons/UserIcon'; // Importar UserIcon para gerenciamento de usuários
+import { MenuIcon } from './icons/MenuIcon';
+import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
+import { BuildingIcon } from './icons/BuildingIcon';
+import { UserIcon } from './icons/UserIcon';
+import { BellIcon } from './icons/BellIcon'; // Importar o novo ícone
 import { View, ModuleName, UserRole } from '../types';
 
 interface SidebarProps {
@@ -15,8 +16,8 @@ interface SidebarProps {
     setView: (view: View) => void;
     modulePermissions: Record<ModuleName, boolean>;
     currentUserRole: UserRole;
-    isExpanded: boolean; // Adicionar prop para controlar expansão
-    onToggle: () => void; // Adicionar prop para função de toggle
+    isExpanded: boolean;
+    onToggle: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissions, currentUserRole, isExpanded, onToggle }) => {
@@ -37,7 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
             label: 'Sorteios',
             icon: GiftIcon,
             view: View.GIVEAWAYS,
-            permission: modulePermissions[ModuleName.ACCESS_GIVEAWAYS],
+            permission: modulePermissions[ModuleName.PERFORM_GIVEAWAYS] || modulePermissions[ModuleName.VIEW_GIVEAWAY_DATA],
         },
         {
             label: 'Gerenciar Usuários',
@@ -50,6 +51,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
             icon: BuildingIcon,
             view: View.DEVELOPER_COMPANY_USER_MANAGER,
             permission: currentUserRole === UserRole.DEVELOPER, // Apenas Desenvolvedores
+        },
+        {
+            label: 'Gerenciar Avisos', // Novo item de menu
+            icon: BellIcon,
+            view: View.MANAGE_NOTICES,
+            permission: modulePermissions[ModuleName.MANAGE_NOTICES],
         },
         {
             label: 'Configurações',

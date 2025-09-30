@@ -88,6 +88,16 @@ export interface GiveawayWinner {
     prize?: Prize; // Para incluir detalhes do prêmio ao buscar
 }
 
+export interface Notice {
+    id: string;
+    created_at: string;
+    sender_id: string;
+    sender_email: string;
+    message: string;
+    target_roles: UserRole[]; // Array de roles para quem o aviso é destinado
+    company_id?: string; // Opcional, para avisos específicos da empresa
+}
+
 export enum View {
     SURVEY_LIST = 'SURVEY_LIST',
     CREATE_SURVEY = 'CREATE_SURVEY',
@@ -102,6 +112,7 @@ export enum View {
     DEVELOPER_COMPANY_USER_MANAGER = 'DEVELOPER_COMPANY_USER_MANAGER', // Nova view para o Developer
     ADMIN_USER_MANAGER = 'ADMIN_USER_MANAGER', // Nova view para o Administrador
     LOGS_AND_AUDIT = 'LOGS_AND_AUDIT', // Nova view para Logs e Auditoria
+    MANAGE_NOTICES = 'MANAGE_NOTICES', // Nova view para gerenciar avisos
 }
 
 export enum ModuleName {
@@ -114,6 +125,7 @@ export enum ModuleName {
     MANAGE_COMPANY_SETTINGS = 'manage_company_settings',
     MANAGE_USERS = 'manage_users', // Para administradores gerenciarem usuários
     MANAGE_COMPANIES = 'manage_companies', // Para desenvolvedores gerenciarem empresas
+    MANAGE_NOTICES = 'manage_notices', // Nova permissão: Gerenciar avisos
 }
 
 export interface ModulePermission {

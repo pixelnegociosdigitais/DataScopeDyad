@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { UserRole, View, Survey, ModuleName } from './types';
+import { UserRole, View, Survey, ModuleName, Notice } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import SurveyList from './components/SurveyList';
@@ -15,8 +15,10 @@ import SettingsPanel from './components/SettingsPanel';
 import ModulePermissionsManager from './components/ModulePermissionsManager';
 import DeveloperCompanyUserManager from './components/DeveloperCompanyUserManager';
 import AdministratorUserManager from './components/AdministratorUserManager';
-import LogsAndAuditPanel from './components/LogsAndAuditPanel'; // Importar o novo componente
+import LogsAndAuditPanel from './components/LogsAndAuditPanel';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
+import NoticeCreator from './src/components/NoticeCreator'; // Importar NoticeCreator
+import NoticeDisplay from './src/components/NoticeDisplay'; // Importar NoticeDisplay
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
@@ -29,7 +31,8 @@ const App: React.FC = () => {
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
-    const [companySettingsAccessDenied, setCompanySettingsAccessDenied] = useState(false); // Novo estado para controle de acesso
+    const [companySettingsAccessDenied, setCompanySettingsAccessDenied] = useState(false);
+    const [displayedNotices, setDisplayedNotices] = useState<Notice[]>([]); // Estado para avisos
 
     const {
         currentUser,
@@ -170,6 +173,10 @@ const App: React.FC = () => {
         setIsSidebarExpanded(prev => !prev);
     }, []);
 
+    const handleNoticeDismiss = useCallback((noticeId: string) => {
+        setDisplayedNotices(prev => prev.filter(notice => notice.id !== noticeId));
+    }, []);
+
     const loading = loadingSession || loadingAuth || loadingSurveys;
 
     if (loading) {
@@ -207,9 +214,6 @@ const App: React.FC = () => {
                 }
                 return null;
             case View.COMPANY_SETTINGS:
-                // Se o acesso foi negado e o usuário foi redirecionado, este caso não será renderizado.
-                // Se chegamos aqui, significa que ou não há empresa (formulário de criação)
-                // ou há empresa e o usuário tem permissão (formulário de edição).
                 if (!currentCompany) {
                     return <CompanyCreationForm user={currentUser} onCreateCompany={handleCreateCompany} onBack={handleBack} />;
                 }
@@ -224,8 +228,10 @@ const App: React.FC = () => {
                 return <DeveloperCompanyUserManager onBack={handleBack} setCurrentView={setCurrentView} />;
             case View.ADMIN_USER_MANAGER:
                 return <AdministratorUserManager onBack={handleBack} currentUser={currentUser} currentCompany={currentCompany} setCurrentView={setCurrentView} />;
-            case View.LOGS_AND_AUDIT: // Novo caso para Logs e Auditoria
+            case View.LOGS_AND_AUDIT:
                 return <LogsAndAuditPanel onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
+            case View.MANAGE_NOTICES: // Novo caso para o criador de avisos
+                return <NoticeCreator onBack={handleBack} />;
             default:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
         }
@@ -250,6 +256,8 @@ const App: React.FC = () => {
                     modulePermissions={modulePermissions}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
+                    {/* Renderiza os avisos aqui */}
+                    <NoticeDisplay onNoticeDismiss={handleNoticeDismiss} />
                     {renderContent()}
                 </main>
             </div>

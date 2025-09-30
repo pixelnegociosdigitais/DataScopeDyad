@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User, Company, UserRole, View, ModuleName, ModulePermission } from '@/types';
+import { User, Company, UserRole, View, ModuleName, ModulePermission, Notice } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { useAuthSession } from '@/src/context/AuthSessionContext';
 import { showSuccess, showError } from '@/src/utils/toast';
@@ -20,6 +20,7 @@ interface UseAuthReturn {
     handleUpdateUserPermissions: (userId: string, permissions: Record<string, boolean>) => Promise<void>;
     handleAdminUpdateUserProfile: (userId: string, updatedFields: Partial<User>) => Promise<void>;
     handleDeleteUser: (userId: string, userEmail: string) => Promise<void>;
+    handleCreateNotice: (message: string, targetRoles: UserRole[], companyId?: string) => Promise<boolean>;
 }
 
 const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
@@ -32,6 +33,7 @@ const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
     [ModuleName.MANAGE_COMPANY_SETTINGS]: false,
     [ModuleName.MANAGE_USERS]: false,
     [ModuleName.MANAGE_COMPANIES]: false,
+    [ModuleName.MANAGE_NOTICES]: false, // Novo módulo de avisos
 };
 
 const DEVELOPER_EMAIL = 'santananegociosdigitais@gmail.com';
@@ -482,6 +484,68 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [currentUser, showError, showSuccess, currentCompany]);
 
+    const handleCreateNotice = useCallback(async (message: string, targetRoles: UserRole[], companyId?: string): Promise<boolean> => {
+        if (!currentUser) {
+            showError('Você precisa estar logado para criar um aviso.');
+            logActivity('WARN', 'Tentativa de criar aviso sem usuário logado.', 'NOTICES');
+            return false;
+        }
+
+        if (!message.trim()) {
+            showError('A mensagem do aviso não pode estar vazia.');
+            logActivity('WARN', `Tentativa de criar aviso vazio por ${currentUser.email}.`, 'NOTICES', currentUser.id, currentUser.email, companyId);
+            return false;
+        }
+
+        if (targetRoles.length === 0) {
+            showError('Selecione pelo menos um papel para o aviso.');
+            logActivity('WARN', `Tentativa de criar aviso sem papéis de destino por ${currentUser.email}.`, 'NOTICES', currentUser.id, currentUser.email, companyId);
+            return false;
+        }
+
+        // Validação de permissões para criar avisos
+        if (currentUser.role === UserRole.ADMIN) {
+            if (targetRoles.includes(UserRole.DEVELOPER) || targetRoles.includes(UserRole.ADMIN)) {
+                showError('Administradores só podem enviar avisos para Usuários.');
+                logActivity('WARN', `Admin ${currentUser.email} tentou enviar aviso para Desenvolvedor/Admin.`, 'NOTICES', currentUser.id, currentUser.email, companyId);
+                return false;
+            }
+            if (!companyId || companyId !== currentCompany?.id) {
+                showError('Administradores só podem enviar avisos para usuários da sua própria empresa.');
+                logActivity('WARN', `Admin ${currentUser.email} tentou enviar aviso para fora da sua empresa.`, 'NOTICES', currentUser.id, currentUser.email, companyId);
+                return false;
+            }
+        } else if (currentUser.role === UserRole.USER) {
+            showError('Usuários não têm permissão para criar avisos.');
+            logActivity('WARN', `Usuário ${currentUser.email} tentou criar aviso.`, 'NOTICES', currentUser.id, currentUser.email, companyId);
+            return false;
+        }
+
+        try {
+            const { error } = await supabase.from('notices').insert({
+                sender_id: currentUser.id,
+                sender_email: currentUser.email,
+                message,
+                target_roles: targetRoles,
+                company_id: companyId,
+            });
+
+            if (error) {
+                showError('Erro ao criar aviso: ' + error.message);
+                logActivity('ERROR', `Erro ao criar aviso por ${currentUser.email}: ${error.message}`, 'NOTICES', currentUser.id, currentUser.email, companyId);
+                return false;
+            }
+
+            showSuccess('Aviso criado e enviado com sucesso!');
+            logActivity('INFO', `Aviso criado por ${currentUser.email} para ${targetRoles.join(', ')}.`, 'NOTICES', currentUser.id, currentUser.email, companyId);
+            return true;
+        } catch (err: any) {
+            showError('Erro inesperado ao criar aviso: ' + err.message);
+            logActivity('ERROR', `Erro inesperado ao criar aviso por ${currentUser.email}: ${err.message}`, 'NOTICES', currentUser.id, currentUser.email, companyId);
+            return false;
+        }
+    }, [currentUser, currentCompany, showError, showSuccess]);
+
 
     return {
         currentUser,
@@ -498,5 +562,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         handleUpdateUserPermissions,
         handleAdminUpdateUserProfile,
         handleDeleteUser,
+        handleCreateNotice,
     };
 };
