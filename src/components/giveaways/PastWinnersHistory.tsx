@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { showError } from '../../utils/toast';
+import { useAuth } from '../../hooks/useAuth'; // Importar useAuth para acessar modulePermissions
+import { ModuleName } from '../../../types'; // Importar ModuleName
 
 interface PastWinner {
     created_at: string;
@@ -19,7 +21,16 @@ const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyI
     const [pastWinners, setPastWinners] = useState<PastWinner[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const { modulePermissions } = useAuth(() => {}); // Obter as permissões do módulo
+    const canViewGiveawayData = modulePermissions[ModuleName.VIEW_GIVEAWAY_DATA];
+
     const fetchPastWinners = useCallback(async () => {
+        if (!canViewGiveawayData) {
+            setPastWinners([]);
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         const { data, error } = await supabase
             .from('giveaway_winners')
@@ -51,11 +62,19 @@ const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyI
             setPastWinners(mappedWinners);
         }
         setLoading(false);
-    }, [selectedSurveyId]);
+    }, [selectedSurveyId, canViewGiveawayData]);
 
     useEffect(() => {
         fetchPastWinners();
     }, [fetchPastWinners]);
+
+    if (!canViewGiveawayData) {
+        return (
+            <div className="mt-12 text-center text-text-light">
+                <p>Você não tem permissão para visualizar o histórico de sorteios.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="mt-12">

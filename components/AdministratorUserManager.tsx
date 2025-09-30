@@ -23,7 +23,9 @@ const moduleNameTranslations: Record<ModuleName, string> = {
     [ModuleName.CREATE_SURVEY]: 'Criar Pesquisas',
     [ModuleName.MANAGE_SURVEYS]: 'Gerenciar Pesquisas (Editar/Excluir)',
     [ModuleName.VIEW_DASHBOARD]: 'Visualizar Painel de Pesquisas',
-    [ModuleName.ACCESS_GIVEAWAYS]: 'Acessar Sorteios',
+    [ModuleName.ACCESS_GIVEAWAYS]: 'Acessar Sorteios (Antigo)', // Manter para compatibilidade, mas será desativado
+    [ModuleName.PERFORM_GIVEAWAYS]: 'Realizar Sorteios e Gerenciar Prêmios', // Novo
+    [ModuleName.VIEW_GIVEAWAY_DATA]: 'Visualizar Histórico de Sorteios', // Novo
     [ModuleName.MANAGE_COMPANY_SETTINGS]: 'Gerenciar Configurações da Empresa',
     [ModuleName.MANAGE_USERS]: 'Gerenciar Usuários',
     [ModuleName.MANAGE_COMPANIES]: 'Gerenciar Empresas',
@@ -360,17 +362,22 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                     <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
                         <h3 className="text-xl font-bold text-text-main mb-4">Permissões para {editingUserPermissions.fullName}</h3>
                         <div className="space-y-3">
-                            {Object.values(ModuleName).map((moduleName: ModuleName) => (
-                                <label key={moduleName} className="flex items-center space-x-3 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={currentPermissions[moduleName] || false}
-                                        onChange={(e) => handlePermissionChange(moduleName, e.target.checked)}
-                                        className="form-checkbox h-5 w-5 text-primary rounded focus:ring-primary"
-                                    />
-                                    <span>{moduleNameTranslations[moduleName] || moduleName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
-                                </label>
-                            ))}
+                            {Object.values(ModuleName).map((moduleName: ModuleName) => {
+                                // Não exibir o módulo ACCESS_GIVEAWAYS (antigo)
+                                if (moduleName === ModuleName.ACCESS_GIVEAWAYS) return null;
+
+                                return (
+                                    <label key={moduleName} className="flex items-center space-x-3 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={currentPermissions[moduleName] || false}
+                                            onChange={(e) => handlePermissionChange(moduleName, e.target.checked)}
+                                            className="form-checkbox h-5 w-5 text-primary rounded focus:ring-primary"
+                                        />
+                                        <span>{moduleNameTranslations[moduleName]}</span>
+                                    </label>
+                                );
+                            })}
                         </div>
                         <div className="mt-6 flex justify-end gap-3">
                             <button

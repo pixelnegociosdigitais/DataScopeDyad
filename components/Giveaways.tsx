@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { User, Company, Survey, Prize, GiveawayWinner } from '../types';
+import { User, Company, Survey, Prize, GiveawayWinner, ModuleName } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
 import { GiftIcon } from './icons/GiftIcon';
 import { showError, showSuccess } from '../src/utils/toast';
@@ -11,6 +11,7 @@ import ParticipantList from '../src/components/giveaways/ParticipantList';
 import DrawSetup from '../src/components/giveaways/DrawSetup';
 import PastWinnersHistory from '../src/components/giveaways/PastWinnersHistory';
 import { logActivity } from '../src/utils/logger'; // Importar o utilitário de log
+import { useAuth } from '../src/hooks/useAuth'; // Importar useAuth para acessar modulePermissions
 
 interface GiveawayParticipant {
     id: string;
@@ -34,6 +35,11 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     const [isDrawing, setIsDrawing] = useState(false);
     const [countdown, setCountdown] = useState(0);
     const [progress, setProgress] = useState(0);
+
+    const { modulePermissions } = useAuth(() => {}); // Obter as permissões do módulo
+
+    const canPerformGiveaways = modulePermissions[ModuleName.PERFORM_GIVEAWAYS];
+    const canViewGiveawayData = modulePermissions[ModuleName.VIEW_GIVEAWAY_DATA];
 
     const animationDuration = 3000;
 
@@ -101,6 +107,11 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     }, [isDrawing]);
 
     const handleDraw = async () => {
+        if (!canPerformGiveaways) {
+            showError('Você não tem permissão para realizar sorteios.');
+            logActivity('WARN', `Tentativa de realizar sorteio por usuário sem permissão (${currentUser.email}).`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany?.id);
+            return;
+        }
         if (!selectedSurveyId || participants.length === 0 || selectedPrizesForDraw.length === 0) {
             showError('Selecione uma pesquisa, certifique-se de que há participantes e selecione prêmios para sortear.');
             logActivity('WARN', `Tentativa de sorteio sem pesquisa, participantes ou prêmios selecionados.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany?.id);
@@ -169,23 +180,34 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             </div>
             <p className="text-text-light mb-6">Realize sorteios entre os leads cadastrados nas pesquisas da sua empresa ({currentCompany.name}).</p>
 
-            <PrizeManager currentCompany={currentCompany} currentUser={currentUser} prizes={prizes} onPrizesUpdate={fetchPrizes} />
-            <SurveySelector availableSurveys={availableSurveys} selectedSurveyId={selectedSurveyId} onSurveyChange={setSelectedSurveyId} />
+            {canPerformGiveaways && (
+                <PrizeManager currentCompany={currentCompany} currentUser={currentUser} prizes={prizes} onPrizesUpdate={fetchPrizes} />
+            )}
+            
+            {(canPerformGiveaways || canViewGiveawayData) && (
+                <SurveySelector availableSurveys={availableSurveys} selectedSurveyId={selectedSurveyId} onSurveyChange={setSelectedSurveyId} />
+            )}
 
-            {selectedSurveyId && (
+            {selectedSurveyId && (canPerformGiveaways || canViewGiveawayData) && (
                 <>
                     <ParticipantList selectedSurveyId={selectedSurveyId} onParticipantsLoad={setParticipants} />
-                    <DrawSetup prizes={prizes} selectedPrizesForDraw={selectedPrizesForDraw} onPrizeSelectionChange={handlePrizeSelectionForDraw} />
-                    <div className="flex justify-center mb-8">
-                        <button
-                            onClick={handleDraw}
-                            className="px-8 py-3 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={participants.length === 0 || isDrawing || selectedPrizesForDraw.length === 0}
-                        >
-                            {isDrawing ? 'Sorteando...' : 'Sortear'}
-                        </button>
-                    </div>
-                    <PastWinnersHistory selectedSurveyId={selectedSurveyId} />
+                    {canPerformGiveaways && (
+                        <DrawSetup prizes={prizes} selectedPrizesForDraw={selectedPrizesForDraw} onPrizeSelectionChange={handlePrizeSelectionForDraw} />
+                    )}
+                    {canPerformGiveaways && (
+                        <div className="flex justify-center mb-8">
+                            <button
+                                onClick={handleDraw}
+                                className="px-8 py-3 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={participants.length === 0 || isDrawing || selectedPrizesForDraw.length === 0}
+                            >
+                                {isDrawing ? 'Sorteando...' : 'Sortear'}
+                            </button>
+                        </div>
+                    )}
+                    {canViewGiveawayData && (
+                        <PastWinnersHistory selectedSurveyId={selectedSurveyId} />
+                    )}
                 </>
             )}
 

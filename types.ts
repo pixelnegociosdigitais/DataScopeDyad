@@ -108,7 +108,9 @@ export enum ModuleName {
     CREATE_SURVEY = 'create_survey',
     MANAGE_SURVEYS = 'manage_surveys', // Edit/Delete surveys
     VIEW_DASHBOARD = 'view_dashboard',
-    ACCESS_GIVEAWAYS = 'access_giveaways',
+    ACCESS_GIVEAWAYS = 'access_giveaways', // Será substituído por PERFORM_GIVEAWAYS e VIEW_GIVEAWAY_DATA
+    PERFORM_GIVEAWAYS = 'perform_giveaways', // Nova permissão: Realizar sorteios e gerenciar prêmios
+    VIEW_GIVEAWAY_DATA = 'view_giveaway_data', // Nova permissão: Visualizar histórico de sorteios
     MANAGE_COMPANY_SETTINGS = 'manage_company_settings',
     MANAGE_USERS = 'manage_users', // Para administradores gerenciarem usuários
     MANAGE_COMPANIES = 'manage_companies', // Para desenvolvedores gerenciarem empresas

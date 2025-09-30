@@ -26,7 +26,9 @@ const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
     [ModuleName.CREATE_SURVEY]: true,
     [ModuleName.MANAGE_SURVEYS]: true,
     [ModuleName.VIEW_DASHBOARD]: true,
-    [ModuleName.ACCESS_GIVEAWAYS]: true,
+    [ModuleName.ACCESS_GIVEAWAYS]: false, // Desativar o módulo antigo
+    [ModuleName.PERFORM_GIVEAWAYS]: true, // Novo módulo, ativado por padrão para admins/devs
+    [ModuleName.VIEW_GIVEAWAY_DATA]: true, // Novo módulo, ativado por padrão para admins/devs
     [ModuleName.MANAGE_COMPANY_SETTINGS]: true,
     [ModuleName.MANAGE_USERS]: true, // Novo módulo
     [ModuleName.MANAGE_COMPANIES]: true, // Novo módulo

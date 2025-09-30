@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Prize, Company, User, UserRole } from '../../../types';
+import { Prize, Company, User, UserRole, ModuleName } from '../../../types';
 import { supabase } from '../../integrations/supabase/client';
 import { showError, showSuccess } from '../../utils/toast';
 import { CreateIcon } from '../../../components/icons/CreateIcon';
@@ -7,6 +7,7 @@ import { PencilIcon } from '../../../components/icons/PencilIcon';
 import { TrashIcon } from '../../../components/icons/TrashIcon';
 import ConfirmationDialog from '../ConfirmationDialog';
 import { logActivity } from '../../utils/logger'; // Importar o utilitário de log
+import { useAuth } from '../../hooks/useAuth'; // Importar useAuth para acessar modulePermissions
 
 interface PrizeManagerProps {
     currentCompany: Company;
@@ -24,10 +25,11 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
     const [showDeletePrizeDialog, setShowDeletePrizeDialog] = useState(false);
     const [prizeToDelete, setPrizeToDelete] = useState<Prize | null>(null);
 
-    const canManagePrizes = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
+    const { modulePermissions } = useAuth(() => {}); // Obter as permissões do módulo
+    const canPerformGiveaways = modulePermissions[ModuleName.PERFORM_GIVEAWAYS];
 
-    if (!canManagePrizes) {
-        return null;
+    if (!canPerformGiveaways) {
+        return null; // Não renderiza o gerenciador de prêmios se não tiver permissão
     }
 
     const handleOpenPrizeModal = (prize: Prize | null = null) => {
