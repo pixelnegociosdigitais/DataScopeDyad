@@ -39,6 +39,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
     const [loadingAuth, setLoadingAuth] = useState(true);
     const [modulePermissions, setModulePermissions] = useState<Record<ModuleName, boolean>>(DEFAULT_MODULE_PERMISSIONS);
 
+    // fetchModulePermissions agora é estável, pois não depende de estados mutáveis para sua recriação.
+    // As variáveis currentUser e currentCompany são acessadas do closure para fins de log.
     const fetchModulePermissions = useCallback(async (role: UserRole) => {
         console.log('useAuth: fetchModulePermissions - Buscando permissões para o papel:', role);
         const { data, error } = await supabase
@@ -48,7 +50,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         if (error) {
             console.error('useAuth: Erro ao buscar permissões de módulo:', error);
-            logActivity('ERROR', `Erro ao buscar permissões de módulo para o papel ${role}: ${error.message}`, 'AUTH');
+            logActivity('ERROR', `Erro ao buscar permissões de módulo para o papel ${role}: ${error.message}`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
             setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
             return;
         }
@@ -62,8 +64,9 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         setModulePermissions(newPermissions);
         console.log('useAuth: Permissões de módulo buscadas:', newPermissions);
         logActivity('INFO', `Permissões de módulo carregadas para o papel ${role}.`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
-    }, [currentUser, currentCompany]);
+    }, []); // Dependência vazia para estabilidade
 
+    // fetchUserData agora é estável, pois depende apenas de fetchModulePermissions (que é estável).
     const fetchUserData = useCallback(async (userId: string, userEmail: string) => {
         setLoadingAuth(true);
         console.log('useAuth: fetchUserData - Iniciando busca de dados do usuário para ID:', userId);
@@ -120,12 +123,10 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 console.warn(`useAuth: Forçando o papel de 'Desenvolvedor' para ${DEVELOPER_EMAIL}.`);
                 user.role = UserRole.DEVELOPER;
                 logActivity('WARN', `Papel de 'Desenvolvedor' forçado para o usuário ${userEmail}.`, 'AUTH', userId, userEmail);
-                // Opcionalmente, atualizar o DB aqui se estiver fora de sincronia, mas por enquanto, apenas atualiza o estado local
-                // await supabase.from('profiles').update({ role: UserRole.DEVELOPER }).eq('id', user.id);
             }
 
             setCurrentUser(user);
-            await fetchModulePermissions(user.role);
+            await fetchModulePermissions(user.role); // Chama a versão estável
 
             // Verifica se a empresa está vinculada ao perfil
             if (profileData.companies) {
@@ -141,7 +142,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
         setLoadingAuth(false);
         console.log('useAuth: fetchUserData concluído. loadingAuth = false.');
-    }, [fetchModulePermissions]);
+    }, [fetchModulePermissions]); // Dependência na função estável
 
     useEffect(() => {
         console.log('useAuth: useEffect - loadingSession:', loadingSession, 'session:', session);
@@ -157,7 +158,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
             }
         }
-    }, [session, loadingSession, fetchUserData]);
+    }, [session, loadingSession, fetchUserData]); // fetchUserData agora é estável, este useEffect só roda quando session/loadingSession mudam.
 
     const handleCreateCompany = useCallback(async (companyData: Omit<Company, 'id' | 'created_at'>) => {
         if (!currentUser) {
@@ -221,7 +222,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         setCurrentView(View.SURVEY_LIST);
         logActivity('INFO', `Empresa '${newCompany.name}' criada e vinculada ao usuário ${userEmail}.`, 'COMPANIES', userId, userEmail, newCompany.id);
         console.log('useAuth: Empresa criada e perfil atualizado com sucesso.');
-    }, [currentUser, setCurrentView, fetchModulePermissions, showError, showSuccess]);
+    }, [currentUser, setCurrentView, fetchModulePermissions, showError, showSuccess, setCurrentUser, setCurrentCompany]);
 
     const handleUpdateProfile = useCallback(async (updatedUser: User) => {
         console.log('useAuth: handleUpdateProfile - Atualizando perfil para:', updatedUser.id);
@@ -260,7 +261,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             logActivity('INFO', `Perfil do usuário ${updatedUser.email} atualizado com sucesso.`, 'PROFILE', updatedUser.id, updatedUser.email, currentCompany?.id);
             console.log('useAuth: Perfil atualizado com sucesso.');
         }
-    }, [setCurrentView, currentUser?.role, fetchModulePermissions, showError, showSuccess, currentCompany]);
+    }, [setCurrentView, currentUser?.role, fetchModulePermissions, showError, showSuccess, currentCompany, setCurrentUser]);
 
     const handleUpdateCompany = useCallback(async (updatedCompany: Company) => {
         if (!currentCompany) {
@@ -296,7 +297,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             logActivity('INFO', `Empresa '${data.name}' atualizada com sucesso.`, 'COMPANIES', currentUser?.id, currentUser?.email, data.id);
             console.log('useAuth: Empresa atualizada com sucesso.');
         }
-    }, [currentCompany, setCurrentView, showError, showSuccess, currentUser]);
+    }, [currentCompany, setCurrentView, showError, showSuccess, currentUser, setCurrentCompany]);
 
     const handleToggleCompanyStatus = useCallback(async (companyId: string, newStatus: 'active' | 'inactive') => {
         if (currentUser?.role !== UserRole.DEVELOPER) {
@@ -321,7 +322,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             }
             logActivity('INFO', `Status da empresa ${companyId} alterado para '${newStatus}'.`, 'COMPANIES', currentUser?.id, currentUser?.email, companyId);
         }
-    }, [currentUser, currentCompany, showError, showSuccess]);
+    }, [currentUser, currentCompany, showError, showSuccess, setCurrentCompany]);
 
     const handleResetUserPassword = useCallback(async (userId: string, newPassword?: string) => {
         if (currentUser?.role !== UserRole.DEVELOPER && currentUser?.role !== UserRole.ADMIN) {
@@ -377,7 +378,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             console.log('Usuário criado:', data);
             logActivity('INFO', `Usuário '${email}' criado com sucesso para empresa ${companyId}.`, 'AUTH', currentUser?.id, currentUser?.email, companyId);
         }
-    }, [currentUser, showError, showSuccess]);
+    }, [currentUser, showError, showSuccess, currentCompany]);
 
     const handleUpdateUserPermissions = useCallback(async (userId: string, permissions: Record<string, boolean>) => {
         if (currentUser?.role !== UserRole.ADMIN) {

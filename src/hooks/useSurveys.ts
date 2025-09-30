@@ -22,6 +22,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
     const [templates, setTemplates] = useState<Survey[]>([]);
     const [loadingSurveys, setLoadingSurveys] = useState(true);
 
+    // fetchSurveys agora é estável. currentUser é acessado do closure para fins de log.
     const fetchSurveys = useCallback(async (companyId: string): Promise<Survey[]> => {
         setLoadingSurveys(true);
         console.log('useSurveys: fetchSurveys - Iniciando busca de pesquisas para companyId:', companyId);
@@ -75,8 +76,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         setLoadingSurveys(false);
         console.log('useSurveys: fetchSurveys - Nenhuma pesquisa encontrada ou erro. loadingSurveys = false.');
         return [];
-    }, [currentUser]);
+    }, []); // Dependência vazia para estabilidade
 
+    // fetchSurveyResponses agora é estável. currentUser e currentCompany são acessados do closure para fins de log.
     const fetchSurveyResponses = useCallback(async (surveyId: string) => {
         console.log('useSurveys: fetchSurveyResponses - Iniciando busca de respostas para surveyId:', surveyId);
         const { data, error } = await supabase
@@ -118,8 +120,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             logActivity('INFO', `Nenhuma resposta encontrada para a pesquisa ${surveyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             setSurveyResponses([]);
         }
-    }, [currentUser, currentCompany]);
+    }, []); // Dependência vazia para estabilidade
 
+    // fetchTemplates agora é estável. currentUser e currentCompany são acessados do closure para fins de log.
     const fetchTemplates = useCallback(async () => {
         console.log('useSurveys: fetchTemplates - Iniciando busca de templates.');
         const { data, error } = await supabase
@@ -144,11 +147,11 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             logActivity('INFO', `Templates de pesquisa carregados.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             console.log('useSurveys: fetchTemplates - Templates processados e definidos:', fetchedTemplates);
         }
-    }, [currentUser, currentCompany]);
+    }, []); // Dependência vazia para estabilidade
 
     useEffect(() => {
         fetchTemplates();
-    }, [fetchTemplates]);
+    }, [fetchTemplates]); // fetchTemplates agora é estável, este useEffect só roda uma vez.
 
     useEffect(() => {
         console.log('useSurveys: useEffect - currentCompany.id mudou:', currentCompany?.id);
@@ -160,7 +163,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             setSurveys([]);
             setLoadingSurveys(false);
         }
-    }, [currentCompany?.id, fetchSurveys]);
+    }, [currentCompany?.id, fetchSurveys]); // fetchSurveys agora é estável, este useEffect só roda quando currentCompany.id muda.
 
     const handleSaveSurvey = useCallback(async (surveyData: Survey, editingSurveyId?: string) => {
         if (!currentUser || !currentCompany) {
@@ -331,7 +334,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 });
             }
         }
-    }, [currentUser, currentCompany, fetchSurveys, showSuccess, showError]);
+    }, [currentUser, currentCompany, fetchSurveys, showSuccess, showError, setSurveys]);
 
     const handleDeleteSurvey = useCallback(async (surveyId: string) => {
         if (window.confirm('Tem certeza que deseja excluir esta pesquisa? Todas as perguntas e respostas associadas também serão excluídas.')) {
@@ -353,7 +356,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 console.log('useSurveys: handleDeleteSurvey - Pesquisa excluída com sucesso.');
             }
         }
-    }, [showSuccess, showError, currentUser, currentCompany]);
+    }, [showSuccess, showError, currentUser, currentCompany, setSurveys]);
 
     const handleSaveResponse = useCallback(async (answers: Answer[], selectedSurvey: Survey, currentUser: User): Promise<boolean> => {
         console.log('useSurveys: handleSaveResponse - Iniciando salvamento da resposta.');
