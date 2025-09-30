@@ -74,6 +74,13 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 combinedPermissions[moduleName as ModuleName] = userSpecificPermissions[moduleName];
             }
         }
+
+        // 3. Developers always have all permissions
+        if (userRole === UserRole.DEVELOPER) {
+            for (const moduleName of Object.values(ModuleName)) {
+                combinedPermissions[moduleName] = true;
+            }
+        }
         
         setModulePermissions(combinedPermissions);
         console.log('useAuth: Permissões de módulo combinadas e definidas:', combinedPermissions);
