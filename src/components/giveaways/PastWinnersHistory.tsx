@@ -39,9 +39,16 @@ const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyI
             showError('Não foi possível carregar o histórico de sorteios.');
             setPastWinners([]);
         } else {
-            // O Supabase retorna 'prizes' como um objeto se for um relacionamento one-to-one/many-to-one
-            // ou null se não houver correspondência (devido ao !left)
-            setPastWinners(data as PastWinner[] || []);
+            // Mapear explicitamente os dados para garantir que 'prizes' esteja no formato correto
+            const mappedWinners: PastWinner[] = (data || []).map((item: any) => ({
+                created_at: item.created_at,
+                winner_name: item.winner_name,
+                winner_phone: item.winner_phone,
+                rank: item.rank,
+                prize_id: item.prize_id,
+                prizes: item.prizes ? { name: item.prizes.name } : null,
+            }));
+            setPastWinners(mappedWinners);
         }
         setLoading(false);
     }, [selectedSurveyId]);
