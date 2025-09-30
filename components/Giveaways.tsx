@@ -10,6 +10,7 @@ import SurveySelector from '../src/components/giveaways/SurveySelector';
 import ParticipantList from '../src/components/giveaways/ParticipantList';
 import DrawSetup from '../src/components/giveaways/DrawSetup';
 import PastWinnersHistory from '../src/components/giveaways/PastWinnersHistory';
+import { logActivity } from '../src/utils/logger'; // Importar o utilitário de log
 
 interface GiveawayParticipant {
     id: string;
@@ -44,11 +45,13 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         const { data, error } = await supabase.from('prizes').select('*').eq('company_id', currentCompany.id).order('rank', { ascending: true, nullsFirst: true }).order('name', { ascending: true });
         if (error) {
             showError('Não foi possível carregar a lista de prêmios.');
+            logActivity('ERROR', `Erro ao carregar prêmios para a empresa ${currentCompany.id}: ${error.message}`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
             setPrizes([]);
         } else {
             setPrizes(data || []);
+            logActivity('INFO', `Prêmios carregados para a empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
         }
-    }, [currentCompany?.id]);
+    }, [currentCompany?.id, currentUser]);
 
     useEffect(() => {
         const loadSurveys = async () => {
@@ -60,6 +63,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             const { data, error } = await supabase.from('surveys').select('id, title').eq('company_id', currentCompany.id).order('title', { ascending: true });
             if (error) {
                 showError('Não foi possível carregar a lista de pesquisas.');
+                logActivity('ERROR', `Erro ao carregar pesquisas para a empresa ${currentCompany.id}: ${error.message}`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
                 setAvailableSurveys([]);
             } else {
                 setAvailableSurveys(data || []);
@@ -68,11 +72,12 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 } else if (!data || data.length === 0) {
                     setSelectedSurveyId(null);
                 }
+                logActivity('INFO', `Pesquisas carregadas para seleção de sorteio na empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
             }
         };
         loadSurveys();
         fetchPrizes();
-    }, [currentCompany?.id, fetchPrizes, selectedSurveyId]);
+    }, [currentCompany?.id, fetchPrizes, selectedSurveyId, currentUser]);
 
     useEffect(() => {
         let countdownInterval: NodeJS.Timeout;
@@ -98,9 +103,11 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     const handleDraw = async () => {
         if (!selectedSurveyId || participants.length === 0 || selectedPrizesForDraw.length === 0) {
             showError('Selecione uma pesquisa, certifique-se de que há participantes e selecione prêmios para sortear.');
+            logActivity('WARN', `Tentativa de sorteio sem pesquisa, participantes ou prêmios selecionados.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany?.id);
             return;
         }
         setIsDrawing(true);
+        logActivity('INFO', `Iniciando sorteio para a pesquisa ${selectedSurveyId} com ${selectedPrizesForDraw.length} prêmios.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany?.id);
         setTimeout(async () => {
             const shuffled = [...participants].sort(() => 0.5 - Math.random());
             const winners: GiveawayWinner[] = [];
@@ -123,10 +130,15 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 })));
                 if (error) {
                     showError('Erro ao salvar os vencedores: ' + error.message);
+                    logActivity('ERROR', `Erro ao salvar vencedores do sorteio para pesquisa ${selectedSurveyId}: ${error.message}`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany?.id);
                 } else {
                     showSuccess('Sorteio realizado e vencedores salvos!');
+                    logActivity('INFO', `Sorteio realizado com sucesso para pesquisa ${selectedSurveyId}. Vencedores: ${winners.map(w => w.winner_name).join(', ')}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany?.id);
                     setDrawResults(winners);
                 }
+            } else {
+                showError('Não foi possível selecionar vencedores suficientes para todos os prêmios.');
+                logActivity('WARN', `Não foi possível selecionar vencedores suficientes para todos os prêmios na pesquisa ${selectedSurveyId}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany?.id);
             }
             setIsDrawing(false);
         }, animationDuration);

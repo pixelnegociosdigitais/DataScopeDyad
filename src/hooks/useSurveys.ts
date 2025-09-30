@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Survey, SurveyResponse, Question, Answer, Company, User } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { showSuccess, showError } from '@/src/utils/toast'; // Importar showSuccess e showError
+import { logActivity } from '@/src/utils/logger'; // Importar o utilitário de log
 
 interface UseSurveysReturn {
     surveys: Survey[];
@@ -46,6 +47,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
         if (error) {
             console.error('useSurveys: fetchSurveys - Erro ao buscar pesquisas:', error);
+            logActivity('ERROR', `Erro ao buscar pesquisas para a empresa ${companyId}: ${error.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, companyId);
             setSurveys([]);
             setLoadingSurveys(false);
             return [];
@@ -65,6 +67,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 responseCount: s.survey_responses ? s.survey_responses.length : 0,
             }));
             console.log('useSurveys: fetchSurveys - Pesquisas processadas e definidas:', fetchedSurveys);
+            logActivity('INFO', `Pesquisas carregadas para a empresa ${companyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, companyId);
             setSurveys(fetchedSurveys);
             setLoadingSurveys(false);
             return fetchedSurveys;
@@ -72,7 +75,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         setLoadingSurveys(false);
         console.log('useSurveys: fetchSurveys - Nenhuma pesquisa encontrada ou erro. loadingSurveys = false.');
         return [];
-    }, []);
+    }, [currentUser]);
 
     const fetchSurveyResponses = useCallback(async (surveyId: string) => {
         console.log('useSurveys: fetchSurveyResponses - Iniciando busca de respostas para surveyId:', surveyId);
@@ -92,6 +95,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
         if (error) {
             console.error('useSurveys: fetchSurveyResponses - Erro ao buscar respostas:', error);
+            logActivity('ERROR', `Erro ao buscar respostas para a pesquisa ${surveyId}: ${error.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             setSurveyResponses([]);
             return;
         }
@@ -107,12 +111,14 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 })),
             }));
             console.log('useSurveys: fetchSurveyResponses - Respostas processadas e definidas:', fetchedResponses);
+            logActivity('INFO', `Respostas carregadas para a pesquisa ${surveyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             setSurveyResponses(fetchedResponses);
         } else {
             console.log('useSurveys: fetchSurveyResponses - Nenhuma resposta recebida, definindo surveyResponses como array vazio.');
+            logActivity('INFO', `Nenhuma resposta encontrada para a pesquisa ${surveyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             setSurveyResponses([]);
         }
-    }, []);
+    }, [currentUser, currentCompany]);
 
     const fetchTemplates = useCallback(async () => {
         console.log('useSurveys: fetchTemplates - Iniciando busca de templates.');
@@ -122,6 +128,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
         if (error) {
             console.error('useSurveys: fetchTemplates - Erro ao buscar templates:', error);
+            logActivity('ERROR', `Erro ao buscar templates de pesquisa: ${error.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             return;
         }
 
@@ -134,9 +141,10 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 questions: template.questions as Question[],
             }));
             setTemplates(fetchedTemplates);
+            logActivity('INFO', `Templates de pesquisa carregados.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             console.log('useSurveys: fetchTemplates - Templates processados e definidos:', fetchedTemplates);
         }
-    }, []);
+    }, [currentUser, currentCompany]);
 
     useEffect(() => {
         fetchTemplates();
@@ -158,6 +166,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         if (!currentUser || !currentCompany) {
             showError('Usuário ou empresa não identificados para salvar a pesquisa.');
             console.error('useSurveys: handleSaveSurvey - Usuário ou empresa ausentes.');
+            logActivity('ERROR', `Tentativa de salvar pesquisa sem usuário ou empresa identificados.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             return;
         }
 
@@ -174,6 +183,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             if (surveyUpdateError) {
                 showError('Erro ao atualizar a pesquisa: ' + surveyUpdateError.message);
                 console.error('useSurveys: handleSaveSurvey - Erro ao atualizar pesquisa:', surveyUpdateError);
+                logActivity('ERROR', `Erro ao atualizar pesquisa '${surveyData.title}' (ID: ${editingSurveyId}): ${surveyUpdateError.message}`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany.id);
                 return;
             }
 
@@ -186,6 +196,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             if (deleteQuestionsError) {
                 showError('Erro ao remover perguntas antigas: ' + deleteQuestionsError.message);
                 console.error('useSurveys: handleSaveSurvey - Erro ao remover perguntas antigas:', deleteQuestionsError);
+                logActivity('ERROR', `Erro ao remover perguntas antigas da pesquisa '${surveyData.title}' (ID: ${editingSurveyId}): ${deleteQuestionsError.message}`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany.id);
                 return;
             }
 
@@ -206,10 +217,12 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             if (insertQuestionsError) {
                 showError('Erro ao inserir novas perguntas: ' + insertQuestionsError.message);
                 console.error('useSurveys: handleSaveSurvey - Erro ao inserir novas perguntas:', insertQuestionsError);
+                logActivity('ERROR', `Erro ao inserir novas perguntas para a pesquisa '${surveyData.title}' (ID: ${editingSurveyId}): ${insertQuestionsError.message}`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany.id);
                 return;
             }
 
             showSuccess('Pesquisa atualizada com sucesso!');
+            logActivity('INFO', `Pesquisa '${surveyData.title}' (ID: ${editingSurveyId}) atualizada com sucesso.`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany.id);
 
         } else {
             console.log('useSurveys: handleSaveSurvey - Criando nova pesquisa.');
@@ -227,6 +240,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             if (surveyInsertError) {
                 showError('Erro ao criar a pesquisa: ' + surveyInsertError.message);
                 console.error('useSurveys: handleSaveSurvey - Erro ao criar pesquisa:', surveyInsertError);
+                logActivity('ERROR', `Erro ao criar nova pesquisa '${surveyData.title}': ${surveyInsertError.message}`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany.id);
                 return;
             }
 
@@ -248,9 +262,11 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 if (questionsInsertError) {
                     showError('Erro ao inserir perguntas da pesquisa: ' + questionsInsertError.message);
                     console.error('useSurveys: handleSaveSurvey - Erro ao inserir perguntas:', questionsInsertError);
+                    logActivity('ERROR', `Erro ao inserir perguntas para a nova pesquisa '${surveyData.title}' (ID: ${newSurvey.id}): ${questionsInsertError.message}`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany.id);
                     return;
                 }
                 showSuccess('Pesquisa criada com sucesso!');
+                logActivity('INFO', `Nova pesquisa '${surveyData.title}' (ID: ${newSurvey.id}) criada com sucesso.`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany.id);
             }
         }
 
@@ -279,6 +295,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
             if (fetchSingleError) {
                 console.error('useSurveys: handleSaveSurvey - Erro ao buscar pesquisa única atualizada:', fetchSingleError);
+                logActivity('ERROR', `Erro ao buscar pesquisa única atualizada (ID: ${targetSurveyId}): ${fetchSingleError.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany.id);
                 // Fallback para buscar todas as pesquisas se a busca única falhar
                 await fetchSurveys(currentCompany.id);
                 return;
@@ -327,20 +344,23 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             if (error) {
                 showError('Erro ao excluir a pesquisa: ' + error.message);
                 console.error('useSurveys: handleDeleteSurvey - Erro ao excluir pesquisa:', error);
+                logActivity('ERROR', `Erro ao excluir pesquisa (ID: ${surveyId}): ${error.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             } else {
                 showSuccess('Pesquisa excluída com sucesso!');
                 // Atualiza o estado de surveys removendo a pesquisa excluída
                 setSurveys(prevSurveys => prevSurveys.filter(s => s.id !== surveyId));
+                logActivity('INFO', `Pesquisa (ID: ${surveyId}) excluída com sucesso.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
                 console.log('useSurveys: handleDeleteSurvey - Pesquisa excluída com sucesso.');
             }
         }
-    }, [showSuccess, showError]);
+    }, [showSuccess, showError, currentUser, currentCompany]);
 
     const handleSaveResponse = useCallback(async (answers: Answer[], selectedSurvey: Survey, currentUser: User): Promise<boolean> => {
         console.log('useSurveys: handleSaveResponse - Iniciando salvamento da resposta.');
         if (!selectedSurvey || !currentUser) {
             console.error('useSurveys: handleSaveResponse - Usuário ou pesquisa não identificados.', { selectedSurvey, currentUser });
             showError('Usuário ou pesquisa não identificados para salvar a resposta.');
+            logActivity('ERROR', `Tentativa de salvar resposta sem pesquisa ou usuário identificados.`, 'SURVEY_RESPONSES', currentUser?.id, currentUser?.email, currentCompany?.id);
             console.log('useSurveys: handleSaveResponse - Retornando FALSE devido a dados ausentes.');
             return false;
         }
@@ -363,6 +383,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             const missingQuestionTexts = missingAnswers.map(q => q.text).join(', ');
             console.error('useSurveys: handleSaveResponse - Perguntas obrigatórias não respondidas:', missingAnswers);
             showError(`Por favor, responda a todas as perguntas obrigatórias: ${missingQuestionTexts}`);
+            logActivity('WARN', `Tentativa de salvar resposta com campos obrigatórios ausentes para pesquisa '${selectedSurvey.title}'. Perguntas: ${missingQuestionTexts}`, 'SURVEY_RESPONSES', currentUser.id, currentUser.email, currentCompany?.id);
             console.log('useSurveys: handleSaveResponse - Retornando FALSE devido a validação de campos obrigatórios.');
             return false;
         }
@@ -381,6 +402,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         if (responseError) {
             console.error('useSurveys: handleSaveResponse - Erro ao inserir survey_responses:', responseError);
             showError('Erro ao enviar a resposta da pesquisa: ' + responseError.message);
+            logActivity('ERROR', `Erro ao inserir resposta principal para pesquisa '${selectedSurvey.title}': ${responseError.message}`, 'SURVEY_RESPONSES', currentUser.id, currentUser.email, currentCompany?.id);
             console.log('useSurveys: handleSaveResponse - Retornando FALSE devido a erro na inserção da resposta principal.');
             return false;
         }
@@ -401,6 +423,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             if (answersError) {
                 console.error('useSurveys: handleSaveResponse - Erro ao inserir answers:', answersError);
                 showError('Erro ao salvar as respostas detalhadas: ' + answersError.message);
+                logActivity('ERROR', `Erro ao inserir respostas detalhadas para pesquisa '${selectedSurvey.title}' (Resposta ID: ${newResponse.id}): ${answersError.message}`, 'SURVEY_RESPONSES', currentUser.id, currentUser.email, currentCompany?.id);
                 console.log('useSurveys: handleSaveResponse - Retornando FALSE devido a erro na inserção das respostas detalhadas.');
                 return false;
             }
@@ -413,13 +436,15 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 // await fetchSurveyResponses(selectedSurvey.id); // TEMPORARILY COMMENTED OUT FOR DIAGNOSIS
             }
             showSuccess('Resposta enviada com sucesso!');
+            logActivity('INFO', `Resposta enviada com sucesso para pesquisa '${selectedSurvey.title}' (Resposta ID: ${newResponse.id}).`, 'SURVEY_RESPONSES', currentUser.id, currentUser.email, currentCompany?.id);
             console.log('useSurveys: handleSaveResponse - Retornando TRUE - sucesso total.');
             return true;
         }
         console.error('useSurveys: handleSaveResponse - newResponse foi nulo após a inserção, mas nenhum erro foi reportado.');
+        logActivity('ERROR', `newResponse foi nulo após a inserção da resposta principal para pesquisa '${selectedSurvey.title}'.`, 'SURVEY_RESPONSES', currentUser.id, currentUser.email, currentCompany?.id);
         console.log('useSurveys: handleSaveResponse - Retornando FALSE - newResponse nulo.');
         return false;
-    }, [currentCompany?.id, fetchSurveys, fetchSurveyResponses, showSuccess, showError]);
+    }, [currentCompany?.id, fetchSurveys, fetchSurveyResponses, showSuccess, showError, currentUser]);
 
     return {
         surveys,

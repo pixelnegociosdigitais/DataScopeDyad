@@ -3,6 +3,7 @@ import { User, Company, UserRole, View, ModuleName, ModulePermission } from '@/t
 import { supabase } from '@/src/integrations/supabase/client';
 import { useAuthSession } from '@/src/context/AuthSessionContext';
 import { showSuccess, showError } from '@/src/utils/toast';
+import { logActivity } from '@/src/utils/logger'; // Importar o utilitário de log
 
 interface UseAuthReturn {
     currentUser: User | null;
@@ -47,6 +48,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         if (error) {
             console.error('useAuth: Erro ao buscar permissões de módulo:', error);
+            logActivity('ERROR', `Erro ao buscar permissões de módulo para o papel ${role}: ${error.message}`, 'AUTH');
             setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
             return;
         }
@@ -59,7 +61,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         });
         setModulePermissions(newPermissions);
         console.log('useAuth: Permissões de módulo buscadas:', newPermissions);
-    }, []);
+        logActivity('INFO', `Permissões de módulo carregadas para o papel ${role}.`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
+    }, [currentUser, currentCompany]);
 
     const fetchUserData = useCallback(async (userId: string, userEmail: string) => {
         setLoadingAuth(true);
@@ -92,6 +95,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         if (profileError) {
             console.error('useAuth: Erro ao buscar perfil:', profileError);
+            logActivity('ERROR', `Erro ao buscar perfil para o usuário ${userEmail}: ${profileError.message}`, 'AUTH', userId, userEmail);
             setLoadingAuth(false);
             setCurrentUser(null); // Garante que currentUser é null em caso de erro no perfil
             setCurrentCompany(null);
@@ -115,6 +119,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             if (user.email === DEVELOPER_EMAIL && user.role !== UserRole.DEVELOPER) {
                 console.warn(`useAuth: Forçando o papel de 'Desenvolvedor' para ${DEVELOPER_EMAIL}.`);
                 user.role = UserRole.DEVELOPER;
+                logActivity('WARN', `Papel de 'Desenvolvedor' forçado para o usuário ${userEmail}.`, 'AUTH', userId, userEmail);
                 // Opcionalmente, atualizar o DB aqui se estiver fora de sincronia, mas por enquanto, apenas atualiza o estado local
                 // await supabase.from('profiles').update({ role: UserRole.DEVELOPER }).eq('id', user.id);
             }
@@ -127,9 +132,11 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 console.log('useAuth: Empresa encontrada:', profileData.companies);
                 const company: Company = profileData.companies as unknown as Company;
                 setCurrentCompany(company);
+                logActivity('INFO', `Usuário ${user.fullName} logado e vinculado à empresa ${company.name}.`, 'AUTH', userId, userEmail, company.id);
             } else {
                 console.log('useAuth: Nenhuma empresa associada ao perfil.');
                 setCurrentCompany(null);
+                logActivity('INFO', `Usuário ${user.fullName} logado, mas sem empresa vinculada.`, 'AUTH', userId, userEmail);
             }
         }
         setLoadingAuth(false);
@@ -143,6 +150,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 fetchUserData(session.user.id, session.user.email || '');
             } else {
                 console.log('useAuth: Nenhuma sessão ativa. Resetando estados.');
+                logActivity('INFO', 'Usuário deslogado.', 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
                 setCurrentUser(null);
                 setCurrentCompany(null);
                 setLoadingAuth(false);
@@ -155,6 +163,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         if (!currentUser) {
             showError('Erro: Dados do usuário não disponíveis para criar a empresa.');
             console.error('handleCreateCompany: currentUser é nulo ou indefinido.');
+            logActivity('ERROR', 'Tentativa de criar empresa sem usuário logado.', 'COMPANIES');
             return;
         }
         const userId = currentUser.id;
@@ -175,12 +184,14 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         if (companyError) {
             showError('Erro ao criar a empresa: ' + companyError.message);
             console.error('useAuth: Erro ao criar a empresa:', companyError);
+            logActivity('ERROR', `Erro ao criar empresa '${companyData.name}': ${companyError.message}`, 'COMPANIES', userId, userEmail);
             return;
         }
 
         if (!newCompanyDataArray || newCompanyDataArray.length === 0) {
             showError('Erro: Nenhuma empresa foi retornada após a criação.');
             console.error('useAuth: Nenhuma empresa retornada após insert.');
+            logActivity('ERROR', `Nenhuma empresa retornada após a criação de '${companyData.name}'.`, 'COMPANIES', userId, userEmail);
             return;
         }
 
@@ -199,6 +210,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         if (profileUpdateError) {
             showError('Erro ao vincular a empresa ao seu perfil: ' + profileUpdateError.message);
             console.error('useAuth: Erro ao vincular empresa ao perfil:', profileUpdateError);
+            logActivity('ERROR', `Erro ao vincular empresa '${newCompany.name}' ao perfil do usuário ${userEmail}: ${profileUpdateError.message}`, 'COMPANIES', userId, userEmail, newCompany.id);
             return;
         }
 
@@ -207,6 +219,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         await fetchModulePermissions(roleToAssign);
         showSuccess('Empresa criada e vinculada com sucesso!');
         setCurrentView(View.SURVEY_LIST);
+        logActivity('INFO', `Empresa '${newCompany.name}' criada e vinculada ao usuário ${userEmail}.`, 'COMPANIES', userId, userEmail, newCompany.id);
         console.log('useAuth: Empresa criada e perfil atualizado com sucesso.');
     }, [currentUser, setCurrentView, fetchModulePermissions, showError, showSuccess]);
 
@@ -217,6 +230,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         if (updatedUser.email === DEVELOPER_EMAIL && updatedUser.role !== UserRole.DEVELOPER) {
             showError(`Não é permitido alterar o papel do usuário ${DEVELOPER_EMAIL}.`);
             console.warn(`Tentativa de alterar o papel de ${DEVELOPER_EMAIL} para ${updatedUser.role} foi bloqueada.`);
+            logActivity('WARN', `Tentativa de alterar o papel do desenvolvedor ${DEVELOPER_EMAIL} para ${updatedUser.role} foi bloqueada.`, 'AUTH', updatedUser.id, updatedUser.email, currentCompany?.id);
             setCurrentUser(prev => prev ? { ...prev, role: UserRole.DEVELOPER } : null);
             return;
         }
@@ -235,6 +249,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         if (error) {
             showError('Erro ao atualizar o perfil: ' + error.message);
             console.error('useAuth: Erro ao atualizar perfil:', error);
+            logActivity('ERROR', `Erro ao atualizar perfil do usuário ${updatedUser.email}: ${error.message}`, 'PROFILE', updatedUser.id, updatedUser.email, currentCompany?.id);
         } else {
             setCurrentUser(updatedUser);
             if (currentUser?.role !== updatedUser.role) {
@@ -242,13 +257,15 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             }
             showSuccess('Perfil atualizado com sucesso!');
             setCurrentView(View.SURVEY_LIST);
+            logActivity('INFO', `Perfil do usuário ${updatedUser.email} atualizado com sucesso.`, 'PROFILE', updatedUser.id, updatedUser.email, currentCompany?.id);
             console.log('useAuth: Perfil atualizado com sucesso.');
         }
-    }, [setCurrentView, currentUser?.role, fetchModulePermissions, showError, showSuccess]);
+    }, [setCurrentView, currentUser?.role, fetchModulePermissions, showError, showSuccess, currentCompany]);
 
     const handleUpdateCompany = useCallback(async (updatedCompany: Company) => {
         if (!currentCompany) {
             showError('Nenhuma empresa selecionada para atualizar.');
+            logActivity('WARN', 'Tentativa de atualizar empresa sem empresa selecionada.', 'COMPANIES', currentUser?.id, currentUser?.email);
             return;
         }
         console.log('useAuth: handleUpdateCompany - Atualizando empresa:', currentCompany.id);
@@ -271,17 +288,20 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         if (error) {
             showError('Erro ao atualizar a empresa: ' + error.message);
             console.error('useAuth: Erro ao atualizar empresa:', error);
+            logActivity('ERROR', `Erro ao atualizar empresa '${currentCompany.name}': ${error.message}`, 'COMPANIES', currentUser?.id, currentUser?.email, currentCompany.id);
         } else if (data) {
             setCurrentCompany(data as Company);
             showSuccess('Empresa atualizada com sucesso!');
             setCurrentView(View.SURVEY_LIST);
+            logActivity('INFO', `Empresa '${data.name}' atualizada com sucesso.`, 'COMPANIES', currentUser?.id, currentUser?.email, data.id);
             console.log('useAuth: Empresa atualizada com sucesso.');
         }
-    }, [currentCompany, setCurrentView, showError, showSuccess]);
+    }, [currentCompany, setCurrentView, showError, showSuccess, currentUser]);
 
     const handleToggleCompanyStatus = useCallback(async (companyId: string, newStatus: 'active' | 'inactive') => {
         if (currentUser?.role !== UserRole.DEVELOPER) {
             showError('Você não tem permissão para alterar o status da empresa.');
+            logActivity('WARN', `Tentativa de alterar status da empresa ${companyId} por usuário sem permissão (${currentUser?.email}).`, 'COMPANIES', currentUser?.id, currentUser?.email, companyId);
             return;
         }
         console.log(`useAuth: handleToggleCompanyStatus - Alterando status da empresa ${companyId} para ${newStatus}`);
@@ -293,17 +313,20 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         if (error) {
             showError('Erro ao atualizar o status da empresa: ' + error.message);
             console.error('useAuth: Erro ao atualizar status da empresa:', error);
+            logActivity('ERROR', `Erro ao alterar status da empresa ${companyId} para ${newStatus}: ${error.message}`, 'COMPANIES', currentUser?.id, currentUser?.email, companyId);
         } else {
             showSuccess(`Status da empresa atualizado para '${newStatus}' com sucesso!`);
             if (currentCompany?.id === companyId) {
                 setCurrentCompany(prev => prev ? { ...prev, status: newStatus } : null);
             }
+            logActivity('INFO', `Status da empresa ${companyId} alterado para '${newStatus}'.`, 'COMPANIES', currentUser?.id, currentUser?.email, companyId);
         }
     }, [currentUser, currentCompany, showError, showSuccess]);
 
     const handleResetUserPassword = useCallback(async (userId: string, newPassword?: string) => {
         if (currentUser?.role !== UserRole.DEVELOPER && currentUser?.role !== UserRole.ADMIN) {
             showError('Você não tem permissão para redefinir senhas.');
+            logActivity('WARN', `Tentativa de redefinir senha do usuário ${userId} por usuário sem permissão (${currentUser?.email}).`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
             return;
         }
 
@@ -315,19 +338,23 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         if (error) {
             showError(`Erro ao redefinir senha: ${error.message}`);
+            logActivity('ERROR', `Erro ao redefinir senha para o usuário ${userId}: ${error.message}`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
         } else {
             showSuccess(`Senha do usuário redefinida com sucesso! A nova senha temporária é: ${password}`);
+            logActivity('INFO', `Senha do usuário ${userId} redefinida com sucesso.`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
         }
-    }, [currentUser, showError, showSuccess]);
+    }, [currentUser, showError, showSuccess, currentCompany]);
 
     const handleCreateUserForCompany = useCallback(async (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword?: string) => {
         if (currentUser?.role !== UserRole.DEVELOPER && currentUser?.role !== UserRole.ADMIN) {
             showError('Você não tem permissão para criar usuários.');
+            logActivity('WARN', `Tentativa de criar usuário para empresa ${companyId} por usuário sem permissão (${currentUser?.email}).`, 'AUTH', currentUser?.id, currentUser?.email, companyId);
             return;
         }
 
         if (!temporaryPassword) {
             showError('A senha temporária é obrigatória.');
+            logActivity('ERROR', `Tentativa de criar usuário para empresa ${companyId} sem senha temporária.`, 'AUTH', currentUser?.id, currentUser?.email, companyId);
             return;
         }
 
@@ -344,15 +371,18 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         if (error) {
             showError(`Erro ao criar usuário: ${error.message}`);
             console.error('Erro ao invocar a função create-user:', error);
+            logActivity('ERROR', `Erro ao criar usuário '${email}' para empresa ${companyId}: ${error.message}`, 'AUTH', currentUser?.id, currentUser?.email, companyId);
         } else {
             showSuccess(`Usuário ${fullName} criado com sucesso!`);
             console.log('Usuário criado:', data);
+            logActivity('INFO', `Usuário '${email}' criado com sucesso para empresa ${companyId}.`, 'AUTH', currentUser?.id, currentUser?.email, companyId);
         }
     }, [currentUser, showError, showSuccess]);
 
     const handleUpdateUserPermissions = useCallback(async (userId: string, permissions: Record<string, boolean>) => {
         if (currentUser?.role !== UserRole.ADMIN) {
             showError('Você não tem permissão para atualizar permissões de usuário.');
+            logActivity('WARN', `Tentativa de atualizar permissões do usuário ${userId} por usuário sem permissão (${currentUser?.email}).`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
             return;
         }
         
@@ -364,10 +394,12 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         if (error) {
             showError('Erro ao atualizar permissões: ' + error.message);
             console.error('Erro ao atualizar permissões:', error);
+            logActivity('ERROR', `Erro ao atualizar permissões para o usuário ${userId}: ${error.message}`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
         } else {
             showSuccess(`Permissões do usuário ${userId} atualizadas com sucesso!`);
+            logActivity('INFO', `Permissões do usuário ${userId} atualizadas com sucesso.`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
         }
-    }, [currentUser, showError, showSuccess]);
+    }, [currentUser, showError, showSuccess, currentCompany]);
 
 
     return {

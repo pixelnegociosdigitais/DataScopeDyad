@@ -6,6 +6,7 @@ import { CreateIcon } from '../../../components/icons/CreateIcon';
 import { PencilIcon } from '../../../components/icons/PencilIcon';
 import { TrashIcon } from '../../../components/icons/TrashIcon';
 import ConfirmationDialog from '../ConfirmationDialog';
+import { logActivity } from '../../utils/logger'; // Importar o utilitário de log
 
 interface PrizeManagerProps {
     currentCompany: Company;
@@ -48,6 +49,7 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
     const handleSavePrize = async () => {
         if (!prizeFormName.trim()) {
             showError('O nome do prêmio não pode estar vazio.');
+            logActivity('WARN', `Tentativa de salvar prêmio sem nome na empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
             return;
         }
 
@@ -60,18 +62,21 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
                     .eq('id', editingPrize.id);
                 if (error) throw error;
                 showSuccess('Prêmio atualizado com sucesso!');
+                logActivity('INFO', `Prêmio '${prizeFormName}' (ID: ${editingPrize.id}) atualizado com sucesso.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
             } else {
                 const { error } = await supabase
                     .from('prizes')
                     .insert({ company_id: currentCompany.id, name: prizeFormName, description: prizeFormDescription, rank: rankValue });
                 if (error) throw error;
                 showSuccess('Prêmio criado com sucesso!');
+                logActivity('INFO', `Novo prêmio '${prizeFormName}' criado com sucesso para a empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
             }
             onPrizesUpdate();
             handleClosePrizeModal();
         } catch (err: any) {
             console.error('Erro ao salvar prêmio:', err.message);
             showError('Erro ao salvar prêmio: ' + err.message);
+            logActivity('ERROR', `Erro ao salvar prêmio '${prizeFormName}' na empresa ${currentCompany.id}: ${err.message}`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
         }
     };
 
@@ -86,12 +91,14 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
             const { error } = await supabase.from('prizes').delete().eq('id', prizeToDelete.id);
             if (error) throw error;
             showSuccess('Prêmio excluído com sucesso!');
+            logActivity('INFO', `Prêmio '${prizeToDelete.name}' (ID: ${prizeToDelete.id}) excluído com sucesso.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
             onPrizesUpdate();
             setShowDeletePrizeDialog(false);
             setPrizeToDelete(null);
         } catch (err: any) {
             console.error('Erro ao excluir prêmio:', err.message);
             showError('Erro ao excluir prêmio: ' + err.message);
+            logActivity('ERROR', `Erro ao excluir prêmio '${prizeToDelete.name}' (ID: ${prizeToDelete.id}): ${err.message}`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
         }
     };
 
