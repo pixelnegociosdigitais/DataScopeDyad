@@ -11,6 +11,7 @@ import { showSuccess, showError } from '../src/utils/toast';
 import ConfirmationDialog from '../src/components/ConfirmationDialog';
 import CompanyEditModal from '../src/components/CompanyEditModal'; // Importar o novo modal de edição
 import { useAuth } from '../src/hooks/useAuth'; // Importar useAuth para as funções de gerenciamento
+import { logActivity } from '../src/utils/logger'; // Importar o utilitário de log
 
 interface DeveloperCompanyUserManagerProps {
     onBack: () => void;
@@ -34,7 +35,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     const [editingCompany, setEditingCompany] = useState<Company | null>(null); // Empresa sendo editada
     const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null); // Empresa a ser excluída
 
-    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany } = useAuth(setCurrentView);
+    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany, currentUser } = useAuth(setCurrentView);
 
     const fetchCompanies = useCallback(async () => {
         setLoading(true);
@@ -55,6 +56,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             console.error('Erro ao buscar empresas:', error);
             setError('Não foi possível carregar as empresas.');
             setCompanies([]);
+            logActivity('ERROR', `Erro ao buscar empresas: ${error.message}`, 'COMPANIES', currentUser?.id, currentUser?.email);
         } else {
             // Mapear os perfis para cada empresa, filtrando apenas administradores
             const companiesWithAdmins = data.map(company => ({
@@ -62,9 +64,10 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                 administrators: company.profiles.filter((p: any) => p.role === UserRole.ADMIN)
             }));
             setCompanies(companiesWithAdmins as Company[]);
+            logActivity('INFO', 'Empresas carregadas com sucesso.', 'COMPANIES', currentUser?.id, currentUser?.email);
         }
         setLoading(false);
-    }, []);
+    }, [currentUser]); // Adicionado currentUser para logActivity
 
     useEffect(() => {
         fetchCompanies();
@@ -73,13 +76,10 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     const handleCreateCompanyAndAdmin = async () => {
         if (!newCompanyName.trim() || !newAdminFullName.trim() || !newAdminEmail.trim() || !newAdminPassword.trim()) {
             showError('Por favor, preencha todos os campos para criar a empresa e o administrador.');
+            logActivity('WARN', 'Tentativa de criar empresa e admin com campos incompletos.', 'COMPANIES', currentUser?.id, currentUser?.email);
             return;
         }
 
-        // Esta função agora precisa de um companyId, que ainda não existe.
-        // A lógica precisa ser: 1. Criar empresa, 2. Criar usuário com o ID da nova empresa.
-        // Isso deve ser uma única transação, idealmente em uma Edge Function.
-        
         // Passo 1: Criar a empresa
         const { data: newCompany, error: companyError } = await supabase
             .from('companies')
@@ -89,11 +89,17 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
 
         if (companyError || !newCompany) {
             showError('Erro ao criar a empresa: ' + companyError?.message);
+            logActivity('ERROR', `Erro ao criar empresa '${newCompanyName}': ${companyError?.message}`, 'COMPANIES', currentUser?.id, currentUser?.email);
             return;
         }
+        logActivity('INFO', `Empresa '${newCompanyName}' criada com sucesso (ID: ${newCompany.id}).`, 'COMPANIES', currentUser?.id, currentUser?.email, newCompany.id);
+
 
         // Passo 2: Criar o usuário administrador para a nova empresa
+        // handleCreateUserForCompany já lida com seus próprios toasts de sucesso/erro e logging.
         await handleCreateUserForCompany(newCompany.id, newAdminFullName, newAdminEmail, UserRole.ADMIN, newAdminPassword);
+        
+        showSuccess(`Empresa '${newCompanyName}' e administrador '${newAdminFullName}' criados com sucesso!`); // Toast de sucesso geral
         
         setShowCreateCompanyModal(false);
         setNewCompanyName('');
@@ -142,6 +148,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         setCompanies(prevCompanies => 
             prevCompanies.map(c => c.id === updatedCompany.id ? { ...updatedCompany, administrators: c.administrators } : c)
         );
+        logActivity('INFO', `Empresa '${updatedCompany.name}' (ID: ${updatedCompany.id}) atualizada via modal.`, 'COMPANIES', currentUser?.id, currentUser?.email, updatedCompany.id);
     };
 
     const confirmDeleteCompany = (company: Company) => {
@@ -198,12 +205,14 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             if (companyDeleteError) throw companyDeleteError;
 
             showSuccess(`Empresa "${companyToDelete.name}" e todos os dados relacionados excluídos com sucesso!`);
+            logActivity('INFO', `Empresa '${companyToDelete.name}' (ID: ${companyToDelete.id}) e dados relacionados excluídos.`, 'COMPANIES', currentUser?.id, currentUser?.email, companyToDelete.id);
             fetchCompanies(); // Recarregar a lista
             setShowConfirmationDialog(false);
             setCompanyToDelete(null);
         } catch (err: any) {
             console.error('Erro ao excluir empresa e dados relacionados:', err.message);
             showError('Erro ao excluir empresa: ' + err.message);
+            logActivity('ERROR', `Erro ao excluir empresa '${companyToDelete.name}' (ID: ${companyToDelete.id}): ${err.message}`, 'COMPANIES', currentUser?.id, currentUser?.email, companyToDelete.id);
         }
     };
 
