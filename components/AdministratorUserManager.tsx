@@ -18,6 +18,17 @@ interface AdministratorUserManagerProps {
     setCurrentView: (view: View) => void;
 }
 
+// Mapeamento de tradução para os nomes dos módulos
+const moduleNameTranslations: Record<ModuleName, string> = {
+    [ModuleName.CREATE_SURVEY]: 'Criar Pesquisas',
+    [ModuleName.MANAGE_SURVEYS]: 'Gerenciar Pesquisas (Editar/Excluir)',
+    [ModuleName.VIEW_DASHBOARD]: 'Visualizar Painel de Pesquisas',
+    [ModuleName.ACCESS_GIVEAWAYS]: 'Acessar Sorteios',
+    [ModuleName.MANAGE_COMPANY_SETTINGS]: 'Gerenciar Configurações da Empresa',
+    [ModuleName.MANAGE_USERS]: 'Gerenciar Usuários',
+    [ModuleName.MANAGE_COMPANIES]: 'Gerenciar Empresas',
+};
+
 const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onBack, currentUser, currentCompany, setCurrentView }) => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -349,7 +360,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                     <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
                         <h3 className="text-xl font-bold text-text-main mb-4">Permissões para {editingUserPermissions.fullName}</h3>
                         <div className="space-y-3">
-                            {Object.values(ModuleName).map((moduleName: string) => (
+                            {Object.values(ModuleName).map((moduleName: ModuleName) => (
                                 <label key={moduleName} className="flex items-center space-x-3 cursor-pointer">
                                     <input
                                         type="checkbox"
@@ -357,7 +368,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                                         onChange={(e) => handlePermissionChange(moduleName, e.target.checked)}
                                         className="form-checkbox h-5 w-5 text-primary rounded focus:ring-primary"
                                     />
-                                    <span>{moduleName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                                    <span>{moduleNameTranslations[moduleName] || moduleName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
                                 </label>
                             ))}
                         </div>
