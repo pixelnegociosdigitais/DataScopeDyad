@@ -23,15 +23,15 @@ interface UseAuthReturn {
 }
 
 const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
-    [ModuleName.CREATE_SURVEY]: true,
-    [ModuleName.MANAGE_SURVEYS]: true,
-    [ModuleName.VIEW_DASHBOARD]: true,
+    [ModuleName.CREATE_SURVEY]: false, // Default para false
+    [ModuleName.MANAGE_SURVEYS]: false, // Default para false
+    [ModuleName.VIEW_DASHBOARD]: false, // Default para false
     [ModuleName.ACCESS_GIVEAWAYS]: false,
-    [ModuleName.PERFORM_GIVEAWAYS]: true,
-    [ModuleName.VIEW_GIVEAWAY_DATA]: true,
-    [ModuleName.MANAGE_COMPANY_SETTINGS]: true,
-    [ModuleName.MANAGE_USERS]: true,
-    [ModuleName.MANAGE_COMPANIES]: true,
+    [ModuleName.PERFORM_GIVEAWAYS]: false,
+    [ModuleName.VIEW_GIVEAWAY_DATA]: false,
+    [ModuleName.MANAGE_COMPANY_SETTINGS]: false,
+    [ModuleName.MANAGE_USERS]: false,
+    [ModuleName.MANAGE_COMPANIES]: false,
 };
 
 const DEVELOPER_EMAIL = 'santananegociosdigitais@gmail.com';
