@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeftIcon } from '../../components/icons/ArrowLeftIcon';
 import { BellIcon } from '../../components/icons/BellIcon';
-import { UserRole, View } from '../../types';
+import { UserRole, View, ModuleName } from '../../types'; // Importar ModuleName
 import { useAuth } from '../hooks/useAuth';
 import { showError, showSuccess } from '../utils/toast';
 
