@@ -119,3 +119,14 @@ export interface ModulePermission {
     module_name: ModuleName;
     enabled: boolean;
 }
+
+export interface LogEntry {
+    id: string;
+    timestamp: string;
+    level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
+    message: string;
+    userId?: string;
+    userEmail?: string;
+    companyId?: string;
+    module?: string;
+}

@@ -1,4 +1,4 @@
-import { User, Company, Survey, SurveyResponse, UserRole, QuestionType } from '../types';
+import { User, Company, Survey, SurveyResponse, UserRole, QuestionType, LogEntry } from '../types';
 
 export const MOCK_COMPANIES: Company[] = [
     { id: 'c1', name: 'Inova S.A.' },
@@ -86,4 +86,72 @@ export const MOCK_RESPONSES: SurveyResponse[] = [
     { id: 'r10', surveyId: 's3', answers: [{ questionId: 'q1', value: 'E-mail' }, { questionId: 'q2', value: 6 }] },
     { id: 'r11', surveyId: 's3', answers: [{ questionId: 'q1', value: 'Anúncio' }, { questionId: 'q2', value: 7 }] },
     { id: 'r12', surveyId: 's3', answers: [{ questionId: 'q1', value: 'Mídias Sociais' }, { questionId: 'q2', value: 8 }] },
+];
+
+export const MOCK_LOGS: LogEntry[] = [
+    {
+        id: 'log1',
+        timestamp: '2024-07-26T10:30:00Z',
+        level: 'INFO',
+        message: "Usuário 'Alice Dev' acessou o painel da pesquisa 'Pesquisa de Satisfação de Colaboradores 2024'.",
+        userId: 'u1',
+        userEmail: 'alice.dev@inova.sa',
+        companyId: 'c1',
+        module: 'DASHBOARD',
+    },
+    {
+        id: 'log2',
+        timestamp: '2024-07-26T10:35:15Z',
+        level: 'INFO',
+        message: "Usuário 'Beto Admin' atualizou as configurações da empresa 'Inova S.A.'.",
+        userId: 'u2',
+        userEmail: 'beto.admin@dadoscorp.com',
+        companyId: 'c1',
+        module: 'COMPANY_SETTINGS',
+    },
+    {
+        id: 'log3',
+        timestamp: '2024-07-26T10:40:30Z',
+        level: 'ERROR',
+        message: "Falha na conexão com o banco de dados ao tentar buscar perfis.",
+        module: 'AUTH',
+    },
+    {
+        id: 'log4',
+        timestamp: '2024-07-26T10:45:00Z',
+        level: 'INFO',
+        message: "Nova pesquisa 'Feedback do Cliente sobre Novo Produto' criada por 'Alice Dev'.",
+        userId: 'u1',
+        userEmail: 'alice.dev@inova.sa',
+        companyId: 'c1',
+        module: 'CREATE_SURVEY',
+    },
+    {
+        id: 'log5',
+        timestamp: '2024-07-26T10:50:05Z',
+        level: 'WARN',
+        message: "Tentativa de acesso não autorizado ao módulo 'Gerenciar Empresas' pelo usuário 'Carlos Usuário'.",
+        userId: 'u3',
+        userEmail: 'carlos.user@solucoes.ltda',
+        module: 'MODULE_PERMISSIONS',
+    },
+    {
+        id: 'log6',
+        timestamp: '2024-07-26T11:00:00Z',
+        level: 'INFO',
+        message: "Sorteio realizado para a pesquisa 'Pesquisa de Satisfação de Colaboradores 2024'. Vencedor: 'João Silva'.",
+        userId: 'u2',
+        userEmail: 'beto.admin@dadoscorp.com',
+        companyId: 'c1',
+        module: 'GIVEAWAYS',
+    },
+    {
+        id: 'log7',
+        timestamp: '2024-07-26T11:05:20Z',
+        level: 'DEBUG',
+        message: "Dados de sessão atualizados para o usuário 'Alice Dev'.",
+        userId: 'u1',
+        userEmail: 'alice.dev@inova.sa',
+        module: 'AUTH',
+    },
 ];
