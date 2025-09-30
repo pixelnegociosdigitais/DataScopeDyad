@@ -7,7 +7,7 @@ interface PastWinner {
     winner_name: string;
     winner_phone: string | null;
     rank: number;
-    prizes: { name: string } | null;
+    prizes: { name: string }[]; // Updated to match the actual data structure
 }
 
 interface PastWinnersHistoryProps {
@@ -31,7 +31,7 @@ const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyI
             showError('Não foi possível carregar o histórico de sorteios.');
             setPastWinners([]);
         } else {
-            setPastWinners(data as PastWinner[]);
+            setPastWinners(data || []); // Now properly typed
         }
         setLoading(false);
     }, [selectedSurveyId]);
@@ -64,7 +64,7 @@ const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyI
                                     <td className="py-3 px-4 text-sm text-gray-800 font-medium">{winner.winner_name}</td>
                                     <td className="py-3 px-4 text-sm text-gray-700">{winner.winner_phone || 'N/A'}</td>
                                     <td className="py-3 px-4 text-sm text-gray-700 text-center">{winner.rank}º</td>
-                                    <td className="py-3 px-4 text-sm text-gray-700">{winner.prizes?.name || 'Prêmio desconhecido'}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-700">{winner.prizes[0]?.name || 'Prêmio desconhecido'}</td>
                                 </tr>
                             ))}
                         </tbody>
