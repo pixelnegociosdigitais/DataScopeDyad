@@ -204,13 +204,17 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             return <ChatIcon className="h-10 w-10 text-gray-500" />;
         }
         const otherParticipant = chat.participants?.find(p => p.user_id !== currentUser.id);
-        const otherParticipantFullName = otherParticipant?.profiles?.fullName; // Obter o nome completo
+        const otherParticipantFullName = otherParticipant?.profiles?.fullName;
         
         if (otherParticipant?.profiles?.avatar_url) {
             return <img src={otherParticipant.profiles.avatar_url} alt={otherParticipantFullName || 'Usuário'} className="h-10 w-10 rounded-full object-cover" />;
         }
-        // Usar o nome completo para pegar a primeira letra, ou '?' se não houver nome
-        const initial = otherParticipantFullName ? otherParticipantFullName.charAt(0).toUpperCase() : '?';
+        
+        let initial = '?';
+        // Adiciona uma verificação explícita para garantir que é uma string não vazia
+        if (typeof otherParticipantFullName === 'string' && otherParticipantFullName.length > 0) {
+            initial = otherParticipantFullName.charAt(0).toUpperCase();
+        }
         return <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-base text-gray-600">{initial}</div>;
     };
 
