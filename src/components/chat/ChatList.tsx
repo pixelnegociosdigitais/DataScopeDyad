@@ -4,8 +4,8 @@ import { supabase } from '../../integrations/supabase/client';
 import { showError } from '../../utils/toast';
 import { ChatIcon } from '../../../components/icons/ChatIcon';
 import { CreateIcon } from '../../../components/icons/CreateIcon';
-import { UserIcon } from '../../../components/icons/UserIcon'; // Importar UserIcon
-import { SearchIcon } from '../../../components/icons/SearchIcon'; // Novo ícone de busca
+import { UserIcon } from '../../../components/icons/UserIcon';
+import { SearchIcon } from '../../../components/icons/SearchIcon';
 
 interface ChatListProps {
     currentUser: User;
@@ -20,12 +20,11 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
     const [availableUsers, setAvailableUsers] = useState<User[]>([]);
     const [selectedUsersForNewChat, setSelectedUsersForNewChat] = useState<string[]>([]);
     const [newChatName, setNewChatName] = useState('');
-    const [searchTerm, setSearchTerm] = useState(''); // Estado para o termo de busca
+    const [searchTerm, setSearchTerm] = useState('');
 
     const fetchChats = useCallback(async () => {
         setLoading(true);
         try {
-            // Passo 1: Buscar os IDs dos chats que o usuário participa e a contagem de não lidas
             const { data: userChatParticipants, error: cpError } = await supabase
                 .from('chat_participants')
                 .select('chat_id, unread_count')
@@ -42,7 +41,6 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             const chatIds = userChatParticipants.map(cp => cp.chat_id);
             const unreadCountsMap = new Map(userChatParticipants.map(cp => [cp.chat_id, cp.unread_count]));
 
-            // Passo 2: Com os IDs dos chats, buscar os detalhes completos dos chats, seus participantes e a última mensagem
             const { data: chatsData, error: chatsError } = await supabase
                 .from('chats')
                 .select(`
@@ -114,11 +112,11 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             .channel(`company_chats_${currentCompanyId}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participants', filter: `user_id=eq.${currentUser.id}` }, payload => {
                 console.log('ChatList: Realtime update for chat_participants:', payload);
-                fetchChats(); // Re-fetch chats on any participant change
+                fetchChats();
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
                 console.log('ChatList: Realtime update for new message:', payload);
-                fetchChats(); // Re-fetch chats on new message to update last_message_at and unread_count
+                fetchChats();
             })
             .subscribe();
 
@@ -142,7 +140,6 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
         }
 
         try {
-            // 1. Create the chat
             const { data: newChat, error: chatError } = await supabase
                 .from('chats')
                 .insert({
@@ -155,7 +152,6 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
 
             if (chatError) throw chatError;
 
-            // 2. Add participants
             const participantsToInsert = [currentUser.id, ...selectedUsersForNewChat].map(userId => ({
                 chat_id: newChat.id,
                 user_id: userId,
@@ -171,7 +167,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             setShowNewChatModal(false);
             setSelectedUsersForNewChat([]);
             setNewChatName('');
-            fetchChats(); // Refresh chat list
+            fetchChats();
         } catch (error: any) {
             console.error('Error creating new chat:', error);
             showError('Não foi possível criar o chat: ' + error.message);
@@ -188,7 +184,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
 
     const getChatDisplayAvatar = (chat: Chat) => {
         if (chat.is_group_chat) {
-            return <ChatIcon className="h-10 w-10 text-gray-500" />; // Generic group chat icon
+            return <ChatIcon className="h-10 w-10 text-gray-500" />;
         }
         const otherParticipant = chat.participants?.find(p => p.user_id !== currentUser.id);
         if (otherParticipant?.profiles?.avatar_url) {
@@ -205,7 +201,6 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
 
     return (
         <div className="flex flex-col h-full bg-white rounded-lg shadow-md">
-            {/* Header com Meu Perfil e Botão de Novo Chat */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <div className="flex items-center gap-3">
                     {currentUser.profilePictureUrl ? (
@@ -224,7 +219,6 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                 </button>
             </div>
 
-            {/* Barra de Pesquisa */}
             <div className="p-4 border-b border-gray-200">
                 <div className="relative">
                     <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -238,12 +232,43 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                 </div>
             </div>
 
-            {/* Lista de Chats */}
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
                     <p className="text-center text-text-light py-4">Carregando chats...</p>
                 ) : filteredChats.length === 0 ? (
-                    <p className="text-center text-text-light py-4">Nenhum chat encontrado. Inicie um novo!</p>
+                    <div className="text-center py-4 px-4">
+                        <p className="text-text-light mb-4">Nenhum chat encontrado. Inicie um novo!</p>
+                        {availableUsers.length > 0 && (
+                            <div className="bg-gray-100 p-4 rounded-lg shadow-inner">
+                                <h4 className="font-semibold text-text-main mb-3">Pessoas na sua empresa:</h4>
+                                <ul className="space-y-2">
+                                    {availableUsers.map(user => (
+                                        <li key={user.id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm border border-gray-100">
+                                            <div className="flex items-center gap-3">
+                                                {user.avatar_url ? (
+                                                    <img src={user.avatar_url} alt={user.fullName} className="h-8 w-8 rounded-full object-cover" />
+                                                ) : (
+                                                    <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">
+                                                        {user.fullName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <span className="text-gray-800 font-medium">{user.fullName}</span>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedUsersForNewChat([user.id]);
+                                                    setShowNewChatModal(true);
+                                                }}
+                                                className="px-3 py-1 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary/10 transition-colors"
+                                            >
+                                                Iniciar Chat
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
                 ) : (
                     <ul>
                         {filteredChats.map(chat => (
