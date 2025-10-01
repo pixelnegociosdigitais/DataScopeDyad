@@ -17,8 +17,8 @@ import DeveloperCompanyUserManager from './components/DeveloperCompanyUserManage
 import AdministratorUserManager from './components/AdministratorUserManager';
 import LogsAndAuditPanel from './components/LogsAndAuditPanel';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
-import NoticeCreator from './src/components/NoticeCreator'; // Importar NoticeCreator
-// import NoticeDisplay from './src/components/NoticeDisplay'; // REMOVIDO
+import NoticeCreator from './src/components/NoticeCreator';
+import ChatLayout from './src/components/chat/ChatLayout'; // Importar ChatLayout
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
@@ -253,8 +253,21 @@ const App: React.FC = () => {
                 return <AdministratorUserManager onBack={handleBack} currentUser={currentUser} currentCompany={currentCompany} setCurrentView={setCurrentView} />;
             case View.LOGS_AND_AUDIT:
                 return <LogsAndAuditPanel onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
-            case View.MANAGE_NOTICES: // Novo caso para o criador de avisos
+            case View.MANAGE_NOTICES:
                 return <NoticeCreator onBack={handleBack} />;
+            case View.CHAT: // Novo caso para o chat
+                if (!currentCompany?.id) {
+                    return (
+                        <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
+                            <ChatIcon className="h-12 w-12 text-primary mx-auto mb-4" />
+                            <h2 className="text-2xl font-bold text-text-main mb-4">Chat da Empresa</h2>
+                            <p className="text-text-light mb-6">
+                                Você precisa ter uma empresa associada para usar o chat.
+                            </p>
+                        </div>
+                    );
+                }
+                return <ChatLayout currentUser={currentUser} currentCompanyId={currentCompany.id} />;
             default:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
         }
@@ -277,7 +290,7 @@ const App: React.FC = () => {
                     onLogout={() => supabase.auth.signOut()}
                     setView={setCurrentView}
                     modulePermissions={modulePermissions}
-                    onNoticeClick={handleNoticeClick} // Passar a função para o Header
+                    onNoticeClick={handleNoticeClick}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
                     {renderContent()}

@@ -34,6 +34,7 @@ const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
     [ModuleName.MANAGE_USERS]: false,
     [ModuleName.MANAGE_COMPANIES]: false,
     [ModuleName.MANAGE_NOTICES]: false, // Novo módulo de avisos
+    [ModuleName.ACCESS_CHAT]: false, // Novo módulo de chat
 };
 
 const DEVELOPER_EMAIL = 'santananegociosdigitais@gmail.com';
@@ -101,6 +102,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 avatar_url,
                 permissions,
                 status,
+                company_id,
                 companies (
                     id,
                     name,
@@ -138,6 +140,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 profilePictureUrl: profileData.avatar_url || undefined,
                 permissions: profileData.permissions || {},
                 status: profileData.status || 'active',
+                company_id: profileData.company_id || undefined, // Adicionado company_id
             };
 
             if (user.email === DEVELOPER_EMAIL && user.role !== UserRole.DEVELOPER) {
@@ -243,7 +246,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
 
         setCurrentCompany(newCompany);
-        setCurrentUser(prev => prev ? { ...prev, role: roleToAssign } : null);
+        setCurrentUser(prev => prev ? { ...prev, role: roleToAssign, company_id: newCompany.id } : null); // Atualizar company_id no currentUser
         await fetchModulePermissions(roleToAssign);
         showSuccess('Empresa criada e vinculada com sucesso!');
         setCurrentView(View.SURVEY_LIST);

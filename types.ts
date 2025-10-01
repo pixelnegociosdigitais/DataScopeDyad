@@ -14,6 +14,7 @@ export interface User {
     profilePictureUrl?: string;
     permissions?: Record<string, boolean>; // Adicionado para permissões granulares
     status?: 'active' | 'inactive'; // Adicionado para o status do usuário
+    company_id?: string; // Adicionado para vincular o usuário a uma empresa
 }
 
 export interface Company {
@@ -104,6 +105,33 @@ export interface UserNotice {
     read_at: string;
 }
 
+export interface Chat {
+    id: string;
+    created_at: string;
+    company_id: string;
+    name?: string; // For group chats
+    is_group_chat: boolean;
+    last_message_at?: string;
+    participants?: ChatParticipant[]; // Joined data
+}
+
+export interface ChatParticipant {
+    chat_id: string;
+    user_id: string;
+    joined_at: string;
+    unread_count: number;
+    profiles?: User; // Joined data for participant details
+}
+
+export interface ChatMessage {
+    id: string;
+    chat_id: string;
+    sender_id: string;
+    content: string;
+    created_at: string;
+    sender?: User; // Joined data for sender details
+}
+
 export enum View {
     SURVEY_LIST = 'SURVEY_LIST',
     CREATE_SURVEY = 'CREATE_SURVEY',
@@ -119,6 +147,7 @@ export enum View {
     ADMIN_USER_MANAGER = 'ADMIN_USER_MANAGER', // Nova view para o Administrador
     LOGS_AND_AUDIT = 'LOGS_AND_AUDIT', // Nova view para Logs e Auditoria
     MANAGE_NOTICES = 'MANAGE_NOTICES', // Nova view para gerenciar avisos
+    CHAT = 'CHAT', // Nova view para o chat
 }
 
 export enum ModuleName {
@@ -129,9 +158,10 @@ export enum ModuleName {
     PERFORM_GIVEAWAYS = 'perform_giveaways', // Nova permissão: Realizar sorteios e gerenciar prêmios
     VIEW_GIVEAWAY_DATA = 'view_giveaway_data', // Nova permissão: Visualizar histórico de sorteios
     MANAGE_COMPANY_SETTINGS = 'manage_company_settings',
-        MANAGE_USERS = 'manage_users', // Para administradores gerenciarem usuários
+    MANAGE_USERS = 'manage_users', // Para administradores gerenciarem usuários
     MANAGE_COMPANIES = 'manage_companies', // Para desenvolvedores gerenciarem empresas
     MANAGE_NOTICES = 'manage_notices', // Nova permissão: Gerenciar avisos
+    ACCESS_CHAT = 'access_chat', // Nova permissão: Acessar o chat
 }
 
 export interface ModulePermission {

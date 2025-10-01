@@ -30,6 +30,7 @@ const moduleNameTranslations: Record<ModuleName, string> = {
     [ModuleName.MANAGE_USERS]: 'Gerenciar Usuários',
     [ModuleName.MANAGE_COMPANIES]: 'Gerenciar Empresas',
     [ModuleName.MANAGE_NOTICES]: 'Gerenciar Avisos', // Adicionado
+    [ModuleName.ACCESS_CHAT]: 'Acessar Chat', // Adicionado
 };
 
 const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onBack, currentUser, currentCompany, setCurrentView }) => {

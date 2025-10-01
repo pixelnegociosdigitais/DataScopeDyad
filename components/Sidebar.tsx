@@ -8,7 +8,8 @@ import { MenuIcon } from './icons/MenuIcon';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
-import { BellIcon } from './icons/BellIcon'; // Importar o novo ícone
+import { BellIcon } from './icons/BellIcon';
+import { ChatIcon } from './icons/ChatIcon'; // Importar o novo ícone de chat
 import { View, ModuleName, UserRole } from '../types';
 
 interface SidebarProps {
@@ -41,6 +42,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
             permission: modulePermissions[ModuleName.PERFORM_GIVEAWAYS] || modulePermissions[ModuleName.VIEW_GIVEAWAY_DATA],
         },
         {
+            label: 'Chat', // Novo item de menu para o chat
+            icon: ChatIcon,
+            view: View.CHAT,
+            permission: modulePermissions[ModuleName.ACCESS_CHAT],
+        },
+        {
             label: 'Gerenciar Usuários',
             icon: UserIcon,
             view: View.ADMIN_USER_MANAGER,
@@ -53,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
             permission: currentUserRole === UserRole.DEVELOPER, // Apenas Desenvolvedores
         },
         {
-            label: 'Gerenciar Avisos', // Novo item de menu
+            label: 'Gerenciar Avisos',
             icon: BellIcon,
             view: View.MANAGE_NOTICES,
             permission: modulePermissions[ModuleName.MANAGE_NOTICES],
