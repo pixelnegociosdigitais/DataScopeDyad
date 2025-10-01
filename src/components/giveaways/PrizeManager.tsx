@@ -6,8 +6,8 @@ import { CreateIcon } from '../../../components/icons/CreateIcon';
 import { PencilIcon } from '../../../components/icons/PencilIcon';
 import { TrashIcon } from '../../../components/icons/TrashIcon';
 import ConfirmationDialog from '../ConfirmationDialog';
-import { logActivity } from '../../utils/logger'; // Importar o utilitário de log
-import { useAuth } from '../../hooks/useAuth'; // Importar useAuth para acessar modulePermissions
+import { logActivity } from '../../utils/logger';
+import { useAuth } from '../../hooks/useAuth';
 
 interface PrizeManagerProps {
     currentCompany: Company;
@@ -25,11 +25,11 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
     const [showDeletePrizeDialog, setShowDeletePrizeDialog] = useState(false);
     const [prizeToDelete, setPrizeToDelete] = useState<Prize | null>(null);
 
-    const { modulePermissions } = useAuth(() => {}); // Obter as permissões do módulo
+    const { modulePermissions } = useAuth(() => {});
     const canPerformGiveaways = modulePermissions[ModuleName.PERFORM_GIVEAWAYS];
 
     if (!canPerformGiveaways) {
-        return null; // Não renderiza o gerenciador de prêmios se não tiver permissão
+        return null;
     }
 
     const handleOpenPrizeModal = (prize: Prize | null = null) => {
@@ -82,12 +82,7 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
         }
     };
 
-    const confirmDeletePrize = (prize: Prize) => {
-        setPrizeToDelete(prize);
-        setShowDeletePrizeDialog(true);
-    };
-
-    const handleDeletePrize = async () => {
+    const handleDeletePrizeConfirmed = useCallback(async () => {
         if (!prizeToDelete) return;
         try {
             const { error } = await supabase.from('prizes').delete().eq('id', prizeToDelete.id);
@@ -95,14 +90,20 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
             showSuccess('Prêmio excluído com sucesso!');
             logActivity('INFO', `Prêmio '${prizeToDelete.name}' (ID: ${prizeToDelete.id}) excluído com sucesso.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
             onPrizesUpdate();
-            setShowDeletePrizeDialog(false);
-            setPrizeToDelete(null);
         } catch (err: any) {
             console.error('Erro ao excluir prêmio:', err.message);
             showError('Erro ao excluir prêmio: ' + err.message);
             logActivity('ERROR', `Erro ao excluir prêmio '${prizeToDelete.name}' (ID: ${prizeToDelete.id}): ${err.message}`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
+        } finally {
+            setShowDeletePrizeDialog(false);
+            setPrizeToDelete(null);
         }
-    };
+    }, [prizeToDelete, onPrizesUpdate, currentUser, currentCompany]);
+
+    const confirmDeletePrize = useCallback((prize: Prize) => {
+        setPrizeToDelete(prize);
+        setShowDeletePrizeDialog(true);
+    }, []);
 
     return (
         <div className="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
@@ -175,8 +176,15 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
                 </div>
             )}
 
-            {showDeletePrizeDialog && (
-                <ConfirmationDialog title="Confirmar Exclusão" message={`Tem certeza que deseja excluir o prêmio "${prizeToDelete?.name}"? Esta ação não pode ser desfeita.`} confirmText="Excluir" onConfirm={handleDeletePrize} cancelText="Cancelar" onCancel={() => setShowDeletePrizeDialog(false)} />
+            {showDeletePrizeDialog && prizeToDelete && (
+                <ConfirmationDialog
+                    title="Confirmar Exclusão de Prêmio"
+                    message={`Tem certeza que deseja excluir o prêmio "${prizeToDelete.name}"? Esta ação não pode ser desfeita.`}
+                    confirmText="Excluir"
+                    onConfirm={handleDeletePrizeConfirmed}
+                    cancelText="Cancelar"
+                    onCancel={() => setShowDeletePrizeDialog(false)}
+                />
             )}
         </div>
     );

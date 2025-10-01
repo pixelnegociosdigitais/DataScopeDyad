@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Survey, SurveyResponse, Question, Answer, Company, User } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
-import { showSuccess, showError } from '@/src/utils/toast'; // Importar showSuccess e showError
-import { logActivity } from '@/src/utils/logger'; // Importar o utilitário de log
+import { showSuccess, showError } from '@/src/utils/toast';
+import { logActivity } from '@/src/utils/logger';
 
 interface UseSurveysReturn {
     surveys: Survey[];
@@ -12,7 +12,7 @@ interface UseSurveysReturn {
     fetchSurveys: (companyId: string) => Promise<Survey[]>;
     fetchSurveyResponses: (surveyId: string) => Promise<void>;
     handleSaveSurvey: (surveyData: Survey, editingSurveyId?: string) => Promise<void>;
-    handleDeleteSurvey: (surveyId: string) => Promise<void>;
+    handleDeleteSurvey: (surveyId: string) => Promise<boolean>; // Retorna Promise<boolean>
     handleSaveResponse: (answers: Answer[], selectedSurvey: Survey, currentUser: User) => Promise<boolean>;
 }
 
@@ -22,7 +22,6 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
     const [templates, setTemplates] = useState<Survey[]>([]);
     const [loadingSurveys, setLoadingSurveys] = useState(true);
 
-    // fetchSurveys agora é estável. currentUser é acessado do closure para fins de log.
     const fetchSurveys = useCallback(async (companyId: string): Promise<Survey[]> => {
         setLoadingSurveys(true);
         console.log('useSurveys: fetchSurveys - Iniciando busca de pesquisas para companyId:', companyId);
@@ -54,7 +53,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             return [];
         } else if (data) {
             console.log('useSurveys: fetchSurveys - Dados de pesquisas recebidos:', data);
-            const fetchedSurveys: Survey[] = data.map((s: any) => ({ // Adicionado 'any' para tipagem temporária
+            const fetchedSurveys: Survey[] = data.map((s: any) => ({
                 id: s.id,
                 title: s.title,
                 companyId: s.company_id,
@@ -63,7 +62,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     text: q.text,
                     type: q.type,
                     options: q.options || undefined,
-                    position: q.position || 0, // Adicionado position
+                    position: q.position || 0,
                 })).sort((a, b) => (a.position || 0) - (b.position || 0)),
                 responseCount: s.survey_responses ? s.survey_responses.length : 0,
             }));
@@ -76,9 +75,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         setLoadingSurveys(false);
         console.log('useSurveys: fetchSurveys - Nenhuma pesquisa encontrada ou erro. loadingSurveys = false.');
         return [];
-    }, []); // Dependência vazia para estabilidade
+    }, []);
 
-    // fetchSurveyResponses agora é estável. currentUser e currentCompany são acessados do closure para fins de log.
     const fetchSurveyResponses = useCallback(async (surveyId: string) => {
         console.log('useSurveys: fetchSurveyResponses - Iniciando busca de respostas para surveyId:', surveyId);
         const { data, error } = await supabase
@@ -120,9 +118,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             logActivity('INFO', `Nenhuma resposta encontrada para a pesquisa ${surveyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             setSurveyResponses([]);
         }
-    }, []); // Dependência vazia para estabilidade
+    }, []);
 
-    // fetchTemplates agora é estável. currentUser e currentCompany são acessados do closure para fins de log.
     const fetchTemplates = useCallback(async () => {
         console.log('useSurveys: fetchTemplates - Iniciando busca de templates.');
         const { data, error } = await supabase
@@ -140,18 +137,18 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             const fetchedTemplates: Survey[] = data.map(template => ({
                 id: template.id,
                 title: template.title,
-                companyId: '', // Templates não têm companyId diretamente
+                companyId: '',
                 questions: template.questions as Question[],
             }));
             setTemplates(fetchedTemplates);
             logActivity('INFO', `Templates de pesquisa carregados.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             console.log('useSurveys: fetchTemplates - Templates processados e definidos:', fetchedTemplates);
         }
-    }, []); // Dependência vazia para estabilidade
+    }, []);
 
     useEffect(() => {
         fetchTemplates();
-    }, [fetchTemplates]); // fetchTemplates agora é estável, este useEffect só roda uma vez.
+    }, [fetchTemplates]);
 
     useEffect(() => {
         console.log('useSurveys: useEffect - currentCompany.id mudou:', currentCompany?.id);
@@ -163,7 +160,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             setSurveys([]);
             setLoadingSurveys(false);
         }
-    }, [currentCompany?.id, fetchSurveys]); // fetchSurveys agora é estável, este useEffect só roda quando currentCompany.id muda.
+    }, [currentCompany?.id, fetchSurveys]);
 
     const handleSaveSurvey = useCallback(async (surveyData: Survey, editingSurveyId?: string) => {
         if (!currentUser || !currentCompany) {
@@ -177,7 +174,6 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
         if (editingSurveyId) {
             console.log('useSurveys: handleSaveSurvey - Atualizando pesquisa existente:', editingSurveyId);
-            // Atualizar pesquisa existente
             const { error: surveyUpdateError } = await supabase
                 .from('surveys')
                 .update({ title: surveyData.title })
@@ -190,7 +186,6 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 return;
             }
 
-            // Excluir perguntas existentes
             const { error: deleteQuestionsError } = await supabase
                 .from('questions')
                 .delete()
@@ -203,7 +198,6 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 return;
             }
 
-            // Inserir novas/atualizadas perguntas
             const questionsToInsert = surveyData.questions.map((q, index) => ({
                 survey_id: editingSurveyId,
                 text: q.text,
@@ -229,7 +223,6 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
         } else {
             console.log('useSurveys: handleSaveSurvey - Criando nova pesquisa.');
-            // Criar nova pesquisa
             const { data: newSurvey, error: surveyInsertError } = await supabase
                 .from('surveys')
                 .insert({
@@ -248,7 +241,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             }
 
             if (newSurvey) {
-                targetSurveyId = newSurvey.id; // Define o ID da nova pesquisa
+                targetSurveyId = newSurvey.id;
                 const questionsToInsert = surveyData.questions.map((q, index) => ({
                     survey_id: newSurvey.id,
                     text: q.text,
@@ -273,7 +266,6 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             }
         }
 
-        // Buscar a pesquisa específica atualizada e atualizar o estado
         if (targetSurveyId && currentCompany?.id) {
             console.log('useSurveys: handleSaveSurvey - Buscando pesquisa única atualizada para ID:', targetSurveyId);
             const { data: updatedSurveyData, error: fetchSingleError } = await supabase
@@ -299,7 +291,6 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             if (fetchSingleError) {
                 console.error('useSurveys: handleSaveSurvey - Erro ao buscar pesquisa única atualizada:', fetchSingleError);
                 logActivity('ERROR', `Erro ao buscar pesquisa única atualizada (ID: ${targetSurveyId}): ${fetchSingleError.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany.id);
-                // Fallback para buscar todas as pesquisas se a busca única falhar
                 await fetchSurveys(currentCompany.id);
                 return;
             }
@@ -314,7 +305,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         text: q.text,
                         type: q.type,
                         options: q.options || undefined,
-                        position: q.position || 0, // Adicionado position
+                        position: q.position || 0,
                     })).sort((a, b) => (a.position || 0) - (b.position || 0)),
                     responseCount: updatedSurveyData.survey_responses ? updatedSurveyData.survey_responses.length : 0,
                 };
@@ -323,12 +314,10 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 setSurveys(prevSurveys => {
                     const existingIndex = prevSurveys.findIndex(s => s.id === updatedSurvey.id);
                     if (existingIndex > -1) {
-                        // Atualiza a pesquisa existente no array
                         const newSurveys = [...prevSurveys];
                         newSurveys[existingIndex] = updatedSurvey;
                         return newSurveys;
                     } else {
-                        // Adiciona a nova pesquisa ao array (para criação de nova pesquisa)
                         return [updatedSurvey, ...prevSurveys];
                     }
                 });
@@ -336,25 +325,24 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         }
     }, [currentUser, currentCompany, fetchSurveys, showSuccess, showError, setSurveys]);
 
-    const handleDeleteSurvey = useCallback(async (surveyId: string) => {
-        if (window.confirm('Tem certeza que deseja excluir esta pesquisa? Todas as perguntas e respostas associadas também serão excluídas.')) {
-            console.log('useSurveys: handleDeleteSurvey - Excluindo pesquisa ID:', surveyId);
-            const { error } = await supabase
-                .from('surveys')
-                .delete()
-                .eq('id', surveyId);
+    const handleDeleteSurvey = useCallback(async (surveyId: string): Promise<boolean> => {
+        console.log('useSurveys: handleDeleteSurvey - Excluindo pesquisa ID:', surveyId);
+        const { error } = await supabase
+            .from('surveys')
+            .delete()
+            .eq('id', surveyId);
 
-            if (error) {
-                showError('Erro ao excluir a pesquisa: ' + error.message);
-                console.error('useSurveys: handleDeleteSurvey - Erro ao excluir pesquisa:', error);
-                logActivity('ERROR', `Erro ao excluir pesquisa (ID: ${surveyId}): ${error.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
-            } else {
-                showSuccess('Pesquisa excluída com sucesso!');
-                // Atualiza o estado de surveys removendo a pesquisa excluída
-                setSurveys(prevSurveys => prevSurveys.filter(s => s.id !== surveyId));
-                logActivity('INFO', `Pesquisa (ID: ${surveyId}) excluída com sucesso.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
-                console.log('useSurveys: handleDeleteSurvey - Pesquisa excluída com sucesso.');
-            }
+        if (error) {
+            showError('Erro ao excluir a pesquisa: ' + error.message);
+            console.error('useSurveys: handleDeleteSurvey - Erro ao excluir pesquisa:', error);
+            logActivity('ERROR', `Erro ao excluir pesquisa (ID: ${surveyId}): ${error.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
+            return false;
+        } else {
+            showSuccess('Pesquisa excluída com sucesso!');
+            setSurveys(prevSurveys => prevSurveys.filter(s => s.id !== surveyId));
+            logActivity('INFO', `Pesquisa (ID: ${surveyId}) excluída com sucesso.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
+            console.log('useSurveys: handleDeleteSurvey - Pesquisa excluída com sucesso.');
+            return true;
         }
     }, [showSuccess, showError, currentUser, currentCompany, setSurveys]);
 
@@ -368,14 +356,12 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             return false;
         }
 
-        // --- Client-side validation for required fields ---
         const missingAnswers = selectedSurvey.questions.filter(q => {
             const answer = answers.find(a => a.questionId === q.id);
             if (!answer || answer.value === null || answer.value === undefined) {
-                return true; // No answer provided or value is null/undefined
+                return true;
             }
 
-            // Check for empty values based on question type
             if (typeof answer.value === 'string' && answer.value.trim() === '') return true;
             if (Array.isArray(answer.value) && answer.value.length === 0) return true;
             
@@ -390,7 +376,6 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             console.log('useSurveys: handleSaveResponse - Retornando FALSE devido a validação de campos obrigatórios.');
             return false;
         }
-        // --- End client-side validation ---
 
         console.log('useSurveys: handleSaveResponse - Tentando inserir em survey_responses para surveyId:', selectedSurvey.id, 'respondentId:', currentUser.id);
         const { data: newResponse, error: responseError } = await supabase
@@ -432,11 +417,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             }
             console.log('useSurveys: handleSaveResponse - Respostas detalhadas inseridas com sucesso.');
             
-            // Após salvar uma resposta, atualize a contagem de respostas para a pesquisa na lista E no dashboard
             if (currentCompany?.id) {
                 console.log('useSurveys: handleSaveResponse - Chamando fetchSurveys e fetchSurveyResponses para atualizar contagens e dados do painel.');
-                // await fetchSurveys(currentCompany.id); // TEMPORARILY COMMENTED OUT FOR DIAGNOSIS
-                // await fetchSurveyResponses(selectedSurvey.id); // TEMPORARILY COMMENTED OUT FOR DIAGNOSIS
             }
             showSuccess('Resposta enviada com sucesso!');
             logActivity('INFO', `Resposta enviada com sucesso para pesquisa '${selectedSurvey.title}' (Resposta ID: ${newResponse.id}).`, 'SURVEY_RESPONSES', currentUser.id, currentUser.email, currentCompany?.id);

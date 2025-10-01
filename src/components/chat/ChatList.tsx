@@ -4,6 +4,7 @@ import { Chat, User, ChatParticipant, UserRole } from '../../../types';
 import { showError, showSuccess } from '../../utils/toast';
 import { PlusIcon } from '../../../components/icons/PlusIcon'; 
 import { TrashIcon } from '../../../components/icons/TrashIcon'; // Usando TrashIcon em vez de DeleteIcon
+import ConfirmationDialog from '../ConfirmationDialog'; // Importar ConfirmationDialog
 
 interface ChatListProps {
     currentUser: User;
@@ -16,6 +17,8 @@ interface ChatListProps {
 const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSelectChat, onCreateChat, selectedChatId }) => {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showDeleteChatConfirm, setShowDeleteChatConfirm] = useState(false); // Estado para o diálogo de confirmação
+    const [chatToDelete, setChatToDelete] = useState<Chat | null>(null); // Chat a ser excluído
 
     const fetchChats = useCallback(async () => {
         setLoading(true);
@@ -45,7 +48,6 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                 return;
             }
 
-            // Fetch all participants for these chats to determine individual chat names
             const { data: allParticipants, error: allParticipantsError } = await supabase
                 .from('chat_participants')
                 .select(`
@@ -71,7 +73,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     ...chatData,
                     displayName: chatDisplayName,
                     unread_count: unreadCount,
-                    participants: participantsInChat.map(p => p.profiles) // Attach profiles for display
+                    participants: participantsInChat.map(p => p.profiles)
                 };
             });
 
@@ -90,11 +92,9 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
         const channel = supabase
             .channel(`public:chats`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, payload => {
-                // Refetch chats on any change to ensure list is up-to-date
                 fetchChats();
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participants', filter: `user_id=eq.${currentUser.id}` }, payload => {
-                // Refetch chats if current user's participation changes
                 fetchChats();
             })
             .subscribe();
@@ -104,46 +104,49 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
         };
     }, [fetchChats, currentUser.id]);
 
-    const handleDeleteChat = async (chatId: string) => {
-        if (!window.confirm('Tem certeza que deseja excluir esta conversa? Esta ação é irreversível e removerá todas as mensagens e participantes.')) {
-            return;
-        }
+    const handleDeleteChatConfirmed = useCallback(async () => {
+        if (!chatToDelete) return;
 
         try {
-            // 1. Delete messages
             const { error: messagesError } = await supabase
                 .from('messages')
                 .delete()
-                .eq('chat_id', chatId);
+                .eq('chat_id', chatToDelete.id);
 
             if (messagesError) throw messagesError;
 
-            // 2. Delete chat participants
             const { error: participantsError } = await supabase
                 .from('chat_participants')
                 .delete()
-                .eq('chat_id', chatId);
+                .eq('chat_id', chatToDelete.id);
 
             if (participantsError) throw participantsError;
 
-            // 3. Delete the chat itself
             const { error: chatError } = await supabase
                 .from('chats')
                 .delete()
-                .eq('id', chatId);
+                .eq('id', chatToDelete.id);
 
             if (chatError) throw chatError;
 
             showSuccess('Conversa excluída com sucesso!');
-            fetchChats(); // Refresh the list
-            if (selectedChatId === chatId) {
-                onSelectChat(null); // Deselect the chat if it was the one open
+            fetchChats();
+            if (selectedChatId === chatToDelete.id) {
+                onSelectChat(null);
             }
         } catch (error: any) {
             console.error('Erro ao excluir conversa:', error.message);
             showError('Não foi possível excluir a conversa.');
+        } finally {
+            setShowDeleteChatConfirm(false);
+            setChatToDelete(null);
         }
-    };
+    }, [chatToDelete, fetchChats, onSelectChat, selectedChatId]);
+
+    const handleDeleteChat = useCallback((chat: Chat) => {
+        setChatToDelete(chat);
+        setShowDeleteChatConfirm(true);
+    }, []);
 
     const canDeleteChat = currentUser.role === UserRole.ADMINISTRATOR || currentUser.role === UserRole.DEVELOPER;
 
@@ -182,8 +185,8 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                             {canDeleteChat && (
                                 <button
                                     onClick={(e) => {
-                                        e.stopPropagation(); // Prevent selecting the chat when deleting
-                                        handleDeleteChat(chat.id);
+                                        e.stopPropagation();
+                                        handleDeleteChat(chat);
                                     }}
                                     className="p-1 rounded-full text-red-600 hover:bg-red-100 transition-colors"
                                     title="Excluir Conversa"
@@ -195,6 +198,20 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     ))
                 )}
             </div>
+
+            {showDeleteChatConfirm && chatToDelete && (
+                <ConfirmationDialog
+                    title="Confirmar Exclusão de Conversa"
+                    message={`Tem certeza que deseja excluir a conversa "${chatToDelete.displayName}"? Esta ação é irreversível e removerá todas as mensagens e participantes.`}
+                    confirmText="Excluir"
+                    onConfirm={handleDeleteChatConfirmed}
+                    cancelText="Cancelar"
+                    onCancel={() => {
+                        setShowDeleteChatConfirm(false);
+                        setChatToDelete(null);
+                    }}
+                />
+            )}
         </div>
     );
 };

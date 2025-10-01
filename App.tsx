@@ -18,13 +18,14 @@ import AdministratorUserManager from './components/AdministratorUserManager';
 import LogsAndAuditPanel from './components/LogsAndAuditPanel';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
 import NoticeCreator from './src/components/NoticeCreator';
-import ChatLayout from './src/components/chat/ChatLayout'; // Importar ChatLayout
-import { ChatIcon } from './components/icons/ChatIcon'; // Importar ChatIcon
+import ChatLayout from './src/components/chat/ChatLayout';
+import { ChatIcon } from './components/icons/ChatIcon';
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
 import { useSurveys } from './src/hooks/useSurveys';
 import { showError } from './src/utils/toast';
+import ConfirmationDialog from './src/components/ConfirmationDialog'; // Importar ConfirmationDialog
 
 const App: React.FC = () => {
     const { session, loadingSession } = useAuthSession();
@@ -33,7 +34,9 @@ const App: React.FC = () => {
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const [companySettingsAccessDenied, setCompanySettingsAccessDenied] = useState(false);
-    const [activeNotice, setActiveNotice] = useState<Notice | null>(null); // Estado para o aviso ativo
+    const [activeNotice, setActiveNotice] = useState<Notice | null>(null);
+    const [showDeleteSurveyConfirm, setShowDeleteSurveyConfirm] = useState(false); // Estado para o diálogo de confirmação
+    const [surveyToDelete, setSurveyToDelete] = useState<Survey | null>(null); // Pesquisa a ser excluída
 
     const {
         currentUser,
@@ -56,7 +59,6 @@ const App: React.FC = () => {
         handleSaveResponse,
     } = useSurveys(currentCompany, currentUser);
 
-    // Log de diagnóstico para o estado de carregamento global
     useEffect(() => {
         if (loadingSession || loadingAuth || loadingSurveys) {
             console.log('App: Global loading state active. loadingSession:', loadingSession, 'loadingAuth:', loadingAuth, 'loadingSurveys:', loadingSurveys);
@@ -65,21 +67,17 @@ const App: React.FC = () => {
         }
     }, [loadingSession, loadingAuth, loadingSurveys]);
 
-    // Efeito para lidar com a lógica de acesso às configurações da empresa
     useEffect(() => {
-        // Só executa se a autenticação e o carregamento de dados estiverem completos
         if (!loadingAuth && !loadingSession && session && currentUser) {
             if (currentView === View.COMPANY_SETTINGS) {
-                // Verifica se o usuário tem uma empresa E não tem permissão para gerenciá-la
                 if (currentCompany && !modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS]) {
                     setCompanySettingsAccessDenied(true);
                     showError('Você não tem permissão para configurar a empresa.');
-                    setCurrentView(View.SURVEY_LIST); // Redireciona imediatamente
+                    setCurrentView(View.SURVEY_LIST);
                 } else {
-                    setCompanySettingsAccessDenied(false); // Limpa o estado se as condições forem atendidas
+                    setCompanySettingsAccessDenied(false);
                 }
             } else {
-                // Se navegarmos para fora de COMPANY_SETTINGS, limpa qualquer estado de negação de acesso anterior
                 setCompanySettingsAccessDenied(false);
             }
         }
@@ -120,15 +118,29 @@ const App: React.FC = () => {
             showError('Você não tem permissão para excluir pesquisas.');
             return;
         }
-        await handleDeleteSurvey(surveyId);
-        if (selectedSurvey?.id === surveyId) {
-            setSelectedSurvey(null);
+        const survey = surveys.find(s => s.id === surveyId);
+        if (survey) {
+            setSurveyToDelete(survey);
+            setShowDeleteSurveyConfirm(true);
         }
-        if (editingSurvey?.id === surveyId) {
-            setEditingSurvey(null);
+    }, [surveys, modulePermissions]);
+
+    const confirmDeleteSurvey = useCallback(async () => {
+        if (surveyToDelete) {
+            const success = await handleDeleteSurvey(surveyToDelete.id);
+            if (success) {
+                if (selectedSurvey?.id === surveyToDelete.id) {
+                    setSelectedSurvey(null);
+                }
+                if (editingSurvey?.id === surveyToDelete.id) {
+                    setEditingSurvey(null);
+                }
+                setCurrentView(View.SURVEY_LIST);
+            }
         }
-        setCurrentView(View.SURVEY_LIST);
-    }, [handleDeleteSurvey, selectedSurvey, editingSurvey, modulePermissions]);
+        setShowDeleteSurveyConfirm(false);
+        setSurveyToDelete(null);
+    }, [surveyToDelete, handleDeleteSurvey, selectedSurvey, editingSurvey, setCurrentView]);
 
     const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey) => {
         if (!currentCompany) {
@@ -168,7 +180,7 @@ const App: React.FC = () => {
         setCurrentView(View.SURVEY_LIST);
         setSelectedSurvey(null);
         setEditingSurvey(null);
-        setActiveNotice(null); // Limpa o aviso ativo ao voltar
+        setActiveNotice(null);
     }, []);
 
     const toggleSidebar = useCallback(() => {
@@ -176,9 +188,7 @@ const App: React.FC = () => {
     }, []);
 
     const handleNoticeClick = useCallback((notice: Notice) => {
-        setActiveNotice(notice); // Define o aviso clicado como ativo
-        // Poderíamos mudar para uma view específica de aviso aqui, se necessário
-        // Por enquanto, apenas o define como ativo para ser exibido em um modal ou similar
+        setActiveNotice(notice);
     }, []);
 
     const loading = loadingSession || loadingAuth || loadingSurveys;
@@ -199,7 +209,6 @@ const App: React.FC = () => {
 
     const renderContent = () => {
         if (activeNotice) {
-            // Renderiza um modal ou um painel para o aviso ativo
             return (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full relative">
@@ -256,7 +265,7 @@ const App: React.FC = () => {
                 return <LogsAndAuditPanel onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
             case View.MANAGE_NOTICES:
                 return <NoticeCreator onBack={handleBack} />;
-            case View.CHAT: // Novo caso para o chat
+            case View.CHAT:
                 if (!currentCompany?.id) {
                     return (
                         <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
@@ -297,6 +306,20 @@ const App: React.FC = () => {
                     {renderContent()}
                 </main>
             </div>
+
+            {showDeleteSurveyConfirm && surveyToDelete && (
+                <ConfirmationDialog
+                    title="Confirmar Exclusão de Pesquisa"
+                    message={`Tem certeza que deseja excluir a pesquisa "${surveyToDelete.title}"? Todas as perguntas e respostas associadas também serão excluídas. Esta ação é irreversível.`}
+                    confirmText="Excluir"
+                    onConfirm={confirmDeleteSurvey}
+                    cancelText="Cancelar"
+                    onCancel={() => {
+                        setShowDeleteSurveyConfirm(false);
+                        setSurveyToDelete(null);
+                    }}
+                />
+            )}
         </div>
     );
 };

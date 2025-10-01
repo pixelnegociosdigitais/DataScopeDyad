@@ -4,7 +4,7 @@ import { Survey, User, Company, UserRole } from '../../types';
 import { showError, showSuccess } from '../utils/toast';
 import { CreateIcon } from './icons/CreateIcon';
 import { EditIcon } from './icons/EditIcon';
-import { DeleteIcon } from './icons/DeleteIcon';
+import { TrashIcon } from './icons/TrashIcon'; // Usando TrashIcon
 import { EyeIcon } from './icons/EyeIcon';
 import { ShareIcon } from './icons/ShareIcon';
 import { DownloadIcon } from './icons/DownloadIcon';
@@ -19,6 +19,7 @@ import SurveyGiveaway from './SurveyGiveaway';
 import SurveyQuestions from './SurveyQuestions';
 import SurveyTemplates from './SurveyTemplates';
 import { generatePdfReport } from '../utils/pdfGenerator';
+import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Importar ConfirmationDialog
 
 interface SurveyListProps {
     currentUser: User;
@@ -37,6 +38,8 @@ const SurveyList: React.FC<SurveyListProps> = ({ currentUser, currentCompany }) 
     const [showQuestionsModal, setShowQuestionsModal] = useState(false);
     const [selectedSurveyForQuestions, setSelectedSurveyForQuestions] = useState<Survey | null>(null);
     const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+    const [showDeleteSurveyConfirm, setShowDeleteSurveyConfirm] = useState(false); // Estado para o diálogo de confirmação
+    const [surveyToDelete, setSurveyToDelete] = useState<Survey | null>(null); // Pesquisa a ser excluída
 
     const fetchSurveys = useCallback(async () => {
         setLoading(true);
@@ -57,7 +60,6 @@ const SurveyList: React.FC<SurveyListProps> = ({ currentUser, currentCompany }) 
             if (currentUser.role !== UserRole.DEVELOPER && currentCompany?.id) {
                 query = query.eq('company_id', currentCompany.id);
             } else if (currentUser.role !== UserRole.DEVELOPER && !currentCompany?.id) {
-                // If not a developer and no company, no surveys to show
                 setSurveys([]);
                 setLoading(false);
                 return;
@@ -98,15 +100,14 @@ const SurveyList: React.FC<SurveyListProps> = ({ currentUser, currentCompany }) 
         setShowCreateModal(true);
     };
 
-    const handleDeleteSurvey = async (surveyId: string) => {
-        if (!window.confirm('Tem certeza que deseja excluir esta pesquisa e todas as suas respostas?')) {
-            return;
-        }
+    const handleDeleteSurveyConfirmed = useCallback(async () => {
+        if (!surveyToDelete) return;
+
         try {
             const { error } = await supabase
                 .from('surveys')
                 .delete()
-                .eq('id', surveyId);
+                .eq('id', surveyToDelete.id);
 
             if (error) throw error;
 
@@ -115,8 +116,16 @@ const SurveyList: React.FC<SurveyListProps> = ({ currentUser, currentCompany }) 
         } catch (error: any) {
             console.error('Erro ao excluir pesquisa:', error.message);
             showError('Não foi possível excluir a pesquisa.');
+        } finally {
+            setShowDeleteSurveyConfirm(false);
+            setSurveyToDelete(null);
         }
-    };
+    }, [surveyToDelete, fetchSurveys]);
+
+    const handleDeleteSurvey = useCallback((survey: Survey) => {
+        setSurveyToDelete(survey);
+        setShowDeleteSurveyConfirm(true);
+    }, []);
 
     const handleViewResponses = (survey: Survey) => {
         setSelectedSurveyForResponses(survey);
@@ -299,11 +308,11 @@ const SurveyList: React.FC<SurveyListProps> = ({ currentUser, currentCompany }) 
                                                                 <EditIcon className="h-5 w-5" />
                                                             </button>
                                                             <button
-                                                                onClick={() => handleDeleteSurvey(survey.id)}
+                                                                onClick={() => handleDeleteSurvey(survey)}
                                                                 className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50"
                                                                 title="Excluir Pesquisa"
                                                             >
-                                                                <DeleteIcon className="h-5 w-5" />
+                                                                <TrashIcon className="h-5 w-5" />
                                                             </button>
                                                         </>
                                                     )}
@@ -367,6 +376,20 @@ const SurveyList: React.FC<SurveyListProps> = ({ currentUser, currentCompany }) 
                     onTemplateSelected={() => {
                         setShowTemplatesModal(false);
                         fetchSurveys();
+                    }}
+                />
+            )}
+
+            {showDeleteSurveyConfirm && surveyToDelete && (
+                <ConfirmationDialog
+                    title="Confirmar Exclusão de Pesquisa"
+                    message={`Tem certeza que deseja excluir a pesquisa "${surveyToDelete.title}"? Todas as perguntas e respostas associadas também serão excluídas. Esta ação é irreversível.`}
+                    confirmText="Excluir"
+                    onConfirm={handleDeleteSurveyConfirmed}
+                    cancelText="Cancelar"
+                    onCancel={() => {
+                        setShowDeleteSurveyConfirm(false);
+                        setSurveyToDelete(null);
                     }}
                 />
             )}
