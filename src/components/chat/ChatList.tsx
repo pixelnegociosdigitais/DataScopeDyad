@@ -1,163 +1,100 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Chat, ChatParticipant, User, UserRole } from '../../../types'; // Importar UserRole
 import { supabase } from '../../integrations/supabase/client';
+import { Chat, User, ChatParticipant, UserRole } from '../../../types';
 import { showError, showSuccess } from '../../utils/toast';
-import { ChatIcon } from '../../../components/icons/ChatIcon';
-import { CreateIcon } from '../../../components/icons/CreateIcon';
-import { UserIcon } from '../../../components/icons/UserIcon';
-import { SearchIcon } from '../../../components/icons/SearchIcon';
+import { PlusIcon } from '../../components/icons/PlusIcon';
+import { DeleteIcon } from '../../components/icons/DeleteIcon';
 
 interface ChatListProps {
     currentUser: User;
     currentCompanyId: string;
-    onSelectChat: (chat: Chat) => void;
+    onSelectChat: (chat: Chat | null) => void;
+    onCreateChat: () => void;
+    selectedChatId: string | null;
 }
 
-const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSelectChat }) => {
+const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSelectChat, onCreateChat, selectedChatId }) => {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showNewChatModal, setShowNewChatModal] = useState(false);
-    const [availableUsers, setAvailableUsers] = useState<User[]>([]);
-    const [selectedUsersForNewChat, setSelectedUsersForNewChat] = useState<string[]>([]);
-    const [newChatName, setNewChatName] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
 
     const fetchChats = useCallback(async () => {
         setLoading(true);
         try {
-            const { data: userChatParticipants, error: cpError } = await supabase
+            const { data: chatParticipants, error: participantsError } = await supabase
                 .from('chat_participants')
-                .select('chat_id, unread_count')
+                .select(`
+                    chat_id,
+                    chats (
+                        id,
+                        name,
+                        is_group_chat,
+                        last_message_at,
+                        company_id
+                    ),
+                    unread_count
+                `)
                 .eq('user_id', currentUser.id);
 
-            if (cpError) throw cpError;
+            if (participantsError) throw participantsError;
 
-            if (!userChatParticipants || userChatParticipants.length === 0) {
+            const chatIds = chatParticipants.map(cp => cp.chat_id);
+
+            if (chatIds.length === 0) {
                 setChats([]);
                 setLoading(false);
                 return;
             }
 
-            const chatIds = userChatParticipants.map(cp => cp.chat_id);
-            const unreadCountsMap = new Map(userChatParticipants.map(cp => [cp.chat_id, cp.unread_count]));
-
-            const { data: chatsData, error: chatsError } = await supabase
-                .from('chats')
+            // Fetch all participants for these chats to determine individual chat names
+            const { data: allParticipants, error: allParticipantsError } = await supabase
+                .from('chat_participants')
                 .select(`
-                    id,
-                    created_at,
-                    company_id,
-                    name,
-                    is_group_chat,
-                    last_message_at,
-                    chat_participants (
-                        user_id,
-                        profiles (id, full_name, avatar_url)
-                    ),
-                    messages (
-                        content,
-                        created_at
-                    )
+                    chat_id,
+                    profiles(id, full_name, avatar_url)
                 `)
-                .in('id', chatIds)
-                .order('last_message_at', { ascending: false, nullsLast: true })
-                .order('created_at', { foreignTable: 'messages', ascending: false, limit: 1 }); // Adicionado order e limit para mensagens
+                .in('chat_id', chatIds);
 
-            if (chatsError) throw chatsError;
+            if (allParticipantsError) throw allParticipantsError;
 
-            const fetchedChats: Chat[] = (chatsData || []).map((chat: any) => {
-                // A sub-consulta agora retorna um array com no máximo 1 mensagem (a mais recente)
-                const lastMessage = chat.messages && chat.messages.length > 0 ? chat.messages[0] : null;
+            const chatsWithDetails = chatParticipants.map(cp => {
+                const chatData = cp.chats as Chat;
+                const unreadCount = cp.unread_count;
+                const participantsInChat = allParticipants.filter(p => p.chat_id === chatData.id);
+
+                let chatDisplayName = chatData.name;
+                if (!chatData.is_group_chat) {
+                    const otherParticipant = participantsInChat.find(p => p.profiles?.id !== currentUser.id);
+                    chatDisplayName = otherParticipant?.profiles?.full_name || 'Chat Individual';
+                }
+
                 return {
-                    ...chat,
-                    unread_count: unreadCountsMap.get(chat.id) || 0,
-                    participants: chat.chat_participants.map((p: any) => ({
-                        ...p,
-                        profiles: p.profiles ? {
-                            id: p.profiles.id,
-                            fullName: p.profiles.full_name || 'Nome Desconhecido',
-                            profilePictureUrl: p.profiles.avatar_url || undefined,
-                            role: UserRole.USER,
-                            email: '',
-                        } : {
-                            id: p.user_id,
-                            fullName: 'Usuário Desconhecido',
-                            profilePictureUrl: undefined,
-                            role: UserRole.USER,
-                            email: '',
-                        },
-                    })),
-                    last_message_content: lastMessage ? lastMessage.content : null,
-                    last_message_at: lastMessage ? lastMessage.created_at : chat.last_message_at,
+                    ...chatData,
+                    displayName: chatDisplayName,
+                    unread_count: unreadCount,
+                    participants: participantsInChat.map(p => p.profiles) // Attach profiles for display
                 };
             });
 
-            setChats(fetchedChats);
-
+            setChats(chatsWithDetails as Chat[]);
         } catch (error: any) {
-            console.error('Erro ao buscar chats:', error);
-            showError('Não foi possível carregar seus chats.');
-            setChats([]);
+            console.error('Erro ao buscar chats:', error.message);
+            showError('Não foi possível carregar os chats.');
         } finally {
             setLoading(false);
         }
     }, [currentUser.id]);
 
-    const fetchAvailableUsers = useCallback(async () => {
-        setLoading(true);
-        let query = supabase
-            .from('profiles')
-            .select('id, full_name, avatar_url')
-            .neq('id', currentUser.id); // Excluir o usuário atual de qualquer forma
-
-        // Lógica condicional para filtrar usuários com base no papel
-        if (currentUser.role === UserRole.DEVELOPER) {
-            // Desenvolvedores veem todos os usuários (nenhum filtro adicional de empresa)
-            console.log('ChatList: Desenvolvedor logado, buscando TODOS os usuários disponíveis.');
-        } else if (currentCompanyId) {
-            // Administradores e Usuários comuns veem apenas usuários da sua empresa
-            console.log('ChatList: Admin/Usuário logado, buscando usuários da empresa:', currentCompanyId);
-            query = query.eq('company_id', currentCompanyId);
-        } else {
-            // Se não há companyId e não é desenvolvedor, não há usuários para mostrar
-            console.log('ChatList: Usuário sem empresa e não é desenvolvedor, nenhum usuário disponível.');
-            setAvailableUsers([]);
-            setLoading(false);
-            return;
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-            console.error('Erro ao buscar usuários disponíveis:', error);
-            showError('Não foi possível carregar os usuários disponíveis.');
-            setAvailableUsers([]);
-        } else {
-            // Mapeia os dados para o formato User, garantindo que fullName seja sempre uma string
-            const fetchedUsers: User[] = (data || []).map((profile: any) => ({
-                id: profile.id,
-                fullName: profile.full_name || 'Nome Desconhecido',
-                profilePictureUrl: profile.avatar_url || undefined,
-                role: UserRole.USER,
-                email: '',
-            }));
-            setAvailableUsers(fetchedUsers);
-        }
-        setLoading(false);
-    }, [currentCompanyId, currentUser.id, currentUser.role]);
-
     useEffect(() => {
         fetchChats();
-        fetchAvailableUsers();
 
         const channel = supabase
-            .channel(`company_chats_${currentCompanyId}`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participants', filter: `user_id=eq.${currentUser.id}` }, payload => {
-                console.log('ChatList: Atualização em tempo real para chat_participants:', payload);
+            .channel(`public:chats`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, payload => {
+                // Refetch chats on any change to ensure list is up-to-date
                 fetchChats();
             })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                console.log('ChatList: Atualização em tempo real para nova mensagem:', payload);
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participants', filter: `user_id=eq.${currentUser.id}` }, payload => {
+                // Refetch chats if current user's participation changes
                 fetchChats();
             })
             .subscribe();
@@ -165,263 +102,99 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchChats, fetchAvailableUsers, currentCompanyId, currentUser.id]);
+    }, [fetchChats, currentUser.id]);
 
-    const handleCreateNewChat = async () => {
-        if (selectedUsersForNewChat.length === 0) {
-            showError('Selecione pelo menos um usuário para o chat.');
-            return;
-        }
-
-        const isGroupChat = selectedUsersForNewChat.length > 1;
-        const chatName = isGroupChat ? newChatName.trim() : undefined;
-
-        if (isGroupChat && !chatName) {
-            showError('Por favor, insira um nome para o chat em grupo.');
+    const handleDeleteChat = async (chatId: string) => {
+        if (!window.confirm('Tem certeza que deseja excluir esta conversa? Esta ação é irreversível e removerá todas as mensagens e participantes.')) {
             return;
         }
 
         try {
-            const { data: newChat, error: chatError } = await supabase
-                .from('chats')
-                .insert({
-                    company_id: currentCompanyId,
-                    name: chatName,
-                    is_group_chat: isGroupChat,
-                })
-                .select()
-                .single();
+            // 1. Delete messages
+            const { error: messagesError } = await supabase
+                .from('messages')
+                .delete()
+                .eq('chat_id', chatId);
 
-            if (chatError) throw chatError;
+            if (messagesError) throw messagesError;
 
-            const participantsToInsert = [currentUser.id, ...selectedUsersForNewChat].map(userId => ({
-                chat_id: newChat.id,
-                user_id: userId,
-            }));
-
+            // 2. Delete chat participants
             const { error: participantsError } = await supabase
                 .from('chat_participants')
-                .insert(participantsToInsert);
+                .delete()
+                .eq('chat_id', chatId);
 
             if (participantsError) throw participantsError;
 
-            showSuccess('Chat criado com sucesso!');
-            setShowNewChatModal(false);
-            setSelectedUsersForNewChat([]);
-            setNewChatName('');
-            fetchChats();
+            // 3. Delete the chat itself
+            const { error: chatError } = await supabase
+                .from('chats')
+                .delete()
+                .eq('id', chatId);
+
+            if (chatError) throw chatError;
+
+            showSuccess('Conversa excluída com sucesso!');
+            fetchChats(); // Refresh the list
+            if (selectedChatId === chatId) {
+                onSelectChat(null); // Deselect the chat if it was the one open
+            }
         } catch (error: any) {
-            console.error('Erro ao criar novo chat:', error);
-            showError('Não foi possível criar o chat: ' + error.message);
+            console.error('Erro ao excluir conversa:', error.message);
+            showError('Não foi possível excluir a conversa.');
         }
     };
 
-    const getChatDisplayName = (chat: Chat) => {
-        if (chat.is_group_chat) {
-            return chat.name || 'Chat em Grupo';
-        }
-        const otherParticipant = chat.participants?.find(p => p.user_id !== currentUser.id);
-        return otherParticipant?.profiles?.fullName || 'Chat Individual';
-    };
-
-    const getChatDisplayAvatar = (chat: Chat) => {
-        if (chat.is_group_chat) {
-            return <ChatIcon className="h-10 w-10 text-gray-500" />;
-        }
-        const otherParticipant = chat.participants?.find(p => p.user_id !== currentUser.id);
-        const otherParticipantFullName = otherParticipant?.profiles?.fullName;
-        
-        if (otherParticipant?.profiles?.profilePictureUrl) {
-            return <img src={otherParticipant.profiles.profilePictureUrl} alt={otherParticipantFullName || 'Usuário'} className="h-10 w-10 rounded-full object-cover" />;
-        }
-        
-        let initial = '?';
-        if (typeof otherParticipantFullName === 'string' && otherParticipantFullName.length > 0) {
-            initial = otherParticipantFullName.charAt(0).toUpperCase();
-        }
-        return <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-base text-gray-600">{initial}</div>;
-    };
-
-    const filteredChats = chats.filter(chat => {
-        const displayName = getChatDisplayName(chat).toLowerCase();
-        const searchLower = searchTerm.toLowerCase();
-        return displayName.includes(searchLower);
-    });
+    const canDeleteChat = currentUser.role === UserRole.ADMINISTRATOR || currentUser.role === UserRole.DEVELOPER;
 
     return (
-        <div className="flex flex-col h-full bg-white rounded-lg shadow-md">
+        <div className="flex flex-col h-full bg-white border-r border-gray-200">
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <div className="flex items-center gap-3">
-                    {currentUser.profilePictureUrl ? (
-                        <img src={currentUser.profilePictureUrl} alt={currentUser.fullName} className="h-10 w-10 rounded-full object-cover" />
-                    ) : (
-                        <UserIcon className="h-10 w-10 p-1 bg-gray-200 rounded-full text-gray-500" />
-                    )}
-                    <span className="font-semibold text-lg text-text-main">{currentUser.fullName}</span>
-                </div>
+                <h2 className="text-xl font-bold text-text-main">Chats</h2>
                 <button
-                    onClick={() => setShowNewChatModal(true)}
-                    className="p-2 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors"
-                    aria-label="Iniciar novo chat"
+                    onClick={onCreateChat}
+                    className="p-2 rounded-full bg-primary text-white hover:bg-primary-dark transition-colors"
+                    title="Iniciar Novo Chat"
                 >
-                    <CreateIcon className="h-5 w-5" />
+                    <PlusIcon className="h-5 w-5" />
                 </button>
             </div>
-
-            <div className="p-4 border-b border-gray-200">
-                <div className="relative">
-                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                        type="text"
-                        placeholder="Pesquisar chats..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-light text-gray-700"
-                    />
-                </div>
-            </div>
-
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
-                    <p className="text-center text-text-light py-4">Carregando chats...</p>
-                ) : filteredChats.length === 0 && searchTerm === '' ? (
-                    <div className="text-center py-4 px-4">
-                        <p className="text-text-light mb-4">Nenhum chat encontrado. Inicie um novo!</p>
-                        {availableUsers.length > 0 ? (
-                            <div className="bg-gray-100 p-4 rounded-lg shadow-inner mt-6">
-                                <h4 className="font-semibold text-text-main mb-3">Pessoas disponíveis para chat:</h4>
-                                <ul className="space-y-2">
-                                    {availableUsers.map(user => (
-                                        <li key={user.id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm border border-gray-100">
-                                            <div className="flex items-center gap-3">
-                                                {user.profilePictureUrl ? (
-                                                    <img src={user.profilePictureUrl} alt={user.fullName} className="h-8 w-8 rounded-full object-cover" />
-                                                ) : (
-                                                    <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">
-                                                        {typeof user.fullName === 'string' && user.fullName.length > 0 ? user.fullName.charAt(0).toUpperCase() : '?'}
-                                                    </div>
-                                                )}
-                                                <span className="text-gray-800 font-medium">{user.fullName}</span>
-                                            </div>
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedUsersForNewChat([user.id]);
-                                                    setShowNewChatModal(true);
-                                                }}
-                                                className="px-3 py-1 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary/10 transition-colors"
-                                            >
-                                                Iniciar Chat
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ) : (
-                            <p className="text-sm text-text-light mt-6">Nenhum outro usuário disponível para iniciar um chat.</p>
-                        )}
-                    </div>
-                ) : filteredChats.length === 0 && searchTerm !== '' ? (
-                    <p className="text-center text-text-light py-4">Nenhum chat encontrado para "{searchTerm}".</p>
+                    <p className="p-4 text-text-light">Carregando chats...</p>
+                ) : chats.length === 0 ? (
+                    <p className="p-4 text-text-light">Nenhum chat encontrado. Inicie um novo!</p>
                 ) : (
-                    <ul>
-                        {filteredChats.map(chat => (
-                            <li
-                                key={chat.id}
-                                onClick={() => onSelectChat(chat)}
-                                className="flex items-center p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
-                            >
-                                <div className="flex-shrink-0 mr-3">
-                                    {getChatDisplayAvatar(chat)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-center">
-                                        <p className="font-semibold text-text-main truncate">{getChatDisplayName(chat)}</p>
-                                        {chat.last_message_at && (
-                                            <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                                                {new Date(chat.last_message_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex justify-between items-center mt-1">
-                                        <p className="text-sm text-text-light truncate pr-2">
-                                            {chat.last_message_content || 'Nenhuma mensagem.'}
-                                        </p>
-                                        {chat.unread_count > 0 && (
-                                            <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full flex-shrink-0">
-                                                {chat.unread_count}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
-
-            {showNewChatModal && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
-                        <h3 className="text-xl font-bold text-text-main mb-4">Iniciar Novo Chat</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Selecionar Usuários:</label>
-                                <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-2">
-                                    {availableUsers.length === 0 ? (
-                                        <p className="text-sm text-text-light">Nenhum outro usuário disponível para iniciar um chat.</p>
-                                    ) : (
-                                        availableUsers.map(user => (
-                                            <label key={user.id} className="flex items-center space-x-2 cursor-pointer py-1">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedUsersForNewChat.includes(user.id)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            setSelectedUsersForNewChat(prev => [...prev, user.id]);
-                                                        } else {
-                                                            setSelectedUsersForNewChat(prev => prev.filter(id => id !== user.id));
-                                                        }
-                                                    }}
-                                                    className="form-checkbox h-4 w-4 text-primary rounded"
-                                                />
-                                                <span>{user.fullName}</span>
-                                            </label>
-                                        ))
-                                    )}
-                                </div>
+                    chats.map(chat => (
+                        <div
+                            key={chat.id}
+                            className={`flex items-center justify-between p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${selectedChatId === chat.id ? 'bg-blue-50 border-l-4 border-primary' : ''}`}
+                            onClick={() => onSelectChat(chat)}
+                        >
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-text-main">{chat.displayName}</h4>
+                                {chat.unread_count > 0 && (
+                                    <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                                        {chat.unread_count}
+                                    </span>
+                                )}
                             </div>
-                            {selectedUsersForNewChat.length > 1 && (
-                                <div>
-                                    <label htmlFor="newChatName" className="block text-sm font-medium text-gray-700">Nome do Grupo (Opcional)</label>
-                                    <input
-                                        type="text"
-                                        id="newChatName"
-                                        value={newChatName}
-                                        onChange={(e) => setNewChatName(e.target.value)}
-                                        placeholder="Nome do seu grupo de chat"
-                                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700"
-                                    />
-                                </div>
+                            {canDeleteChat && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Prevent selecting the chat when deleting
+                                        handleDeleteChat(chat.id);
+                                    }}
+                                    className="p-1 rounded-full text-red-600 hover:bg-red-100 transition-colors"
+                                    title="Excluir Conversa"
+                                >
+                                    <DeleteIcon className="h-5 w-5" />
+                                </button>
                             )}
                         </div>
-                        <div className="mt-6 flex justify-end gap-3">
-                            <button
-                                onClick={() => setShowNewChatModal(false)}
-                                className="px-4 py-2 font-semibold text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleCreateNewChat}
-                                className="px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
-                                disabled={selectedUsersForNewChat.length === 0 || (selectedUsersForNewChat.length > 1 && !newChatName.trim())}
-                            >
-                                Criar Chat
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                    ))
+                )}
+            </div>
         </div>
     );
 };
