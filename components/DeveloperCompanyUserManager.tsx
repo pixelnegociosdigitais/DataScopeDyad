@@ -184,19 +184,40 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
 
             // Ordem de exclusão para respeitar chaves estrangeiras
             // Excluir vencedores de sorteios
-            await supabase.from('giveaway_winners').delete().in('survey_id', surveyIds);
+            const { error: deleteWinnersError } = await supabase.from('giveaway_winners').delete().in('survey_id', surveyIds);
+            if (deleteWinnersError) throw deleteWinnersError;
+
             // Excluir respostas detalhadas
-            await supabase.from('answers').delete().in('response_id', responseIds);
+            const { error: deleteAnswersError } = await supabase.from('answers').delete().in('response_id', responseIds);
+            if (deleteAnswersError) throw deleteAnswersError;
+
             // Excluir respostas de pesquisas
-            await supabase.from('survey_responses').delete().in('id', responseIds);
+            const { error: deleteResponsesError } = await supabase.from('survey_responses').delete().in('id', responseIds);
+            if (deleteResponsesError) throw deleteResponsesError;
+
             // Excluir perguntas
-            await supabase.from('questions').delete().in('survey_id', surveyIds);
+            const { error: deleteQuestionsError } = await supabase.from('questions').delete().in('survey_id', surveyIds);
+            if (deleteQuestionsError) throw deleteQuestionsError;
+
             // Excluir pesquisas
-            await supabase.from('surveys').delete().in('id', surveyIds);
+            const { error: deleteSurveysError } = await supabase.from('surveys').delete().in('id', surveyIds);
+            if (deleteSurveysError) throw deleteSurveysError;
+
             // Excluir prêmios
-            await supabase.from('prizes').delete().eq('company_id', companyToDelete.id);
-            // Desvincular perfis de usuários da empresa
-            await supabase.from('profiles').update({ company_id: null, role: UserRole.USER }).eq('company_id', companyToDelete.id);
+            const { error: deletePrizesError } = await supabase.from('prizes').delete().eq('company_id', companyToDelete.id);
+            if (deletePrizesError) throw deletePrizesError;
+
+            // Excluir avisos relacionados à empresa
+            const { error: deleteNoticesError } = await supabase.from('notices').delete().eq('company_id', companyToDelete.id);
+            if (deleteNoticesError) throw deleteNoticesError;
+
+            // Desvincular perfis de usuários da empresa e redefinir para 'Usuário'
+            const { error: updateProfilesError } = await supabase
+                .from('profiles')
+                .update({ company_id: null, role: UserRole.USER })
+                .eq('company_id', companyToDelete.id);
+            if (updateProfilesError) throw updateProfilesError;
+
             // Excluir a empresa
             const { error: companyDeleteError } = await supabase
                 .from('companies')
