@@ -211,7 +211,6 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
         }
         
         let initial = '?';
-        // Adiciona uma verificação explícita para garantir que é uma string não vazia
         if (typeof otherParticipantFullName === 'string' && otherParticipantFullName.length > 0) {
             initial = otherParticipantFullName.charAt(0).toUpperCase();
         }
@@ -274,7 +273,8 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                                                     <img src={user.avatar_url} alt={user.fullName} className="h-8 w-8 rounded-full object-cover" />
                                                 ) : (
                                                     <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">
-                                                        {user.fullName.charAt(0).toUpperCase()}
+                                                        {/* Correção aplicada aqui: verifica se user.fullName é uma string não vazia */}
+                                                        {typeof user.fullName === 'string' && user.fullName.length > 0 ? user.fullName.charAt(0).toUpperCase() : '?'}
                                                     </div>
                                                 )}
                                                 <span className="text-gray-800 font-medium">{user.fullName}</span>
