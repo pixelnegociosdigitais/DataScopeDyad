@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Chat, ChatParticipant, User } from '../../../types';
+import { Chat, ChatParticipant, User, UserRole } from '../../../types'; // Importar UserRole
 import { supabase } from '../../integrations/supabase/client';
 import { showError, showSuccess } from '../../utils/toast';
 import { ChatIcon } from '../../../components/icons/ChatIcon';
@@ -90,27 +90,36 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
     }, [currentUser.id]);
 
     const fetchAvailableUsers = useCallback(async () => {
-        if (!currentCompanyId) {
-            console.log('ChatList: currentCompanyId is null or undefined, cannot fetch available users.');
+        let query = supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url')
+            .neq('id', currentUser.id); // Excluir o usuário atual de qualquer forma
+
+        // Lógica condicional para filtrar usuários com base no papel
+        if (currentUser.role === UserRole.DEVELOPER) {
+            // Desenvolvedores veem todos os usuários (nenhum filtro adicional de empresa)
+            console.log('ChatList: Desenvolvedor logado, buscando TODOS os usuários disponíveis.');
+        } else if (currentCompanyId) {
+            // Administradores e Usuários comuns veem apenas usuários da sua empresa
+            console.log('ChatList: Admin/Usuário logado, buscando usuários da empresa:', currentCompanyId);
+            query = query.eq('company_id', currentCompanyId);
+        } else {
+            // Se não há companyId e não é desenvolvedor, não há usuários para mostrar
+            console.log('ChatList: Usuário sem empresa e não é desenvolvedor, nenhum usuário disponível.');
             setAvailableUsers([]);
             return;
         }
-        console.log('ChatList: Fetching available users for company:', currentCompanyId, 'excluding user:', currentUser.id);
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('id, full_name, avatar_url')
-            .eq('company_id', currentCompanyId)
-            .neq('id', currentUser.id); // Exclude current user
+
+        const { data, error } = await query;
 
         if (error) {
-            console.error('ChatList: Error fetching available users:', error);
+            console.error('Error fetching available users:', error);
             showError('Não foi possível carregar os usuários disponíveis.');
             setAvailableUsers([]);
         } else {
-            console.log('ChatList: Available users fetched:', data);
             setAvailableUsers(data as User[]);
         }
-    }, [currentCompanyId, currentUser.id]);
+    }, [currentCompanyId, currentUser.id, currentUser.role]); // Adicionado currentUser.role como dependência
 
     useEffect(() => {
         fetchChats();
@@ -248,7 +257,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                         <p className="text-text-light mb-4">Nenhum chat encontrado. Inicie um novo!</p>
                         {availableUsers.length > 0 ? (
                             <div className="bg-gray-100 p-4 rounded-lg shadow-inner mt-6">
-                                <h4 className="font-semibold text-text-main mb-3">Pessoas na sua empresa:</h4>
+                                <h4 className="font-semibold text-text-main mb-3">Pessoas disponíveis para chat:</h4>
                                 <ul className="space-y-2">
                                     {availableUsers.map(user => (
                                         <li key={user.id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm border border-gray-100">
@@ -276,7 +285,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                                 </ul>
                             </div>
                         ) : (
-                            <p className="text-sm text-text-light mt-6">Nenhum outro usuário disponível na sua empresa para iniciar um chat.</p>
+                            <p className="text-sm text-text-light mt-6">Nenhum outro usuário disponível para iniciar um chat.</p>
                         )}
                     </div>
                 ) : filteredChats.length === 0 && searchTerm !== '' ? (
@@ -327,7 +336,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Selecionar Usuários:</label>
                                 <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-2">
                                     {availableUsers.length === 0 ? (
-                                        <p className="text-sm text-text-light">Nenhum outro usuário disponível na sua empresa.</p>
+                                        <p className="text-sm text-text-light">Nenhum outro usuário disponível para iniciar um chat.</p>
                                     ) : (
                                         availableUsers.map(user => (
                                             <label key={user.id} className="flex items-center space-x-2 cursor-pointer py-1">
