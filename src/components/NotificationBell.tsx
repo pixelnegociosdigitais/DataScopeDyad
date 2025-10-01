@@ -32,18 +32,9 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNoticeClick }) =>
                 .order('created_at', { ascending: false });
 
             // RLS policies should handle most of this, but adding client-side filter for clarity
-            if (currentUser.role === UserRole.DEVELOPER) {
-                // Developers can see all notices
-            } else if (currentUser.role === UserRole.ADMIN) {
-                query = query.eq('company_id', currentCompany?.id || null)
-                             .contains('target_roles', [UserRole.ADMIN, UserRole.USER]);
-            } else if (currentUser.role === UserRole.USER) {
-                query = query.eq('company_id', currentCompany?.id || null)
-                             .contains('target_roles', [UserRole.USER]);
-            } else {
-                setUnreadNotices([]);
-                return;
-            }
+            // The RLS policies are already set to allow global notices (company_id IS NULL)
+            // for Admins and Users if target_roles match.
+            // Developers can see all notices.
 
             const { data, error } = await query;
 
@@ -54,9 +45,14 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNoticeClick }) =>
             } else {
                 const filteredNotices = (data || [])
                     .filter(notice => {
-                        // Filter client-side again to ensure correct targeting and unread status
                         const isTargeted = notice.target_roles.includes(currentUser.role);
-                        const isForCompany = (currentUser.role === UserRole.DEVELOPER) || (notice.company_id === currentCompany?.id);
+                        
+                        // Lógica corrigida para isForCompany:
+                        // - Desenvolvedores veem todos os avisos.
+                        // - Administradores/Usuários veem avisos da sua empresa OU avisos globais (company_id é NULL).
+                        const isForCompany = currentUser.role === UserRole.DEVELOPER || 
+                                             (notice.company_id === currentCompany?.id || notice.company_id === null);
+
                         const isUnread = !notice.user_notices.some((un: any) => un.user_id === currentUser.id);
                         
                         return isTargeted && isForCompany && isUnread;
