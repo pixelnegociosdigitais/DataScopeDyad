@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { Chat, User, ChatParticipant, UserRole } from '../../../types';
 import { showError, showSuccess } from '../../utils/toast';
-import { PlusIcon } from '../../../components/icons/PlusIcon'; // Caminho corrigido
-import { DeleteIcon } from '../../../components/icons/DeleteIcon'; // Caminho corrigido
+import { PlusIcon } from '../../../components/icons/PlusIcon'; 
+import { TrashIcon } from '../../../components/icons/TrashIcon'; // Usando TrashIcon em vez de DeleteIcon
 
 interface ChatListProps {
     currentUser: User;
@@ -188,7 +188,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                                     className="p-1 rounded-full text-red-600 hover:bg-red-100 transition-colors"
                                     title="Excluir Conversa"
                                 >
-                                    <DeleteIcon className="h-5 w-5" />
+                                    <TrashIcon className="h-5 w-5" />
                                 </button>
                             )}
                         </div>
