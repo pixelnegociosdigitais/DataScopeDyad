@@ -10,7 +10,12 @@ export const logActivity = async (
   companyId?: string,
 ) => {
   try {
+    // Gerar um UUID no lado do cliente para garantir a unicidade,
+    // contornando possíveis problemas com o valor padrão do DB.
+    const id = crypto.randomUUID();
+
     const { error } = await supabase.from('logs').insert({
+      id, // Fornecer explicitamente o ID gerado
       level,
       message,
       module,
