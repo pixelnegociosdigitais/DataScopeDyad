@@ -8,8 +8,7 @@ import { MenuIcon } from './icons/MenuIcon';
 import { ChevronLeftIcon } from './icons/ChevronLeftIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
-import { BellIcon } from './icons/BellIcon';
-import { ChatIcon } from './icons/ChatIcon'; // Importar o novo ícone de chat
+import { BellIcon } from './icons/BellIcon'; // Importar o novo ícone
 import { View, ModuleName, UserRole } from '../types';
 
 interface SidebarProps {
@@ -27,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
             label: 'Início',
             icon: HomeIcon,
             view: View.SURVEY_LIST,
-            permission: true,
+            permission: true, // Home/SurveyList is always accessible
         },
         {
             label: 'Criar Pesquisa',
@@ -42,25 +41,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
             permission: modulePermissions[ModuleName.PERFORM_GIVEAWAYS] || modulePermissions[ModuleName.VIEW_GIVEAWAY_DATA],
         },
         {
-            label: 'Chat', // Novo item de menu para o chat
-            icon: ChatIcon,
-            view: View.CHAT,
-            permission: modulePermissions[ModuleName.ACCESS_CHAT],
-        },
-        {
             label: 'Gerenciar Usuários',
             icon: UserIcon,
             view: View.ADMIN_USER_MANAGER,
-            permission: currentUserRole === UserRole.ADMIN,
+            permission: currentUserRole === UserRole.ADMIN, // Apenas Administradores
         },
         {
             label: 'Gerenciar Empresas',
             icon: BuildingIcon,
             view: View.DEVELOPER_COMPANY_USER_MANAGER,
-            permission: currentUserRole === UserRole.DEVELOPER,
+            permission: currentUserRole === UserRole.DEVELOPER, // Apenas Desenvolvedores
         },
         {
-            label: 'Gerenciar Avisos',
+            label: 'Gerenciar Avisos', // Novo item de menu
             icon: BellIcon,
             view: View.MANAGE_NOTICES,
             permission: modulePermissions[ModuleName.MANAGE_NOTICES],
@@ -69,7 +62,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
             label: 'Configurações',
             icon: SettingsIcon,
             view: View.SETTINGS_PANEL,
-            permission: currentUserRole === UserRole.DEVELOPER,
+            permission: currentUserRole === UserRole.DEVELOPER, // Apenas desenvolvedores podem acessar o painel de configurações
         },
     ];
 

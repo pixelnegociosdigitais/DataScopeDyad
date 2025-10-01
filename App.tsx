@@ -17,8 +17,8 @@ import DeveloperCompanyUserManager from './components/DeveloperCompanyUserManage
 import AdministratorUserManager from './components/AdministratorUserManager';
 import LogsAndAuditPanel from './components/LogsAndAuditPanel';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
-import NoticeCreator from './src/components/NoticeCreator';
-import ChatLayout from './src/components/chat/ChatLayout'; // Importar ChatLayout
+import NoticeCreator from './src/components/NoticeCreator'; // Importar NoticeCreator
+// import NoticeDisplay from './src/components/NoticeDisplay'; // REMOVIDO
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
@@ -32,7 +32,7 @@ const App: React.FC = () => {
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const [companySettingsAccessDenied, setCompanySettingsAccessDenied] = useState(false);
-    const [activeNotice, setActiveNotice] = useState<Notice | null>(null);
+    const [activeNotice, setActiveNotice] = useState<Notice | null>(null); // Estado para o aviso ativo
 
     const {
         currentUser,
@@ -55,6 +55,7 @@ const App: React.FC = () => {
         handleSaveResponse,
     } = useSurveys(currentCompany, currentUser);
 
+    // Log de diagnóstico para o estado de carregamento global
     useEffect(() => {
         if (loadingSession || loadingAuth || loadingSurveys) {
             console.log('App: Global loading state active. loadingSession:', loadingSession, 'loadingAuth:', loadingAuth, 'loadingSurveys:', loadingSurveys);
@@ -63,17 +64,21 @@ const App: React.FC = () => {
         }
     }, [loadingSession, loadingAuth, loadingSurveys]);
 
+    // Efeito para lidar com a lógica de acesso às configurações da empresa
     useEffect(() => {
+        // Só executa se a autenticação e o carregamento de dados estiverem completos
         if (!loadingAuth && !loadingSession && session && currentUser) {
             if (currentView === View.COMPANY_SETTINGS) {
+                // Verifica se o usuário tem uma empresa E não tem permissão para gerenciá-la
                 if (currentCompany && !modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS]) {
                     setCompanySettingsAccessDenied(true);
                     showError('Você não tem permissão para configurar a empresa.');
-                    setCurrentView(View.SURVEY_LIST);
+                    setCurrentView(View.SURVEY_LIST); // Redireciona imediatamente
                 } else {
-                    setCompanySettingsAccessDenied(false);
+                    setCompanySettingsAccessDenied(false); // Limpa o estado se as condições forem atendidas
                 }
             } else {
+                // Se navegarmos para fora de COMPANY_SETTINGS, limpa qualquer estado de negação de acesso anterior
                 setCompanySettingsAccessDenied(false);
             }
         }
@@ -162,7 +167,7 @@ const App: React.FC = () => {
         setCurrentView(View.SURVEY_LIST);
         setSelectedSurvey(null);
         setEditingSurvey(null);
-        setActiveNotice(null);
+        setActiveNotice(null); // Limpa o aviso ativo ao voltar
     }, []);
 
     const toggleSidebar = useCallback(() => {
@@ -170,7 +175,9 @@ const App: React.FC = () => {
     }, []);
 
     const handleNoticeClick = useCallback((notice: Notice) => {
-        setActiveNotice(notice);
+        setActiveNotice(notice); // Define o aviso clicado como ativo
+        // Poderíamos mudar para uma view específica de aviso aqui, se necessário
+        // Por enquanto, apenas o define como ativo para ser exibido em um modal ou similar
     }, []);
 
     const loading = loadingSession || loadingAuth || loadingSurveys;
@@ -191,6 +198,7 @@ const App: React.FC = () => {
 
     const renderContent = () => {
         if (activeNotice) {
+            // Renderiza um modal ou um painel para o aviso ativo
             return (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full relative">
@@ -245,10 +253,8 @@ const App: React.FC = () => {
                 return <AdministratorUserManager onBack={handleBack} currentUser={currentUser} currentCompany={currentCompany} setCurrentView={setCurrentView} />;
             case View.LOGS_AND_AUDIT:
                 return <LogsAndAuditPanel onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
-            case View.MANAGE_NOTICES:
+            case View.MANAGE_NOTICES: // Novo caso para o criador de avisos
                 return <NoticeCreator onBack={handleBack} />;
-            case View.CHAT: // Novo caso para o ChatLayout
-                return <ChatLayout onBack={handleBack} setCurrentView={setCurrentView} />;
             default:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
         }
@@ -271,7 +277,7 @@ const App: React.FC = () => {
                     onLogout={() => supabase.auth.signOut()}
                     setView={setCurrentView}
                     modulePermissions={modulePermissions}
-                    onNoticeClick={handleNoticeClick}
+                    onNoticeClick={handleNoticeClick} // Passar a função para o Header
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-8">
                     {renderContent()}
