@@ -93,7 +93,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             setChats(fetchedChats);
 
         } catch (error: any) {
-            console.error('Error fetching chats:', error);
+            console.error('Erro ao buscar chats:', error);
             showError('Não foi possível carregar seus chats.');
             setChats([]);
         } finally {
@@ -127,7 +127,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
         const { data, error } = await query;
 
         if (error) {
-            console.error('Error fetching available users:', error);
+            console.error('Erro ao buscar usuários disponíveis:', error);
             showError('Não foi possível carregar os usuários disponíveis.');
             setAvailableUsers([]);
         } else {
@@ -151,11 +151,11 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
         const channel = supabase
             .channel(`company_chats_${currentCompanyId}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participants', filter: `user_id=eq.${currentUser.id}` }, payload => {
-                console.log('ChatList: Realtime update for chat_participants:', payload);
+                console.log('ChatList: Atualização em tempo real para chat_participants:', payload);
                 fetchChats();
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                console.log('ChatList: Realtime update for new message:', payload);
+                console.log('ChatList: Atualização em tempo real para nova mensagem:', payload);
                 fetchChats();
             })
             .subscribe();
@@ -209,7 +209,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             setNewChatName('');
             fetchChats();
         } catch (error: any) {
-            console.error('Error creating new chat:', error);
+            console.error('Erro ao criar novo chat:', error);
             showError('Não foi possível criar o chat: ' + error.message);
         }
     };

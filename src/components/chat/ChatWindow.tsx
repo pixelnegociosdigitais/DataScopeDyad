@@ -38,7 +38,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             .order('created_at', { ascending: true });
 
         if (error) {
-            console.error('Error fetching messages:', error);
+            console.error('Erro ao buscar mensagens:', error);
             showError('Não foi possível carregar as mensagens.');
         } else {
             setMessages(data as ChatMessage[]);
@@ -56,7 +56,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             .eq('chat_id', chat.id);
 
         if (error) {
-            console.error('Error fetching participants:', error);
+            console.error('Erro ao buscar participantes:', error);
         } else {
             setParticipants(data as ChatParticipant[]);
         }
@@ -71,7 +71,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             .eq('user_id', currentUser.id);
 
         if (error) {
-            console.error('Error marking chat as read:', error);
+            console.error('Erro ao marcar chat como lido:', error);
         }
     }, [chat.id, currentUser]);
 
@@ -170,7 +170,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             setMessages(prev => prev.map(msg => msg.id === tempMessageId ? { ...data, sender: currentUser } : msg));
 
         } catch (error: any) {
-            console.error('Error sending message:', error);
+            console.error('Erro ao enviar mensagem:', error);
             showError('Não foi possível enviar a mensagem: ' + error.message);
             // Remove a mensagem otimista se a inserção falhar
             setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
