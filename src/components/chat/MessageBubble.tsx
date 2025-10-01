@@ -26,7 +26,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isCurrentUser, s
                     </div>
                 )}
 
-                <div className={`relative p-3 rounded-lg shadow-sm ${isCurrentUser ? 'bg-primary text-white rounded-br-none' : 'bg-gray-200 text-text-main rounded-bl-none'}`}>
+                <div className={`relative p-4 rounded-2xl shadow-sm ${isCurrentUser ? 'bg-primary text-white rounded-br-none' : 'bg-gray-200 text-text-main rounded-bl-none'}`}>
                     {!isCurrentUser && (
                         <p className="font-semibold text-sm mb-1">{sender.fullName}</p>
                     )}
