@@ -60,12 +60,14 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     )
                 `)
                 .in('id', chatIds)
-                .order('last_message_at', { ascending: false, nullsLast: true }); // Adicionado nullsLast para ordenar corretamente
+                .order('last_message_at', { ascending: false, nullsLast: true })
+                .order('created_at', { foreignTable: 'messages', ascending: false, limit: 1 }); // Adicionado order e limit para mensagens
 
             if (chatsError) throw chatsError;
 
             const fetchedChats: Chat[] = (chatsData || []).map((chat: any) => {
-                const lastMessage = chat.messages.length > 0 ? chat.messages[0] : null;
+                // A sub-consulta agora retorna um array com no máximo 1 mensagem (a mais recente)
+                const lastMessage = chat.messages && chat.messages.length > 0 ? chat.messages[0] : null;
                 return {
                     ...chat,
                     unread_count: unreadCountsMap.get(chat.id) || 0,
@@ -73,14 +75,14 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                         ...p,
                         profiles: p.profiles ? {
                             id: p.profiles.id,
-                            fullName: p.profiles.full_name || 'Nome Desconhecido', // Garante que fullName é uma string
-                            profilePictureUrl: p.profiles.avatar_url || undefined, // Corrigido: avatar_url para profilePictureUrl
-                            role: UserRole.USER, // Valor padrão, pois não é buscado aqui
-                            email: '', // Valor padrão, pois não é buscado aqui
+                            fullName: p.profiles.full_name || 'Nome Desconhecido',
+                            profilePictureUrl: p.profiles.avatar_url || undefined,
+                            role: UserRole.USER,
+                            email: '',
                         } : {
                             id: p.user_id,
                             fullName: 'Usuário Desconhecido',
-                            profilePictureUrl: undefined, // Corrigido: avatar_url para profilePictureUrl
+                            profilePictureUrl: undefined,
                             role: UserRole.USER,
                             email: '',
                         },
@@ -134,15 +136,15 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             // Mapeia os dados para o formato User, garantindo que fullName seja sempre uma string
             const fetchedUsers: User[] = (data || []).map((profile: any) => ({
                 id: profile.id,
-                fullName: profile.full_name || 'Nome Desconhecido', // Garante que fullName é uma string
-                profilePictureUrl: profile.avatar_url || undefined, // Corrigido: avatar_url para profilePictureUrl
-                role: UserRole.USER, // Valor padrão, pois não é buscado aqui
-                email: '', // Valor padrão, pois não é buscado aqui
+                fullName: profile.full_name || 'Nome Desconhecido',
+                profilePictureUrl: profile.avatar_url || undefined,
+                role: UserRole.USER,
+                email: '',
             }));
             setAvailableUsers(fetchedUsers);
         }
         setLoading(false);
-    }, [currentCompanyId, currentUser.id, currentUser.role]); // Adicionado currentUser.role como dependência
+    }, [currentCompanyId, currentUser.id, currentUser.role]);
 
     useEffect(() => {
         fetchChats();
@@ -229,7 +231,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
         const otherParticipant = chat.participants?.find(p => p.user_id !== currentUser.id);
         const otherParticipantFullName = otherParticipant?.profiles?.fullName;
         
-        if (otherParticipant?.profiles?.profilePictureUrl) { // Corrigido: avatar_url para profilePictureUrl
+        if (otherParticipant?.profiles?.profilePictureUrl) {
             return <img src={otherParticipant.profiles.profilePictureUrl} alt={otherParticipantFullName || 'Usuário'} className="h-10 w-10 rounded-full object-cover" />;
         }
         
@@ -292,11 +294,10 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                                     {availableUsers.map(user => (
                                         <li key={user.id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm border border-gray-100">
                                             <div className="flex items-center gap-3">
-                                                {user.profilePictureUrl ? ( // Corrigido: avatar_url para profilePictureUrl
+                                                {user.profilePictureUrl ? (
                                                     <img src={user.profilePictureUrl} alt={user.fullName} className="h-8 w-8 rounded-full object-cover" />
                                                 ) : (
                                                     <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">
-                                                        {/* Correção aplicada aqui: verifica se user.fullName é uma string não vazia */}
                                                         {typeof user.fullName === 'string' && user.fullName.length > 0 ? user.fullName.charAt(0).toUpperCase() : '?'}
                                                     </div>
                                                 )}
