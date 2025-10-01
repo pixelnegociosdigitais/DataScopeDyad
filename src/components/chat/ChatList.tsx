@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { Chat, User, ChatParticipant, UserRole } from '../../../types';
 import { showError, showSuccess } from '../../utils/toast';
-import { PlusIcon } from '../../components/icons/PlusIcon';
-import { DeleteIcon } from '../../components/icons/DeleteIcon';
+import { PlusIcon } from '../../../components/icons/PlusIcon'; // Caminho corrigido
+import { DeleteIcon } from '../../../components/icons/DeleteIcon'; // Caminho corrigido
 
 interface ChatListProps {
     currentUser: User;
