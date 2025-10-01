@@ -183,8 +183,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
         }
         // Encontra o outro participante que não seja o usuário atual
         const otherParticipant = participants.find(p => p.user_id !== currentUser.id);
-        // Retorna o nome completo do outro participante, ou um fallback se não encontrado
-        return otherParticipant?.profiles?.fullName || 'Chat Individual';
+        // Retorna o nome completo do outro participante, usando 'full_name'
+        return otherParticipant?.profiles?.full_name || 'Chat Individual';
     };
 
     const typingUserNames = Object.values(typingUsers);
