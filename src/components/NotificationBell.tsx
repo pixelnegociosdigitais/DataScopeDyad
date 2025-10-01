@@ -36,10 +36,10 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNoticeClick }) =>
                 // Developers can see all notices
             } else if (currentUser.role === UserRole.ADMIN) {
                 query = query.eq('company_id', currentCompany?.id || null)
-                             .or(`target_roles.cs.{${UserRole.ADMIN},${UserRole.USER}}`);
+                             .contains('target_roles', [UserRole.ADMIN, UserRole.USER]);
             } else if (currentUser.role === UserRole.USER) {
                 query = query.eq('company_id', currentCompany?.id || null)
-                             .cs('target_roles', [UserRole.USER]);
+                             .contains('target_roles', [UserRole.USER]);
             } else {
                 setUnreadNotices([]);
                 return;
