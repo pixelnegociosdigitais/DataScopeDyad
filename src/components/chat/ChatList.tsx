@@ -60,7 +60,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     )
                 `)
                 .in('id', chatIds)
-                .order('last_message_at', { ascending: false, nullsLast: true });
+                .order('last_message_at', { ascending: false } as any); // Corrigido: 'nullsLast' não é uma opção válida aqui, removido ou tipado como 'any' para ignorar.
 
             if (chatsError) throw chatsError;
 
@@ -74,12 +74,13 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                         profiles: p.profiles ? {
                             id: p.profiles.id,
                             fullName: p.profiles.full_name || 'Nome Desconhecido', // Garante que fullName é uma string
-                            avatar_url: p.profiles.avatar_url || undefined,
+                            profilePictureUrl: p.profiles.avatar_url || undefined, // Corrigido: avatar_url para profilePictureUrl
                             role: UserRole.USER, // Valor padrão, pois não é buscado aqui
                             email: '', // Valor padrão, pois não é buscado aqui
                         } : {
                             id: p.user_id,
                             fullName: 'Usuário Desconhecido',
+                            profilePictureUrl: undefined, // Corrigido: avatar_url para profilePictureUrl
                             role: UserRole.USER,
                             email: '',
                         },
@@ -134,7 +135,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             const fetchedUsers: User[] = (data || []).map((profile: any) => ({
                 id: profile.id,
                 fullName: profile.full_name || 'Nome Desconhecido', // Garante que fullName é uma string
-                avatar_url: profile.avatar_url || undefined,
+                profilePictureUrl: profile.avatar_url || undefined, // Corrigido: avatar_url para profilePictureUrl
                 role: UserRole.USER, // Valor padrão, pois não é buscado aqui
                 email: '', // Valor padrão, pois não é buscado aqui
             }));
@@ -228,8 +229,8 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
         const otherParticipant = chat.participants?.find(p => p.user_id !== currentUser.id);
         const otherParticipantFullName = otherParticipant?.profiles?.fullName;
         
-        if (otherParticipant?.profiles?.avatar_url) {
-            return <img src={otherParticipant.profiles.avatar_url} alt={otherParticipantFullName || 'Usuário'} className="h-10 w-10 rounded-full object-cover" />;
+        if (otherParticipant?.profiles?.profilePictureUrl) { // Corrigido: avatar_url para profilePictureUrl
+            return <img src={otherParticipant.profiles.profilePictureUrl} alt={otherParticipantFullName || 'Usuário'} className="h-10 w-10 rounded-full object-cover" />;
         }
         
         let initial = '?';
@@ -291,8 +292,8 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                                     {availableUsers.map(user => (
                                         <li key={user.id} className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm border border-gray-100">
                                             <div className="flex items-center gap-3">
-                                                {user.avatar_url ? (
-                                                    <img src={user.avatar_url} alt={user.fullName} className="h-8 w-8 rounded-full object-cover" />
+                                                {user.profilePictureUrl ? ( // Corrigido: avatar_url para profilePictureUrl
+                                                    <img src={user.profilePictureUrl} alt={user.fullName} className="h-8 w-8 rounded-full object-cover" />
                                                 ) : (
                                                     <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">
                                                         {/* Correção aplicada aqui: verifica se user.fullName é uma string não vazia */}

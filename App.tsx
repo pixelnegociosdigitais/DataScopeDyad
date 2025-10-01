@@ -19,6 +19,7 @@ import LogsAndAuditPanel from './components/LogsAndAuditPanel';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
 import NoticeCreator from './src/components/NoticeCreator';
 import ChatLayout from './src/components/chat/ChatLayout'; // Importar ChatLayout
+import { ChatIcon } from './components/icons/ChatIcon'; // Importar ChatIcon
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
@@ -244,7 +245,7 @@ const App: React.FC = () => {
             case View.GIVEAWAYS:
                 return <Giveaways currentUser={currentUser} currentCompany={currentCompany} />;
             case View.SETTINGS_PANEL:
-                return <SettingsPanel onBack={handleBack} setView={setCurrentView} />;
+                return <SettingsPanel onBack={() => setCurrentView(View.SURVEY_LIST)} setView={setCurrentView} />;
             case View.MODULE_PERMISSIONS_MANAGER:
                 return <ModulePermissionsManager onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
             case View.DEVELOPER_COMPANY_USER_MANAGER:

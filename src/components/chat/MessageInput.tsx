@@ -13,11 +13,12 @@ const MessageInput: React.FC<MessageInputProps> = ({ chatId, onSendMessage, disa
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const broadcastTypingStatus = (isTyping: boolean) => {
-        if (!chatId || !supabase.auth.currentUser) return;
+        const session = supabase.auth.session; // Acessar a sessão para obter o usuário
+        if (!chatId || !session?.user) return; // Corrigido: Acessar o usuário da sessão
         supabase.channel(`chat_${chatId}`).send({
             type: 'broadcast',
             event: 'typing_status',
-            payload: { userId: supabase.auth.currentUser.id, isTyping },
+            payload: { userId: session.user.id, isTyping }, // Corrigido: Acessar o ID do usuário da sessão
         });
     };
 
