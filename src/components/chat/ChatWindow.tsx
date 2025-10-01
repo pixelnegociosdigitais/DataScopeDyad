@@ -4,7 +4,7 @@ import { supabase } from '../../integrations/supabase/client';
 import { showError } from '../../utils/toast';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
-import TypingIndicator from './TypingIndicator'; // Importar TypingIndicator
+import TypingIndicator from './TypingIndicator';
 import { ArrowLeftIcon } from '../../../components/icons/ArrowLeftIcon';
 
 interface ChatWindowProps {
@@ -17,8 +17,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loadingMessages, setLoadingMessages] = useState(true);
     const [participants, setParticipants] = useState<ChatParticipant[]>([]);
+    const participantsRef = useRef(participants); // Ref para manter a lista de participantes atualizada
     const [typingUsers, setTypingUsers] = useState<Record<string, string>>({}); // { userId: userName }
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Atualiza a ref sempre que o estado 'participants' muda
+    useEffect(() => {
+        participantsRef.current = participants;
+    }, [participants]);
 
     const fetchMessages = useCallback(async () => {
         setLoadingMessages(true);
@@ -78,8 +84,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             .channel(`chat_${chat.id}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chat.id}` }, payload => {
                 const newMessage = payload.new as ChatMessage;
-                // Encontrar os detalhes do remetente entre os participantes já carregados
-                const senderProfile = participants.find(p => p.user_id === newMessage.sender_id)?.profiles || currentUser;
+                // Usar participantsRef.current para acessar a lista de participantes mais recente
+                const senderProfile = participantsRef.current.find(p => p.user_id === newMessage.sender_id)?.profiles || currentUser;
                 setMessages(prev => [...prev, { ...newMessage, sender: senderProfile }]);
                 markChatAsRead(); // Marcar como lido quando uma nova mensagem chega
             })
@@ -87,7 +93,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
                 const { userId, isTyping } = payload;
                 if (userId === currentUser.id) return; // Ignorar o status de digitação do próprio usuário
 
-                const participant = participants.find(p => p.user_id === userId);
+                // Usar participantsRef.current para acessar a lista de participantes mais recente
+                const participant = participantsRef.current.find(p => p.user_id === userId);
                 if (participant?.profiles?.full_name) {
                     setTypingUsers(prev => {
                         const newTypingUsers = { ...prev };
@@ -105,11 +112,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [chat.id, currentUser, fetchMessages, fetchParticipants, markChatAsRead, participants]); // Adicionado 'participants' às dependências para o indicador de digitação
+    }, [chat.id, currentUser, fetchMessages, fetchParticipants, markChatAsRead]); // Removido 'participants' das dependências
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, typingUsers]); // Rolar para o final também quando o status de digitação muda
+    }, [messages, typingUsers]);
 
     const handleSendMessage = async (content: string) => {
         if (!currentUser) {
