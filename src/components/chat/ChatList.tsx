@@ -4,6 +4,8 @@ import { supabase } from '../../integrations/supabase/client';
 import { showError } from '../../utils/toast';
 import { ChatIcon } from '../../../components/icons/ChatIcon';
 import { CreateIcon } from '../../../components/icons/CreateIcon';
+import { UserIcon } from '../../../components/icons/UserIcon'; // Importar UserIcon
+import { SearchIcon } from '../../../components/icons/SearchIcon'; // Novo ícone de busca
 
 interface ChatListProps {
     currentUser: User;
@@ -18,6 +20,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
     const [availableUsers, setAvailableUsers] = useState<User[]>([]);
     const [selectedUsersForNewChat, setSelectedUsersForNewChat] = useState<string[]>([]);
     const [newChatName, setNewChatName] = useState('');
+    const [searchTerm, setSearchTerm] = useState(''); // Estado para o termo de busca
 
     const fetchChats = useCallback(async () => {
         setLoading(true);
@@ -39,7 +42,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             const chatIds = userChatParticipants.map(cp => cp.chat_id);
             const unreadCountsMap = new Map(userChatParticipants.map(cp => [cp.chat_id, cp.unread_count]));
 
-            // Passo 2: Com os IDs dos chats, buscar os detalhes completos dos chats e seus participantes
+            // Passo 2: Com os IDs dos chats, buscar os detalhes completos dos chats, seus participantes e a última mensagem
             const { data: chatsData, error: chatsError } = await supabase
                 .from('chats')
                 .select(`
@@ -52,21 +55,30 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     chat_participants (
                         user_id,
                         profiles (id, full_name, avatar_url)
+                    ),
+                    messages (
+                        content,
+                        created_at
                     )
                 `)
                 .in('id', chatIds)
-                .order('last_message_at', { ascending: false, nullsLast: true }); // Manter nullsLast para segurança
+                .order('last_message_at', { ascending: false, nullsLast: true });
 
             if (chatsError) throw chatsError;
 
-            const fetchedChats: Chat[] = (chatsData || []).map((chat: any) => ({
-                ...chat,
-                unread_count: unreadCountsMap.get(chat.id) || 0, // Adicionar a contagem de não lidas
-                participants: chat.chat_participants.map((p: any) => ({
-                    ...p,
-                    profiles: p.profiles,
-                })),
-            }));
+            const fetchedChats: Chat[] = (chatsData || []).map((chat: any) => {
+                const lastMessage = chat.messages.length > 0 ? chat.messages[0] : null;
+                return {
+                    ...chat,
+                    unread_count: unreadCountsMap.get(chat.id) || 0,
+                    participants: chat.chat_participants.map((p: any) => ({
+                        ...p,
+                        profiles: p.profiles,
+                    })),
+                    last_message_content: lastMessage ? lastMessage.content : null,
+                    last_message_at: lastMessage ? lastMessage.created_at : chat.last_message_at,
+                };
+            });
 
             setChats(fetchedChats);
 
@@ -176,19 +188,33 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
 
     const getChatDisplayAvatar = (chat: Chat) => {
         if (chat.is_group_chat) {
-            return <ChatIcon className="h-8 w-8 text-gray-500" />; // Generic group chat icon
+            return <ChatIcon className="h-10 w-10 text-gray-500" />; // Generic group chat icon
         }
         const otherParticipant = chat.participants?.find(p => p.user_id !== currentUser.id);
         if (otherParticipant?.profiles?.avatar_url) {
-            return <img src={otherParticipant.profiles.avatar_url} alt={otherParticipant.profiles.fullName} className="h-8 w-8 rounded-full object-cover" />;
+            return <img src={otherParticipant.profiles.avatar_url} alt={otherParticipant.profiles.fullName} className="h-10 w-10 rounded-full object-cover" />;
         }
-        return <div className="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">{otherParticipant?.profiles?.fullName?.charAt(0).toUpperCase() || '?'}</div>;
+        return <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-base text-gray-600">{otherParticipant?.profiles?.fullName?.charAt(0).toUpperCase() || '?'}</div>;
     };
+
+    const filteredChats = chats.filter(chat => {
+        const displayName = getChatDisplayName(chat).toLowerCase();
+        const searchLower = searchTerm.toLowerCase();
+        return displayName.includes(searchLower);
+    });
 
     return (
         <div className="flex flex-col h-full bg-white rounded-lg shadow-md">
-            <div className="flex justify-between items-center p-4 border-b border-gray-200">
-                <h2 className="text-2xl font-bold text-text-main">Chats</h2>
+            {/* Header com Meu Perfil e Botão de Novo Chat */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <div className="flex items-center gap-3">
+                    {currentUser.profilePictureUrl ? (
+                        <img src={currentUser.profilePictureUrl} alt={currentUser.fullName} className="h-10 w-10 rounded-full object-cover" />
+                    ) : (
+                        <UserIcon className="h-10 w-10 p-1 bg-gray-200 rounded-full text-gray-500" />
+                    )}
+                    <span className="font-semibold text-lg text-text-main">{currentUser.fullName}</span>
+                </div>
                 <button
                     onClick={() => setShowNewChatModal(true)}
                     className="p-2 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors"
@@ -198,14 +224,29 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                 </button>
             </div>
 
+            {/* Barra de Pesquisa */}
+            <div className="p-4 border-b border-gray-200">
+                <div className="relative">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder="Pesquisar chats..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-light text-gray-700"
+                    />
+                </div>
+            </div>
+
+            {/* Lista de Chats */}
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
                     <p className="text-center text-text-light py-4">Carregando chats...</p>
-                ) : chats.length === 0 ? (
+                ) : filteredChats.length === 0 ? (
                     <p className="text-center text-text-light py-4">Nenhum chat encontrado. Inicie um novo!</p>
                 ) : (
                     <ul>
-                        {chats.map(chat => (
+                        {filteredChats.map(chat => (
                             <li
                                 key={chat.id}
                                 onClick={() => onSelectChat(chat)}
@@ -214,16 +255,26 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                                 <div className="flex-shrink-0 mr-3">
                                     {getChatDisplayAvatar(chat)}
                                 </div>
-                                <div className="flex-1">
-                                    <p className="font-semibold text-text-main">{getChatDisplayName(chat)}</p>
-                                    {/* You might want to display the last message here */}
-                                    <p className="text-sm text-text-light">Última mensagem: {chat.last_message_at ? new Date(chat.last_message_at).toLocaleTimeString('pt-BR') : 'N/A'}</p>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between items-center">
+                                        <p className="font-semibold text-text-main truncate">{getChatDisplayName(chat)}</p>
+                                        {chat.last_message_at && (
+                                            <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                                                {new Date(chat.last_message_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex justify-between items-center mt-1">
+                                        <p className="text-sm text-text-light truncate pr-2">
+                                            {chat.last_message_content || 'Nenhuma mensagem.'}
+                                        </p>
+                                        {chat.unread_count > 0 && (
+                                            <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full flex-shrink-0">
+                                                {chat.unread_count}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
-                                {chat.unread_count > 0 && (
-                                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                                        {chat.unread_count}
-                                    </span>
-                                )}
                             </li>
                         ))}
                     </ul>
