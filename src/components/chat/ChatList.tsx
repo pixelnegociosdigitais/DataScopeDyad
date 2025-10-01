@@ -71,7 +71,18 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     unread_count: unreadCountsMap.get(chat.id) || 0,
                     participants: chat.chat_participants.map((p: any) => ({
                         ...p,
-                        profiles: p.profiles,
+                        profiles: p.profiles ? {
+                            id: p.profiles.id,
+                            fullName: p.profiles.full_name || 'Nome Desconhecido', // Garante que fullName é uma string
+                            avatar_url: p.profiles.avatar_url || undefined,
+                            role: UserRole.USER, // Valor padrão, pois não é buscado aqui
+                            email: '', // Valor padrão, pois não é buscado aqui
+                        } : {
+                            id: p.user_id,
+                            fullName: 'Usuário Desconhecido',
+                            role: UserRole.USER,
+                            email: '',
+                        },
                     })),
                     last_message_content: lastMessage ? lastMessage.content : null,
                     last_message_at: lastMessage ? lastMessage.created_at : chat.last_message_at,
@@ -90,6 +101,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
     }, [currentUser.id]);
 
     const fetchAvailableUsers = useCallback(async () => {
+        setLoading(true);
         let query = supabase
             .from('profiles')
             .select('id, full_name, avatar_url')
@@ -107,6 +119,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             // Se não há companyId e não é desenvolvedor, não há usuários para mostrar
             console.log('ChatList: Usuário sem empresa e não é desenvolvedor, nenhum usuário disponível.');
             setAvailableUsers([]);
+            setLoading(false);
             return;
         }
 
@@ -117,8 +130,17 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             showError('Não foi possível carregar os usuários disponíveis.');
             setAvailableUsers([]);
         } else {
-            setAvailableUsers(data as User[]);
+            // Mapeia os dados para o formato User, garantindo que fullName seja sempre uma string
+            const fetchedUsers: User[] = (data || []).map((profile: any) => ({
+                id: profile.id,
+                fullName: profile.full_name || 'Nome Desconhecido', // Garante que fullName é uma string
+                avatar_url: profile.avatar_url || undefined,
+                role: UserRole.USER, // Valor padrão, pois não é buscado aqui
+                email: '', // Valor padrão, pois não é buscado aqui
+            }));
+            setAvailableUsers(fetchedUsers);
         }
+        setLoading(false);
     }, [currentCompanyId, currentUser.id, currentUser.role]); // Adicionado currentUser.role como dependência
 
     useEffect(() => {
