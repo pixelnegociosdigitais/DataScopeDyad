@@ -21,12 +21,28 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
 
     const fetchChats = useCallback(async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('chat_participants')
-            .select(`
-                chat_id,
-                unread_count,
-                chats (
+        try {
+            // Passo 1: Buscar os IDs dos chats que o usuário participa e a contagem de não lidas
+            const { data: userChatParticipants, error: cpError } = await supabase
+                .from('chat_participants')
+                .select('chat_id, unread_count')
+                .eq('user_id', currentUser.id);
+
+            if (cpError) throw cpError;
+
+            if (!userChatParticipants || userChatParticipants.length === 0) {
+                setChats([]);
+                setLoading(false);
+                return;
+            }
+
+            const chatIds = userChatParticipants.map(cp => cp.chat_id);
+            const unreadCountsMap = new Map(userChatParticipants.map(cp => [cp.chat_id, cp.unread_count]));
+
+            // Passo 2: Com os IDs dos chats, buscar os detalhes completos dos chats e seus participantes
+            const { data: chatsData, error: chatsError } = await supabase
+                .from('chats')
+                .select(`
                     id,
                     created_at,
                     company_id,
@@ -37,30 +53,30 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                         user_id,
                         profiles (id, full_name, avatar_url)
                     )
-                )
-            `)
-            .eq('user_id', currentUser.id)
-            .order('last_message_at', { foreignTable: 'chats', ascending: false });
+                `)
+                .in('id', chatIds)
+                .order('last_message_at', { ascending: false, nullsLast: true }); // Manter nullsLast para segurança
 
-        if (error) {
+            if (chatsError) throw chatsError;
+
+            const fetchedChats: Chat[] = (chatsData || []).map((chat: any) => ({
+                ...chat,
+                unread_count: unreadCountsMap.get(chat.id) || 0, // Adicionar a contagem de não lidas
+                participants: chat.chat_participants.map((p: any) => ({
+                    ...p,
+                    profiles: p.profiles,
+                })),
+            }));
+
+            setChats(fetchedChats);
+
+        } catch (error: any) {
             console.error('Error fetching chats:', error);
             showError('Não foi possível carregar seus chats.');
             setChats([]);
-        } else {
-            const userChats: Chat[] = (data || []).map((cp: any) => {
-                const chatData = cp.chats;
-                return {
-                    ...chatData,
-                    unread_count: cp.unread_count, // Add unread_count to the chat object
-                    participants: chatData.chat_participants.map((p: any) => ({
-                        ...p,
-                        profiles: p.profiles,
-                    })),
-                };
-            });
-            setChats(userChats);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }, [currentUser.id]);
 
     const fetchAvailableUsers = useCallback(async () => {
