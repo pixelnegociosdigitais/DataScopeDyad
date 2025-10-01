@@ -1,8 +1,5 @@
-// @ts-nocheck
-/// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { createClient, AuthApiError } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -36,7 +33,15 @@ serve(async (req) => {
       user_metadata: { full_name: fullName }
     })
 
-    if (authError) throw authError
+    if (authError) {
+        if (authError instanceof AuthApiError && authError.status === 409) {
+            return new Response(JSON.stringify({ error: 'Já existe um usuário com este e-mail.' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 409, // Retorna 409 para conflito de e-mail
+            })
+        }
+        throw authError
+    }
     if (!user) throw new Error("Criação do usuário falhou, nenhum usuário retornado.")
 
     // O gatilho 'handle_new_user_with_company' já criou um perfil.

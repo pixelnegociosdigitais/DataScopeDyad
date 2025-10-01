@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { User, Company, UserRole, View, ModuleName, ModulePermission, Notice } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
-import { useAuthSession } from '@/src/context/AuthSessionContext';
 import { showSuccess, showError } from '@/src/utils/toast';
 import { logActivity } from '@/src/utils/logger';
+import { AuthApiError } from '@supabase/supabase-js'; // Importar AuthApiError
 
 interface UseAuthReturn {
     currentUser: User | null;
@@ -97,6 +97,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 id,
                 full_name,
                 role,
+                email,
                 phone,
                 address,
                 avatar_url,

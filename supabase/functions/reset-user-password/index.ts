@@ -1,8 +1,5 @@
-// @ts-nocheck
-/// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { createClient, AuthApiError } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -34,7 +31,15 @@ serve(async (req) => {
       { password: newPassword }
     )
 
-    if (error) throw error
+    if (error) {
+        if (error instanceof AuthApiError && error.status === 404) { // Usuário não encontrado
+            return new Response(JSON.stringify({ error: 'Usuário não encontrado.' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 404,
+            })
+        }
+        throw error
+    }
 
     return new Response(JSON.stringify({ user }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
