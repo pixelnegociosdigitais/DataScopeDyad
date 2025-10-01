@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Chat, ChatParticipant, User } from '../../../types';
 import { supabase } from '../../integrations/supabase/client';
-import { showError, showSuccess } from '../../utils/toast'; // Importar showSuccess
+import { showError, showSuccess } from '../../utils/toast';
 import { ChatIcon } from '../../../components/icons/ChatIcon';
 import { CreateIcon } from '../../../components/icons/CreateIcon';
 import { UserIcon } from '../../../components/icons/UserIcon';
@@ -90,7 +90,12 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
     }, [currentUser.id]);
 
     const fetchAvailableUsers = useCallback(async () => {
-        if (!currentCompanyId) return;
+        if (!currentCompanyId) {
+            console.log('ChatList: currentCompanyId is null or undefined, cannot fetch available users.');
+            setAvailableUsers([]);
+            return;
+        }
+        console.log('ChatList: Fetching available users for company:', currentCompanyId, 'excluding user:', currentUser.id);
         const { data, error } = await supabase
             .from('profiles')
             .select('id, full_name, avatar_url')
@@ -98,8 +103,11 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             .neq('id', currentUser.id); // Exclude current user
 
         if (error) {
-            console.error('Error fetching available users:', error);
+            console.error('ChatList: Error fetching available users:', error);
+            showError('Não foi possível carregar os usuários disponíveis.');
+            setAvailableUsers([]);
         } else {
+            console.log('ChatList: Available users fetched:', data);
             setAvailableUsers(data as User[]);
         }
     }, [currentCompanyId, currentUser.id]);
@@ -235,11 +243,11 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
                     <p className="text-center text-text-light py-4">Carregando chats...</p>
-                ) : filteredChats.length === 0 && searchTerm === '' ? ( // Adicionado searchTerm === ''
+                ) : filteredChats.length === 0 && searchTerm === '' ? (
                     <div className="text-center py-4 px-4">
                         <p className="text-text-light mb-4">Nenhum chat encontrado. Inicie um novo!</p>
-                        {availableUsers.length > 0 && (
-                            <div className="bg-gray-100 p-4 rounded-lg shadow-inner mt-6"> {/* Adicionado mt-6 para espaçamento */}
+                        {availableUsers.length > 0 ? (
+                            <div className="bg-gray-100 p-4 rounded-lg shadow-inner mt-6">
                                 <h4 className="font-semibold text-text-main mb-3">Pessoas na sua empresa:</h4>
                                 <ul className="space-y-2">
                                     {availableUsers.map(user => (
@@ -267,6 +275,8 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                                     ))}
                                 </ul>
                             </div>
+                        ) : (
+                            <p className="text-sm text-text-light mt-6">Nenhum outro usuário disponível na sua empresa para iniciar um chat.</p>
                         )}
                     </div>
                 ) : filteredChats.length === 0 && searchTerm !== '' ? (
