@@ -86,7 +86,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
                 const newMessage = payload.new as ChatMessage;
                 // Usar participantsRef.current para acessar a lista de participantes mais recente
                 const senderProfile = participantsRef.current.find(p => p.user_id === newMessage.sender_id)?.profiles || currentUser;
-                setMessages(prev => [...prev, { ...newMessage, sender: senderProfile }]);
+                setMessages(prev => {
+                    // Evitar duplicatas se a mensagem já foi adicionada otimisticamente
+                    if (prev.some(msg => msg.id === newMessage.id)) {
+                        return prev;
+                    }
+                    // Se a mensagem foi adicionada otimisticamente com um ID temporário, substitua-a
+                    const updatedMessages = prev.map(msg => 
+                        msg.sender_id === newMessage.sender_id && msg.content === newMessage.content && msg.id.startsWith('temp-')
+                            ? { ...newMessage, sender: senderProfile }
+                            : msg
+                    );
+                    // Se não encontrou para substituir, adicione como nova
+                    if (!updatedMessages.some(msg => msg.id === newMessage.id)) {
+                        return [...updatedMessages, { ...newMessage, sender: senderProfile }];
+                    }
+                    return updatedMessages;
+                });
                 markChatAsRead(); // Marcar como lido quando uma nova mensagem chega
             })
             .on('broadcast', { event: 'typing_status' }, ({ payload }) => {
@@ -112,7 +128,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [chat.id, currentUser, fetchMessages, fetchParticipants, markChatAsRead]); // Removido 'participants' das dependências
+    }, [chat.id, currentUser, fetchMessages, fetchParticipants, markChatAsRead]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -124,15 +140,40 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             return;
         }
 
-        const { error } = await supabase.from('messages').insert({
+        const tempMessageId = `temp-${Date.now()}`;
+        const optimisticMessage: ChatMessage = {
+            id: tempMessageId, // ID temporário para a atualização otimista
             chat_id: chat.id,
             sender_id: currentUser.id,
             content,
-        });
+            created_at: new Date().toISOString(), // Data/hora atual
+            sender: currentUser, // O remetente é o usuário atual
+        };
 
-        if (error) {
+        // Adiciona a mensagem otimisticamente ao estado
+        setMessages(prev => [...prev, optimisticMessage]);
+
+        try {
+            const { data, error } = await supabase.from('messages').insert({
+                chat_id: chat.id,
+                sender_id: currentUser.id,
+                content,
+            }).select().single(); // Seleciona a mensagem inserida para obter o ID real
+
+            if (error) throw error;
+
+            // Se a inserção for bem-sucedida, o listener de tempo real deve pegar a mensagem real.
+            // A lógica no listener foi ajustada para substituir a mensagem otimista pela real.
+            // Se por algum motivo o listener não pegar, a mensagem otimista permanecerá.
+            // Para garantir que a mensagem otimista seja substituída pelo ID real,
+            // podemos fazer uma substituição explícita aqui também, caso o listener seja lento.
+            setMessages(prev => prev.map(msg => msg.id === tempMessageId ? { ...data, sender: currentUser } : msg));
+
+        } catch (error: any) {
             console.error('Error sending message:', error);
-            showError('Não foi possível enviar a mensagem.');
+            showError('Não foi possível enviar a mensagem: ' + error.message);
+            // Remove a mensagem otimista se a inserção falhar
+            setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
         }
     };
 
