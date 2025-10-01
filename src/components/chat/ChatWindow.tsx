@@ -4,6 +4,7 @@ import { supabase } from '../../integrations/supabase/client';
 import { showError } from '../../utils/toast';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
+import TypingIndicator from './TypingIndicator'; // Importar TypingIndicator
 import { ArrowLeftIcon } from '../../../components/icons/ArrowLeftIcon';
 
 interface ChatWindowProps {
@@ -16,6 +17,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loadingMessages, setLoadingMessages] = useState(true);
     const [participants, setParticipants] = useState<ChatParticipant[]>([]);
+    const [typingUsers, setTypingUsers] = useState<Record<string, string>>({}); // { userId: userName }
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const fetchMessages = useCallback(async () => {
@@ -76,19 +78,38 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             .channel(`chat_${chat.id}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chat.id}` }, payload => {
                 const newMessage = payload.new as ChatMessage;
-                setMessages(prev => [...prev, { ...newMessage, sender: currentUser }]); // Optimistic update with current user as sender
-                markChatAsRead(); // Mark as read when a new message arrives
+                // Encontrar os detalhes do remetente entre os participantes já carregados
+                const senderProfile = participants.find(p => p.user_id === newMessage.sender_id)?.profiles || currentUser;
+                setMessages(prev => [...prev, { ...newMessage, sender: senderProfile }]);
+                markChatAsRead(); // Marcar como lido quando uma nova mensagem chega
+            })
+            .on('broadcast', { event: 'typing_status' }, ({ payload }) => {
+                const { userId, isTyping } = payload;
+                if (userId === currentUser.id) return; // Ignorar o status de digitação do próprio usuário
+
+                const participant = participants.find(p => p.user_id === userId);
+                if (participant?.profiles?.full_name) {
+                    setTypingUsers(prev => {
+                        const newTypingUsers = { ...prev };
+                        if (isTyping) {
+                            newTypingUsers[userId] = participant.profiles.full_name;
+                        } else {
+                            delete newTypingUsers[userId];
+                        }
+                        return newTypingUsers;
+                    });
+                }
             })
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [chat.id, currentUser, fetchMessages, fetchParticipants, markChatAsRead]);
+    }, [chat.id, currentUser, fetchMessages, fetchParticipants, markChatAsRead, participants]); // Adicionado 'participants' às dependências para o indicador de digitação
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [messages, typingUsers]); // Rolar para o final também quando o status de digitação muda
 
     const handleSendMessage = async (content: string) => {
         if (!currentUser) {
@@ -116,6 +137,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
         return otherParticipant?.profiles?.fullName || 'Chat Individual';
     };
 
+    const typingUserNames = Object.values(typingUsers);
+
     return (
         <div className="flex flex-col h-full bg-gray-50 rounded-lg shadow-md">
             <div className="flex items-center p-4 bg-white border-b border-gray-200">
@@ -136,14 +159,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
                             key={msg.id}
                             message={msg}
                             isCurrentUser={msg.sender_id === currentUser.id}
-                            sender={msg.sender || currentUser} // Fallback to current user if sender not joined
+                            sender={msg.sender || currentUser}
                         />
                     ))
+                )}
+                {typingUserNames.length > 0 && (
+                    <TypingIndicator senderName={typingUserNames.join(', ')} />
                 )}
                 <div ref={messagesEndRef} />
             </div>
 
-            <MessageInput onSendMessage={handleSendMessage} />
+            <MessageInput chatId={chat.id} onSendMessage={handleSendMessage} />
         </div>
     );
 };
