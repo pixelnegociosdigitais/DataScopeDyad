@@ -60,7 +60,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     )
                 `)
                 .in('id', chatIds)
-                .order('last_message_at', { ascending: false } as any); // Corrigido: 'nullsLast' não é uma opção válida aqui, removido ou tipado como 'any' para ignorar.
+                .order('last_message_at', { ascending: false, nullsLast: true }); // Adicionado nullsLast para ordenar corretamente
 
             if (chatsError) throw chatsError;
 
