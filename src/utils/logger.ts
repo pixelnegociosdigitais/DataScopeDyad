@@ -1,5 +1,5 @@
 import { supabase } from '@/src/integrations/supabase/client';
-import { LogEntry, UserRole } from '@/types';
+import { LogEntry } from '@/types'; // Removido UserRole
 
 export const logActivity = async (
   level: LogEntry['level'],
