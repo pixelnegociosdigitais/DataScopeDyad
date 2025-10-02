@@ -9,9 +9,10 @@ import { Company, User, UserRole, View } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
 import { showSuccess, showError } from '../src/utils/toast';
 import ConfirmationDialog from '../src/components/ConfirmationDialog';
-import CompanyEditModal from '../src/components/CompanyEditModal'; // Importar o novo modal de edição
-import { useAuth } from '../src/hooks/useAuth'; // Importar useAuth para as funções de gerenciamento
-import { logActivity } from '../src/utils/logger'; // Importar o utilitário de log
+import CompanyEditModal from '../src/components/CompanyEditModal';
+import { useAuth } from '../src/hooks/useAuth';
+import { logActivity } from '../src/utils/logger';
+import UserEditModal from '../src/components/UserEditModal'; // Importar UserEditModal
 
 interface DeveloperCompanyUserManagerProps {
     onBack: () => void;
@@ -31,11 +32,13 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     const [dialogMessage, setDialogMessage] = useState('');
     const [dialogTitle, setDialogTitle] = useState('');
     const [dialogConfirmAction, setDialogConfirmAction] = useState<(() => void) | null>(null);
-    const [showEditCompanyModal, setShowEditCompanyModal] = useState(false); // Estado para o modal de edição
-    const [editingCompany, setEditingCompany] = useState<Company | null>(null); // Empresa sendo editada
-    const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null); // Empresa a ser excluída
+    const [showEditCompanyModal, setShowEditCompanyModal] = useState(false);
+    const [editingCompany, setEditingCompany] = useState<Company | null>(null);
+    const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+    const [showEditAdminModal, setShowEditAdminModal] = useState(false); // Novo estado para o modal de edição do admin
+    const [editingAdmin, setEditingAdmin] = useState<User | null>(null); // Novo estado para o admin sendo editado
 
-    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany, currentUser } = useAuth(setCurrentView);
+    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany, currentUser, handleAdminUpdateUserProfile } = useAuth(setCurrentView);
 
     const fetchCompanies = useCallback(async () => {
         setLoading(true);
@@ -48,7 +51,11 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                     id,
                     full_name,
                     email,
-                    role
+                    role,
+                    phone,
+                    address,
+                    avatar_url,
+                    status
                 )
             `);
 
@@ -58,7 +65,6 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             setCompanies([]);
             logActivity('ERROR', `Erro ao buscar empresas: ${error.message}`, 'COMPANIES', currentUser?.id, currentUser?.email);
         } else {
-            // Mapear os perfis para cada empresa, filtrando apenas administradores
             const companiesWithAdmins = data.map(company => ({
                 ...company,
                 administrators: company.profiles.filter((p: any) => p.role === UserRole.ADMIN)
@@ -67,7 +73,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             logActivity('INFO', 'Empresas carregadas com sucesso.', 'COMPANIES', currentUser?.id, currentUser?.email);
         }
         setLoading(false);
-    }, [currentUser]); // Adicionado currentUser para logActivity
+    }, [currentUser]);
 
     useEffect(() => {
         fetchCompanies();
@@ -80,7 +86,6 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             return;
         }
 
-        // Passo 1: Criar a empresa
         const { data: newCompany, error: companyError } = await supabase
             .from('companies')
             .insert({ name: newCompanyName })
@@ -94,19 +99,16 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         }
         logActivity('INFO', `Empresa '${newCompanyName}' criada com sucesso (ID: ${newCompany.id}).`, 'COMPANIES', currentUser?.id, currentUser?.email, newCompany.id);
 
-
-        // Passo 2: Criar o usuário administrador para a nova empresa
-        // handleCreateUserForCompany já lida com seus próprios toasts de sucesso/erro e logging.
         await handleCreateUserForCompany(newCompany.id, newAdminFullName, newAdminEmail, UserRole.ADMIN, newAdminPassword);
         
-        showSuccess(`Empresa '${newCompanyName}' e administrador '${newAdminFullName}' criados com sucesso!`); // Toast de sucesso geral
+        showSuccess(`Empresa '${newCompanyName}' e administrador '${newAdminFullName}' criados com sucesso!`);
         
         setShowCreateCompanyModal(false);
         setNewCompanyName('');
         setNewAdminFullName('');
         setNewAdminEmail('');
         setNewAdminPassword('');
-        fetchCompanies(); // Recarregar a lista para refletir a mudança
+        fetchCompanies();
     };
 
     const confirmToggleStatus = (companyId: string, currentStatus: 'active' | 'inactive') => {
@@ -118,7 +120,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         );
         setDialogConfirmAction(() => async () => {
             await handleToggleCompanyStatus(companyId, newStatus);
-            fetchCompanies(); // Recarregar a lista após a atualização
+            fetchCompanies();
             setShowConfirmationDialog(false);
         });
         setShowConfirmationDialog(true);
@@ -134,12 +136,12 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         setShowConfirmationDialog(true);
     };
 
-    const handleOpenEditModal = (company: Company) => {
+    const handleOpenEditCompanyModal = (company: Company) => {
         setEditingCompany(company);
         setShowEditCompanyModal(true);
     };
 
-    const handleCloseEditModal = () => {
+    const handleCloseEditCompanyModal = () => {
         setEditingCompany(null);
         setShowEditCompanyModal(false);
     };
@@ -149,6 +151,28 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             prevCompanies.map(c => c.id === updatedCompany.id ? { ...updatedCompany, administrators: c.administrators } : c)
         );
         logActivity('INFO', `Empresa '${updatedCompany.name}' (ID: ${updatedCompany.id}) atualizada via modal.`, 'COMPANIES', currentUser?.id, currentUser?.email, updatedCompany.id);
+    };
+
+    const handleOpenEditAdminModal = (admin: User) => {
+        setEditingAdmin(admin);
+        setShowEditAdminModal(true);
+    };
+
+    const handleCloseEditAdminModal = () => {
+        setEditingAdmin(null);
+        setShowEditAdminModal(false);
+    };
+
+    const handleUpdateAdminSuccess = (updatedUser: User) => {
+        setCompanies(prevCompanies => 
+            prevCompanies.map(company => ({
+                ...company,
+                administrators: company.administrators.map(admin => 
+                    admin.id === updatedUser.id ? updatedUser : admin
+                )
+            }))
+        );
+        fetchCompanies(); // Re-fetch para garantir que todos os dados estejam atualizados
     };
 
     const confirmDeleteCompany = (company: Company) => {
@@ -166,7 +190,6 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         if (!companyToDelete) return;
 
         try {
-            // 1. Obter IDs de pesquisas associadas à empresa
             const { data: surveysData, error: surveysError } = await supabase
                 .from('surveys')
                 .select('id')
@@ -174,7 +197,6 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             if (surveysError) throw surveysError;
             const surveyIds = surveysData.map(s => s.id);
 
-            // 2. Obter IDs de respostas de pesquisas associadas às pesquisas
             const { data: responsesData, error: responsesError } = await supabase
                 .from('survey_responses')
                 .select('id')
@@ -182,43 +204,33 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             if (responsesError) throw responsesError;
             const responseIds = responsesData.map(r => r.id);
 
-            // Ordem de exclusão para respeitar chaves estrangeiras
-            // Excluir vencedores de sorteios
             const { error: deleteWinnersError } = await supabase.from('giveaway_winners').delete().in('survey_id', surveyIds);
             if (deleteWinnersError) throw deleteWinnersError;
 
-            // Excluir respostas detalhadas
             const { error: deleteAnswersError } = await supabase.from('answers').delete().in('response_id', responseIds);
             if (deleteAnswersError) throw deleteAnswersError;
 
-            // Excluir respostas de pesquisas
             const { error: deleteResponsesError } = await supabase.from('survey_responses').delete().in('id', responseIds);
             if (deleteResponsesError) throw deleteResponsesError;
 
-            // Excluir perguntas
             const { error: deleteQuestionsError } = await supabase.from('questions').delete().in('survey_id', surveyIds);
             if (deleteQuestionsError) throw deleteQuestionsError;
 
-            // Excluir pesquisas
             const { error: deleteSurveysError } = await supabase.from('surveys').delete().in('id', surveyIds);
             if (deleteSurveysError) throw deleteSurveysError;
 
-            // Excluir prêmios
             const { error: deletePrizesError } = await supabase.from('prizes').delete().eq('company_id', companyToDelete.id);
             if (deletePrizesError) throw deletePrizesError;
 
-            // Excluir avisos relacionados à empresa
             const { error: deleteNoticesError } = await supabase.from('notices').delete().eq('company_id', companyToDelete.id);
             if (deleteNoticesError) throw deleteNoticesError;
 
-            // Desvincular perfis de usuários da empresa e redefinir para 'Usuário'
             const { error: updateProfilesError } = await supabase
                 .from('profiles')
                 .update({ company_id: null, role: UserRole.USER })
                 .eq('company_id', companyToDelete.id);
             if (updateProfilesError) throw updateProfilesError;
 
-            // Excluir a empresa
             const { error: companyDeleteError } = await supabase
                 .from('companies')
                 .delete()
@@ -227,7 +239,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
 
             showSuccess(`Empresa "${companyToDelete.name}" e todos os dados relacionados excluídos com sucesso!`);
             logActivity('INFO', `Empresa '${companyToDelete.name}' (ID: ${companyToDelete.id}) e dados relacionados excluídos.`, 'COMPANIES', currentUser?.id, currentUser?.email, companyToDelete.id);
-            fetchCompanies(); // Recarregar a lista
+            fetchCompanies();
             setShowConfirmationDialog(false);
             setCompanyToDelete(null);
         } catch (err: any) {
@@ -309,12 +321,21 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                 <td className="py-3 px-4 text-center">
                                     <div className="flex justify-center gap-2">
                                         <button
-                                            onClick={() => handleOpenEditModal(company)}
+                                            onClick={() => handleOpenEditCompanyModal(company)}
                                             className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
                                             aria-label="Editar empresa"
                                         >
-                                            <PencilIcon className="h-5 w-5" />
+                                            <BuildingIcon className="h-5 w-5" /> {/* Ícone para editar a empresa */}
                                         </button>
+                                        {company.administrators && company.administrators.length > 0 && (
+                                            <button
+                                                onClick={() => handleOpenEditAdminModal(company.administrators[0] as User)}
+                                                className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
+                                                aria-label="Editar administrador"
+                                            >
+                                                <UserIcon className="h-5 w-5" /> {/* Ícone para editar o administrador */}
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => confirmDeleteCompany(company)}
                                             className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors"
@@ -409,8 +430,17 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             {showEditCompanyModal && editingCompany && (
                 <CompanyEditModal
                     company={editingCompany}
-                    onClose={handleCloseEditModal}
+                    onClose={handleCloseEditCompanyModal}
                     onUpdateSuccess={handleUpdateCompanySuccess}
+                />
+            )}
+
+            {showEditAdminModal && editingAdmin && (
+                <UserEditModal
+                    user={editingAdmin}
+                    onClose={handleCloseEditAdminModal}
+                    onUpdateSuccess={handleUpdateAdminSuccess}
+                    onAdminUpdateUserProfile={handleAdminUpdateUserProfile}
                 />
             )}
 

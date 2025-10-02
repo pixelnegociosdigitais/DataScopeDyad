@@ -4,12 +4,27 @@ import { UserIcon } from './icons/UserIcon';
 import { PencilIcon } from './icons/PencilIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { CreateIcon } from './icons/CreateIcon';
-import { User, UserRole, Company, View, ModuleName } from '../types'; // Importar ModuleName
+import { User, UserRole, Company, View, ModuleName } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
 import { showSuccess, showError } from '../src/utils/toast';
 import ConfirmationDialog from '../src/components/ConfirmationDialog';
-import { useAuth } from '../src/hooks/useAuth'; // Importar useAuth para as funções de gerenciamento
-import UserEditModal from '../src/components/UserEditModal'; // Importar o novo modal de edição
+import { useAuth } from '../src/hooks/useAuth';
+import UserEditModal from '../src/components/UserEditModal';
+
+// Mapeamento de tradução para os nomes dos módulos
+const moduleNameTranslations: Record<ModuleName, string> = {
+    [ModuleName.CREATE_SURVEY]: 'Criar Pesquisas',
+    [ModuleName.MANAGE_SURVEYS]: 'Gerenciar Pesquisas (Editar/Excluir)',
+    [ModuleName.VIEW_DASHBOARD]: 'Visualizar Painel de Pesquisas',
+    [ModuleName.ACCESS_GIVEAWAYS]: 'Acessar Sorteios (Antigo)',
+    [ModuleName.PERFORM_GIVEAWAYS]: 'Realizar Sorteios e Gerenciar Prêmios',
+    [ModuleName.VIEW_GIVEAWAY_DATA]: 'Visualizar Histórico de Sorteios',
+    [ModuleName.MANAGE_COMPANY_SETTINGS]: 'Gerenciar Configurações da Empresa',
+    [ModuleName.MANAGE_USERS]: 'Gerenciar Usuários',
+    [ModuleName.MANAGE_COMPANIES]: 'Gerenciar Empresas',
+    [ModuleName.MANAGE_NOTICES]: 'Gerenciar Avisos',
+    [ModuleName.ACCESS_CHAT]: 'Acessar Chat',
+};
 
 interface AdministratorUserManagerProps {
     onBack: () => void;
@@ -17,21 +32,6 @@ interface AdministratorUserManagerProps {
     currentCompany: Company | null;
     setCurrentView: (view: View) => void;
 }
-
-// Mapeamento de tradução para os nomes dos módulos
-const moduleNameTranslations: Record<ModuleName, string> = {
-    [ModuleName.CREATE_SURVEY]: 'Criar Pesquisas',
-    [ModuleName.MANAGE_SURVEYS]: 'Gerenciar Pesquisas (Editar/Excluir)',
-    [ModuleName.VIEW_DASHBOARD]: 'Visualizar Painel de Pesquisas',
-    [ModuleName.ACCESS_GIVEAWAYS]: 'Acessar Sorteios (Antigo)', // Manter para compatibilidade, mas será desativado
-    [ModuleName.PERFORM_GIVEAWAYS]: 'Realizar Sorteios e Gerenciar Prêmios', // Novo
-    [ModuleName.VIEW_GIVEAWAY_DATA]: 'Visualizar Histórico de Sorteios', // Novo
-    [ModuleName.MANAGE_COMPANY_SETTINGS]: 'Gerenciar Configurações da Empresa',
-    [ModuleName.MANAGE_USERS]: 'Gerenciar Usuários',
-    [ModuleName.MANAGE_COMPANIES]: 'Gerenciar Empresas',
-    [ModuleName.MANAGE_NOTICES]: 'Gerenciar Avisos', // Adicionado
-    [ModuleName.ACCESS_CHAT]: 'Acessar Chat', // Adicionado
-};
 
 const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onBack, currentUser, currentCompany, setCurrentView }) => {
     const [users, setUsers] = useState<User[]>([]);
@@ -48,9 +48,9 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
     const [showPermissionsModal, setShowPermissionsModal] = useState(false);
     const [editingUserPermissions, setEditingUserPermissions] = useState<User | null>(null);
     const [currentPermissions, setCurrentPermissions] = useState<Record<string, boolean>>({});
-    const [showEditUserModal, setShowEditUserModal] = useState(false); // Estado para o modal de edição
-    const [editingUser, setEditingUser] = useState<User | null>(null); // Usuário sendo editado
-    const [userToDelete, setUserToDelete] = useState<User | null>(null); // Usuário a ser excluído
+    const [showEditUserModal, setShowEditUserModal] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
     const { handleResetUserPassword, handleCreateUserForCompany, handleUpdateUserPermissions, handleAdminUpdateUserProfile, handleDeleteUser } = useAuth(setCurrentView);
 
@@ -78,7 +78,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                 status
             `)
             .eq('company_id', currentCompany.id)
-            .neq('role', UserRole.DEVELOPER); // Administradores não gerenciam Desenvolvedores
+            .neq('role', UserRole.DEVELOPER);
 
         if (error) {
             console.error('Erro ao buscar usuários:', error);
@@ -94,7 +94,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                 address: p.address || undefined,
                 profilePictureUrl: p.avatar_url || undefined,
                 permissions: p.permissions || {},
-                status: p.status || 'active', // Adicionado status
+                status: p.status || 'active',
             }));
             setUsers(fetchedUsers);
         }
@@ -121,7 +121,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
         setNewUserName('');
         setNewUserEmail('');
         setNewUserPassword('');
-        fetchUsers(); // Recarregar a lista para refletir a mudança
+        fetchUsers();
     };
 
     const confirmResetUserPassword = (userId: string, userName: string) => {
@@ -154,7 +154,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
         if (!editingUserPermissions) return;
         await handleUpdateUserPermissions(editingUserPermissions.id, currentPermissions);
         handleClosePermissionsModal();
-        fetchUsers(); // Recarregar usuários para refletir as permissões atualizadas
+        fetchUsers();
     };
 
     const handleOpenEditUserModal = (user: User) => {
@@ -169,7 +169,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
 
     const handleUpdateUserSuccess = (updatedUser: User) => {
         setUsers(prevUsers => prevUsers.map(u => u.id === updatedUser.id ? updatedUser : u));
-        fetchUsers(); // Re-fetch para garantir que todos os dados estejam atualizados
+        fetchUsers();
     };
 
     const confirmDeleteUser = (user: User) => {
@@ -179,7 +179,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
         setDialogConfirmAction(() => async () => {
             await handleDeleteUser(user.id, user.email);
             setShowConfirmationDialog(false);
-            fetchUsers(); // Recarregar a lista após a exclusão
+            fetchUsers();
         });
         setShowConfirmationDialog(true);
     };
@@ -187,7 +187,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
     const handleToggleUserStatus = async (user: User) => {
         const newStatus = user.status === 'active' ? 'inactive' : 'active';
         await handleAdminUpdateUserProfile(user.id, { status: newStatus });
-        fetchUsers(); // Recarregar a lista para refletir a mudança de status
+        fetchUsers();
     };
 
     if (loading) {
@@ -255,7 +255,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                                             className="sr-only peer"
                                             checked={user.status === 'active'}
                                             onChange={() => handleToggleUserStatus(user)}
-                                            disabled={user.id === currentUser.id || user.role === UserRole.ADMIN} // Admins não podem desativar a si mesmos ou outros admins
+                                            disabled={user.id === currentUser.id || user.role === UserRole.ADMIN}
                                         />
                                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-light rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                                         <span className="ml-3 text-sm font-medium text-gray-900">
@@ -278,7 +278,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                                         >
                                             Redefinir Senha
                                         </button>
-                                        {user.role === UserRole.USER && ( // Apenas usuários básicos têm permissões granulares
+                                        {user.role === UserRole.USER && (
                                             <button
                                                 onClick={() => handleOpenPermissionsModal(user)}
                                                 className="px-3 py-1 text-xs font-medium text-secondary border border-secondary rounded-md hover:bg-secondary/10"
@@ -290,7 +290,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                                             onClick={() => confirmDeleteUser(user)}
                                             className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors"
                                             aria-label="Excluir usuário"
-                                            disabled={user.id === currentUser.id || user.role === UserRole.ADMIN} // Admins não podem excluir a si mesmos ou outros admins
+                                            disabled={user.id === currentUser.id || user.role === UserRole.ADMIN}
                                         >
                                             <TrashIcon className="h-5 w-5" />
                                         </button>
@@ -365,7 +365,6 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                         <h3 className="text-xl font-bold text-text-main mb-4">Permissões para {editingUserPermissions.fullName}</h3>
                         <div className="space-y-3">
                             {Object.values(ModuleName).map((moduleName: ModuleName) => {
-                                // Não exibir o módulo ACCESS_GIVEAWAYS (antigo)
                                 if (moduleName === ModuleName.ACCESS_GIVEAWAYS) return null;
 
                                 return (
