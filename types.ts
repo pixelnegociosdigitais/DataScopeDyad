@@ -114,7 +114,7 @@ export interface Chat {
     is_group_chat: boolean | null; // Pode ser null
     last_message_at?: string | null; // Pode ser null
     participants?: ChatParticipant[]; // Joined data
-    displayName?: string; // Adicionado para exibir o nome do chat na lista
+    displayName?: string | null; // AGORA PODE SER NULL
     unread_count?: number; // Adicionado para exibir a contagem de mensagens não lidas
 }
 
