@@ -47,17 +47,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
             view: View.CHAT,
             permission: modulePermissions[ModuleName.ACCESS_CHAT],
         },
+        // Gerenciamento de Usuários para Administradores
         {
             label: 'Gerenciar Usuários',
             icon: UserIcon,
             view: View.ADMIN_USER_MANAGER,
-            permission: currentUserRole === UserRole.ADMIN, // Apenas Administradores
+            permission: currentUserRole === UserRole.ADMIN,
         },
+        // Gerenciamento de Empresas para Desenvolvedores
         {
             label: 'Gerenciar Empresas',
             icon: BuildingIcon,
             view: View.DEVELOPER_COMPANY_USER_MANAGER,
-            permission: currentUserRole === UserRole.DEVELOPER, // Apenas Desenvolvedores
+            permission: currentUserRole === UserRole.DEVELOPER,
         },
         {
             label: 'Gerenciar Avisos',

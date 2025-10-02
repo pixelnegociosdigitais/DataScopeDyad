@@ -227,6 +227,11 @@ const App: React.FC = () => {
             );
         }
 
+        // Se o usuário não tem empresa e não é desenvolvedor, mostra o prompt para criar/vincular empresa
+        if (!currentCompany && currentUser.role !== UserRole.DEVELOPER) {
+            return <JoinCompanyPrompt user={currentUser} onLogout={() => supabase.auth.signOut()} />;
+        }
+
         switch (currentView) {
             case View.SURVEY_LIST:
                 return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
