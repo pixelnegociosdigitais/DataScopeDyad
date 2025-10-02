@@ -30,7 +30,7 @@ serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: fullName, company_id: companyId } // Ainda passamos company_id aqui para o gatilho
+      user_metadata: { full_name: fullName, company_id: companyId, role: role } // Adicionado 'role' aqui
     })
 
     if (authError) {
@@ -48,7 +48,7 @@ serve(async (req) => {
     // Isso garante que o company_id seja definido, mesmo que haja algum atraso ou problema com o gatilho.
     const { error: profileUpdateError } = await adminClient
       .from('profiles')
-      .update({ role: role, company_id: companyId }) // Adicionado company_id aqui
+      .update({ role: role, company_id: companyId, full_name: fullName }) // Adicionado full_name aqui
       .eq('id', user.id)
 
     if (profileUpdateError) throw profileUpdateError
