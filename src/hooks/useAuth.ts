@@ -61,7 +61,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         if (error) {
             console.error('useAuth: Erro ao buscar permissões de módulo baseadas no papel:', error);
-            logActivity('ERROR', `Erro ao buscar permissões de módulo para o papel ${userRole}: ${error.message}`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
+            // Use session.user.id/email if currentUser is not stable here for logging
+            logActivity('ERROR', `Erro ao buscar permissões de módulo para o papel ${userRole}: ${error.message}`, 'AUTH', session?.user?.id, session?.user?.email, currentCompany?.id);
         } else {
             data.forEach(p => {
                 if (Object.values(ModuleName).includes(p.module_name as ModuleName)) {
@@ -84,8 +85,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         
         setModulePermissions(combinedPermissions);
         console.log('useAuth: Permissões de módulo combinadas e definidas:', combinedPermissions);
-        logActivity('INFO', `Permissões de módulo carregadas e combinadas para o papel ${userRole}.`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
-    }, [currentUser, currentCompany]); // Dependências para logActivity
+        logActivity('INFO', `Permissões de módulo carregadas e combinadas para o papel ${userRole}.`, 'AUTH', session?.user?.id, session?.user?.email, currentCompany?.id);
+    }, [session?.user?.id, session?.user?.email, currentCompany?.id]); // Dependências para logActivity
 
     const _fetchUserData = useCallback(async (userId: string, userEmail: string) => {
         setLoadingAuth(true);
@@ -151,6 +152,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
             setCurrentUser(user);
             
+            // Pass currentCompany?.id to _fetchModulePermissions for logging context
             await _fetchModulePermissions(user.role, user.permissions);
 
             const company: Company | null = profileData.companies ? (profileData.companies as unknown as Company) : null;
@@ -168,7 +170,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
         setLoadingAuth(false);
         console.log('useAuth: _fetchUserData concluído. loadingAuth = false.');
-    }, [_fetchModulePermissions]);
+    }, [_fetchModulePermissions]); // Removed currentUser and currentCompany from dependencies
 
     const _handleCreateCompany = useCallback(async (companyData: Omit<Company, 'id' | 'created_at'>) => {
         if (!currentUser) {
@@ -550,7 +552,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
             }
         }
-    }, [session, loadingSession, _fetchUserData, currentUser, currentCompany]); // Adicionado currentUser e currentCompany para logActivity
+    }, [session, loadingSession, _fetchUserData]); // Removed currentUser and currentCompany from dependencies
 
     // --- Return values ---
     return {
