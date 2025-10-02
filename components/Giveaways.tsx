@@ -66,16 +66,33 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 setSelectedSurveyId(null);
                 return;
             }
-            const { data, error } = await supabase.from('surveys').select('id, title').eq('company_id', currentCompany.id).order('title', { ascending: true });
+            // Ajuste na consulta para incluir todas as propriedades da interface Survey
+            const { data, error } = await supabase.from('surveys').select(`
+                id, 
+                title, 
+                company_id, 
+                created_by, 
+                created_at, 
+                questions (id, text, type, options, position)
+            `).eq('company_id', currentCompany.id).order('title', { ascending: true });
+            
             if (error) {
                 showError('Não foi possível carregar a lista de pesquisas.');
                 logActivity('ERROR', `Erro ao carregar pesquisas para a empresa ${currentCompany.id}: ${error.message}`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
                 setAvailableSurveys([]);
             } else {
-                setAvailableSurveys(data || []);
-                if (data && data.length > 0 && !selectedSurveyId) {
-                    setSelectedSurveyId(data[0].id);
-                } else if (!data || data.length === 0) {
+                const fetchedSurveys: Survey[] = (data || []).map((s: any) => ({
+                    id: s.id,
+                    title: s.title,
+                    companyId: s.company_id,
+                    created_by: s.created_by,
+                    created_at: s.created_at,
+                    questions: s.questions || [], // Garante que questions seja um array
+                }));
+                setAvailableSurveys(fetchedSurveys);
+                if (fetchedSurveys.length > 0 && !selectedSurveyId) {
+                    setSelectedSurveyId(fetchedSurveys[0].id);
+                } else if (fetchedSurveys.length === 0) {
                     setSelectedSurveyId(null);
                 }
                 logActivity('INFO', `Pesquisas carregadas para seleção de sorteio na empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
