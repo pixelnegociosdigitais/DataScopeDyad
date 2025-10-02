@@ -182,7 +182,8 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                                         <Tooltip />
                                         <Legend 
                                             formatter={(value, entry) => {
-                                                const total = q.data.reduce((sum, item) => sum + item.value, 0);
+                                                // Asserção de tipo para garantir que 'item' tem a propriedade 'value'
+                                                const total = q.data.reduce((sum, item) => sum + (item as { name: string; value: number }).value, 0);
                                                 const percentage = total > 0 ? ((entry.payload.value / total) * 100).toFixed(2) : '0.00';
                                                 return `${value} (${percentage}%)`;
                                             }}
