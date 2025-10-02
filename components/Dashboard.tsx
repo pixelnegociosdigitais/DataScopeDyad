@@ -2,7 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Survey, SurveyResponse, Question, QuestionType, Answer } from '../types';
+import { Survey, SurveyResponse, QuestionType, Answer } from '../types';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 
