@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User, Company, UserRole, View, ModuleName, ModulePermission, Notice } from '@/types';
+import { User, Company, UserRole, View, ModuleName, Notice } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { showSuccess, showError } from '@/src/utils/toast';
 import { logActivity } from '@/src/utils/logger';
@@ -25,17 +25,17 @@ interface UseAuthReturn {
 }
 
 const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
-    [ModuleName.CREATE_SURVEY]: false, // Default para false
-    [ModuleName.MANAGE_SURVEYS]: false, // Default para false
-    [ModuleName.VIEW_DASHBOARD]: false, // Default para false
+    [ModuleName.CREATE_SURVEY]: false,
+    [ModuleName.MANAGE_SURVEYS]: false,
+    [ModuleName.VIEW_DASHBOARD]: false,
     [ModuleName.ACCESS_GIVEAWAYS]: false,
     [ModuleName.PERFORM_GIVEAWAYS]: false,
     [ModuleName.VIEW_GIVEAWAY_DATA]: false,
     [ModuleName.MANAGE_COMPANY_SETTINGS]: false,
     [ModuleName.MANAGE_USERS]: false,
     [ModuleName.MANAGE_COMPANIES]: false,
-    [ModuleName.MANAGE_NOTICES]: false, // Novo módulo de avisos
-    [ModuleName.ACCESS_CHAT]: false, // Novo módulo de chat
+    [ModuleName.MANAGE_NOTICES]: false,
+    [ModuleName.ACCESS_CHAT]: false,
 };
 
 const DEVELOPER_EMAIL = 'santananegociosdigitais@gmail.com';
@@ -47,12 +47,13 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
     const [loadingAuth, setLoadingAuth] = useState(true);
     const [modulePermissions, setModulePermissions] = useState<Record<ModuleName, boolean>>(DEFAULT_MODULE_PERMISSIONS);
 
-    const fetchModulePermissions = useCallback(async (userRole: UserRole, userSpecificPermissions: Record<string, boolean> = {}) => {
-        console.log('useAuth: fetchModulePermissions - Iniciando busca de permissões para o papel:', userRole, 'e aplicando overrides:', userSpecificPermissions);
+    // --- Internal Helper Functions (useCallback for stability) ---
+
+    const _fetchModulePermissions = useCallback(async (userRole: UserRole, userSpecificPermissions: Record<string, boolean> = {}) => {
+        console.log('useAuth: _fetchModulePermissions - Iniciando busca de permissões para o papel:', userRole, 'e aplicando overrides:', userSpecificPermissions);
         
         let combinedPermissions: Record<ModuleName, boolean> = { ...DEFAULT_MODULE_PERMISSIONS };
 
-        // 1. Apply role-based permissions from the 'module_permissions' table
         const { data, error } = await supabase
             .from('module_permissions')
             .select('*')
@@ -69,15 +70,12 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             });
         }
 
-        // 2. Apply user-specific overrides from 'profiles.permissions'
-        // These overrides are primarily for 'Usuário' role to grant/revoke specific access
         for (const moduleName in userSpecificPermissions) {
             if (Object.values(ModuleName).includes(moduleName as ModuleName)) {
                 combinedPermissions[moduleName as ModuleName] = userSpecificPermissions[moduleName];
             }
         }
 
-        // 3. Developers always have all permissions
         if (userRole === UserRole.DEVELOPER) {
             for (const moduleName of Object.values(ModuleName)) {
                 combinedPermissions[moduleName] = true;
@@ -87,11 +85,11 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         setModulePermissions(combinedPermissions);
         console.log('useAuth: Permissões de módulo combinadas e definidas:', combinedPermissions);
         logActivity('INFO', `Permissões de módulo carregadas e combinadas para o papel ${userRole}.`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
-    }, [currentUser, currentCompany]);
+    }, [currentUser, currentCompany]); // Dependências para logActivity
 
-    const fetchUserData = useCallback(async (userId: string, userEmail: string) => {
+    const _fetchUserData = useCallback(async (userId: string, userEmail: string) => {
         setLoadingAuth(true);
-        console.log('useAuth: fetchUserData - Iniciando busca de dados do usuário para ID:', userId);
+        console.log('useAuth: _fetchUserData - Iniciando busca de dados do usuário para ID:', userId);
         const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select(`
@@ -151,47 +149,28 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 logActivity('WARN', `Papel de 'Desenvolvedor' forçado para o usuário ${userEmail}.`, 'AUTH', userId, userEmail);
             }
 
-            // Atualiza currentUser diretamente
             setCurrentUser(user);
             
-            await fetchModulePermissions(user.role, user.permissions);
+            await _fetchModulePermissions(user.role, user.permissions);
 
             const company: Company | null = profileData.companies ? (profileData.companies as unknown as Company) : null;
-            // Atualiza currentCompany diretamente
             setCurrentCompany(company);
 
             if (company) {
                 console.log('useAuth: Empresa encontrada:', profileData.companies);
-                console.log('useAuth: Company ID do perfil:', profileData.company_id); // Log detalhado
+                console.log('useAuth: Company ID do perfil:', profileData.company_id);
                 logActivity('INFO', `Usuário ${user.fullName} logado e vinculado à empresa ${company.name}.`, 'AUTH', userId, userEmail, company.id);
             } else {
                 console.log('useAuth: Nenhuma empresa associada ao perfil.');
-                console.log('useAuth: Company ID do perfil:', profileData.company_id); // Log detalhado
+                console.log('useAuth: Company ID do perfil:', profileData.company_id);
                 logActivity('INFO', `Usuário ${user.fullName} logado, mas sem empresa vinculada.`, 'AUTH', userId, userEmail);
             }
         }
         setLoadingAuth(false);
-        console.log('useAuth: fetchUserData concluído. loadingAuth = false.');
-    }, [fetchModulePermissions]); // Removido currentUser e currentCompany das dependências
+        console.log('useAuth: _fetchUserData concluído. loadingAuth = false.');
+    }, [_fetchModulePermissions]);
 
-    useEffect(() => {
-        console.log('useAuth: useEffect - loadingSession:', loadingSession, 'session:', session);
-        if (!loadingSession) {
-            if (session) {
-                // Força a busca dos dados do usuário sempre que a sessão muda
-                fetchUserData(session.user.id, session.user.email || '');
-            } else {
-                console.log('useAuth: Nenhuma sessão ativa. Resetando estados.');
-                logActivity('INFO', 'Usuário deslogado.', 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
-                setCurrentUser(null);
-                setCurrentCompany(null);
-                setLoadingAuth(false);
-                setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
-            }
-        }
-    }, [session, loadingSession, fetchUserData]); // Adicionado fetchUserData como dependência
-
-    const handleCreateCompany = useCallback(async (companyData: Omit<Company, 'id' | 'created_at'>) => {
+    const _handleCreateCompany = useCallback(async (companyData: Omit<Company, 'id' | 'created_at'>) => {
         if (!currentUser) {
             showError('Erro: Dados do usuário não disponíveis para criar a empresa.');
             console.error('handleCreateCompany: currentUser é nulo ou indefinido.');
@@ -201,7 +180,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         const userId = currentUser.id;
         const userEmail = currentUser.email;
 
-        console.log('useAuth: handleCreateCompany - Criando empresa:', companyData.name, 'para userId:', userId);
+        console.log('useAuth: _handleCreateCompany - Criando empresa:', companyData.name, 'para userId:', userId);
 
         const companyToInsert = {
             ...companyData,
@@ -248,15 +227,15 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         setCurrentCompany(newCompany);
         setCurrentUser(prev => prev ? { ...prev, role: roleToAssign, company_id: newCompany.id } : null);
-        await fetchModulePermissions(roleToAssign);
+        await _fetchModulePermissions(roleToAssign);
         showSuccess('Empresa criada e vinculada com sucesso!');
         setCurrentView(View.SURVEY_LIST);
         logActivity('INFO', `Empresa '${newCompany.name}' criada e vinculada ao usuário ${userEmail}.`, 'COMPANIES', userId, userEmail, newCompany.id);
         console.log('useAuth: Empresa criada e perfil atualizado com sucesso.');
-    }, [currentUser, setCurrentView, fetchModulePermissions, showError, showSuccess, setCurrentUser, setCurrentCompany]);
+    }, [currentUser, setCurrentView, _fetchModulePermissions, showError, showSuccess, setCurrentUser, setCurrentCompany]);
 
-    const handleUpdateProfile = useCallback(async (updatedUser: User) => {
-        console.log('useAuth: handleUpdateProfile - Atualizando perfil para:', updatedUser.id);
+    const _handleUpdateProfile = useCallback(async (updatedUser: User) => {
+        console.log('useAuth: _handleUpdateProfile - Atualizando perfil para:', updatedUser.id);
 
         let roleToUpdate = updatedUser.role;
         if (updatedUser.email === DEVELOPER_EMAIL && updatedUser.role !== UserRole.DEVELOPER) {
@@ -286,22 +265,22 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         } else {
             setCurrentUser(updatedUser);
             if (currentUser?.role !== updatedUser.role) {
-                await fetchModulePermissions(updatedUser.role, updatedUser.permissions);
+                await _fetchModulePermissions(updatedUser.role, updatedUser.permissions);
             }
             showSuccess('Perfil atualizado com sucesso!');
             setCurrentView(View.SURVEY_LIST);
             logActivity('INFO', `Perfil do usuário ${updatedUser.email} atualizado com sucesso.`, 'PROFILE', updatedUser.id, updatedUser.email, currentCompany?.id);
             console.log('useAuth: Perfil atualizado com sucesso.');
         }
-    }, [setCurrentView, currentUser?.role, fetchModulePermissions, showError, showSuccess, currentCompany, setCurrentUser]);
+    }, [setCurrentView, currentUser?.role, _fetchModulePermissions, showError, showSuccess, currentCompany, setCurrentUser]);
 
-    const handleUpdateCompany = useCallback(async (updatedCompany: Company) => {
+    const _handleUpdateCompany = useCallback(async (updatedCompany: Company) => {
         if (!currentCompany) {
             showError('Nenhuma empresa selecionada para atualizar.');
             logActivity('WARN', 'Tentativa de atualizar empresa sem empresa selecionada.', 'COMPANIES', currentUser?.id, currentUser?.email);
             return;
         }
-        console.log('useAuth: handleUpdateCompany - Atualizando empresa:', currentCompany.id);
+        console.log('useAuth: _handleUpdateCompany - Atualizando empresa:', currentCompany.id);
         const { data, error } = await supabase
             .from('companies')
             .update({
@@ -331,13 +310,13 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [currentCompany, setCurrentView, showError, showSuccess, currentUser, setCurrentCompany]);
 
-    const handleToggleCompanyStatus = useCallback(async (companyId: string, newStatus: 'active' | 'inactive') => {
+    const _handleToggleCompanyStatus = useCallback(async (companyId: string, newStatus: 'active' | 'inactive') => {
         if (currentUser?.role !== UserRole.DEVELOPER) {
             showError('Você não tem permissão para alterar o status da empresa.');
             logActivity('WARN', `Tentativa de alterar status da empresa ${companyId} por usuário sem permissão (${currentUser?.email}).`, 'COMPANIES', currentUser?.id, currentUser?.email, companyId);
             return;
         }
-        console.log(`useAuth: handleToggleCompanyStatus - Alterando status da empresa ${companyId} para ${newStatus}`);
+        console.log(`useAuth: _handleToggleCompanyStatus - Alterando status da empresa ${companyId} para ${newStatus}`);
         const { error } = await supabase
             .from('companies')
             .update({ status: newStatus })
@@ -356,7 +335,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [currentUser, currentCompany, showError, showSuccess, setCurrentCompany]);
 
-    const handleResetUserPassword = useCallback(async (userId: string, newPassword?: string) => {
+    const _handleResetUserPassword = useCallback(async (userId: string, newPassword?: string) => {
         if (currentUser?.role !== UserRole.DEVELOPER && currentUser?.role !== UserRole.ADMIN) {
             showError('Você não tem permissão para redefinir senhas.');
             logActivity('WARN', `Tentativa de redefinir senha do usuário ${userId} por usuário sem permissão (${currentUser?.email}).`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
@@ -378,7 +357,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [currentUser, showError, showSuccess, currentCompany]);
 
-    const handleCreateUserForCompany = useCallback(async (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword?: string) => {
+    const _handleCreateUserForCompany = useCallback(async (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword?: string) => {
         if (currentUser?.role !== UserRole.DEVELOPER && currentUser?.role !== UserRole.ADMIN) {
             showError('Você não tem permissão para criar usuários.');
             logActivity('WARN', `Tentativa de criar usuário para empresa ${companyId} por usuário sem permissão (${currentUser?.email}).`, 'AUTH', currentUser?.id, currentUser?.email, companyId);
@@ -412,7 +391,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [currentUser, showError, showSuccess, currentCompany]);
 
-    const handleUpdateUserPermissions = useCallback(async (userId: string, permissions: Record<string, boolean>) => {
+    const _handleUpdateUserPermissions = useCallback(async (userId: string, permissions: Record<string, boolean>) => {
         if (currentUser?.role !== UserRole.ADMIN && currentUser?.role !== UserRole.DEVELOPER) {
             showError('Você não tem permissão para atualizar permissões de usuário.');
             logActivity('WARN', `Tentativa de atualizar permissões do usuário ${userId} por usuário sem permissão (${currentUser?.email}).`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
@@ -432,12 +411,12 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             showSuccess(`Permissões do usuário ${userId} atualizadas com sucesso!`);
             logActivity('INFO', `Permissões do usuário ${userId} atualizadas com sucesso.`, 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
             if (currentUser?.id === userId && currentUser.email) {
-                await fetchUserData(userId, currentUser.email);
+                await _fetchUserData(userId, currentUser.email);
             }
         }
-    }, [currentUser, showError, showSuccess, currentCompany, fetchUserData]);
+    }, [currentUser, showError, showSuccess, currentCompany, _fetchUserData]);
 
-    const handleAdminUpdateUserProfile = useCallback(async (userId: string, updatedFields: Partial<User>) => {
+    const _handleAdminUpdateUserProfile = useCallback(async (userId: string, updatedFields: Partial<User>) => {
         if (currentUser?.role !== UserRole.ADMIN && currentUser?.role !== UserRole.DEVELOPER) {
             showError('Você não tem permissão para atualizar perfis de usuário.');
             logActivity('WARN', `Tentativa de admin atualizar perfil do usuário ${userId} por usuário sem permissão (${currentUser?.email}).`, 'ADMIN_USER_MANAGER', currentUser?.id, currentUser?.email, currentCompany?.id);
@@ -464,7 +443,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [currentUser, showError, showSuccess, currentCompany]);
 
-    const handleDeleteUser = useCallback(async (userId: string, userEmail: string) => {
+    const _handleDeleteUser = useCallback(async (userId: string, userEmail: string) => {
         if (currentUser?.role !== UserRole.ADMIN && currentUser?.role !== UserRole.DEVELOPER) {
             showError('Você não tem permissão para excluir usuários.');
             logActivity('WARN', `Tentativa de excluir usuário ${userId} por usuário sem permissão (${currentUser?.email}).`, 'ADMIN_USER_MANAGER', currentUser?.id, currentUser?.email, currentCompany?.id);
@@ -495,7 +474,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [currentUser, showError, showSuccess, currentCompany]);
 
-    const handleCreateNotice = useCallback(async (message: string, targetRoles: UserRole[], companyId?: string): Promise<boolean> => {
+    const _handleCreateNotice = useCallback(async (message: string, targetRoles: UserRole[], companyId?: string): Promise<boolean> => {
         if (!currentUser) {
             showError('Você precisa estar logado para criar um aviso.');
             logActivity('WARN', 'Tentativa de criar aviso sem usuário logado.', 'NOTICES');
@@ -514,7 +493,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             return false;
         }
 
-        // Validação de permissões para criar avisos
         if (currentUser.role === UserRole.ADMIN) {
             if (targetRoles.includes(UserRole.DEVELOPER) || targetRoles.includes(UserRole.ADMIN)) {
                 showError('Administradores só podem enviar avisos para Usuários.');
@@ -557,22 +535,39 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [currentUser, currentCompany, showError, showSuccess]);
 
+    // --- Main useEffect for session changes ---
+    useEffect(() => {
+        console.log('useAuth: useEffect - loadingSession:', loadingSession, 'session:', session);
+        if (!loadingSession) {
+            if (session) {
+                _fetchUserData(session.user.id, session.user.email || '');
+            } else {
+                console.log('useAuth: Nenhuma sessão ativa. Resetando estados.');
+                logActivity('INFO', 'Usuário deslogado.', 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
+                setCurrentUser(null);
+                setCurrentCompany(null);
+                setLoadingAuth(false);
+                setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
+            }
+        }
+    }, [session, loadingSession, _fetchUserData, currentUser, currentCompany]); // Adicionado currentUser e currentCompany para logActivity
 
+    // --- Return values ---
     return {
         currentUser,
         currentCompany,
         loadingAuth,
-        handleCreateCompany,
-        handleUpdateProfile,
-        handleUpdateCompany,
-        fetchUserData,
+        handleCreateCompany: _handleCreateCompany,
+        handleUpdateProfile: _handleUpdateProfile,
+        handleUpdateCompany: _handleUpdateCompany,
+        fetchUserData: _fetchUserData,
         modulePermissions,
-        handleToggleCompanyStatus,
-        handleResetUserPassword,
-        handleCreateUserForCompany,
-        handleUpdateUserPermissions,
-        handleAdminUpdateUserProfile,
-        handleDeleteUser,
-        handleCreateNotice,
+        handleToggleCompanyStatus: _handleToggleCompanyStatus,
+        handleResetUserPassword: _handleResetUserPassword,
+        handleCreateUserForCompany: _handleCreateUserForCompany,
+        handleUpdateUserPermissions: _handleUpdateUserPermissions,
+        handleAdminUpdateUserProfile: _handleAdminUpdateUserProfile,
+        handleDeleteUser: _handleDeleteUser,
+        handleCreateNotice: _handleCreateNotice,
     };
 };
