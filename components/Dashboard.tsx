@@ -188,11 +188,12 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                                         </Pie>
                                         <Tooltip />
                                         <Legend 
-                                            formatter={(name: string, { payload }: { payload?: ChartDataItem }) => {
+                                            formatter={(legendValue: string | number, legendEntry: any) => {
+                                                const dataItem = legendEntry.payload as ChartDataItem; // Type assertion here
                                                 const total = (q.data as ChartDataItem[]).reduce((sum, item) => sum + item.value, 0);
-                                                const entryValue = payload?.value ?? 0; 
+                                                const entryValue = dataItem.value ?? 0; 
                                                 const percentage = total > 0 ? ((entryValue / total) * 100).toFixed(2) : '0.00';
-                                                return `${name} (${percentage}%)`;
+                                                return `${dataItem.name} (${percentage}%)`;
                                             }}
                                         />
                                     </PieChart>
