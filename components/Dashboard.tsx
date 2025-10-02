@@ -12,6 +12,12 @@ interface DashboardProps {
     onBack: () => void;
 }
 
+// Nova interface para os itens de dados dos gráficos
+interface ChartDataItem {
+    name: string;
+    value: number;
+}
+
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#14B8A6', '#F97316'];
 
 const renderActiveShape = (props: any) => {
@@ -67,12 +73,12 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                     return acc;
                 }, {} as Record<string, number>);
                 
-                const data = Object.entries(counts).map(([name, value]) => ({ name, value }));
+                const data: ChartDataItem[] = Object.entries(counts).map(([name, value]) => ({ name, value }));
                 return { ...q, data };
             }
 
             if ([QuestionType.SHORT_TEXT, QuestionType.LONG_TEXT, QuestionType.EMAIL, QuestionType.PHONE].includes(q.type)) {
-                const data = questionResponses.map(r => String(r.value)).filter(v => v.trim() !== '');
+                const data: string[] = questionResponses.map(r => String(r.value)).filter(v => v.trim() !== '');
                 return { ...q, data };
             }
 
@@ -153,7 +159,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                         {([QuestionType.MULTIPLE_CHOICE, QuestionType.CHECKBOX, QuestionType.RATING].includes(q.type as QuestionType)) && Array.isArray(q.data) && q.data.length > 0 && (
                              <ResponsiveContainer width="100%" height={300}>
                                 {q.type === QuestionType.RATING ? (
-                                    <BarChart data={[...q.data].sort((a, b) => Number(a.name) - Number(b.name))}>
+                                    <BarChart data={q.data as ChartDataItem[]}> {/* Adicionando asserção de tipo aqui */}
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="name" />
                                         <YAxis allowDecimals={false} />
@@ -166,7 +172,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                                         <Pie
                                             activeIndex={activeIndex}
                                             activeShape={renderActiveShape}
-                                            data={q.data}
+                                            data={q.data as ChartDataItem[]} {/* Adicionando asserção de tipo aqui */}
                                             cx="50%"
                                             cy="50%"
                                             innerRadius={60}
@@ -175,15 +181,16 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                                             dataKey="value"
                                             onMouseEnter={onPieEnter}
                                         >
-                                          {q.data.map((entry, index) => (
+                                          {/* Mapeamento de células para PieChart */}
+                                          {(q.data as ChartDataItem[]).map((entry, index) => (
                                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                           ))}
                                         </Pie>
                                         <Tooltip />
                                         <Legend 
                                             formatter={(value, entry) => {
-                                                // Asserção de tipo para garantir que 'item' tem a propriedade 'value'
-                                                const total = q.data.reduce((sum, item) => sum + (item as { name: string; value: number }).value, 0);
+                                                // q.data já é ChartDataItem[] devido à asserção de tipo no componente Pie
+                                                const total = (q.data as ChartDataItem[]).reduce((sum, item) => sum + item.value, 0);
                                                 const percentage = total > 0 ? ((entry.payload.value / total) * 100).toFixed(2) : '0.00';
                                                 return `${value} (${percentage}%)`;
                                             }}
