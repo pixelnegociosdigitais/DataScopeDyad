@@ -105,7 +105,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             const fetchedResponses: SurveyResponse[] = data.map(r => ({
                 id: r.id,
                 surveyId: r.survey_id,
-                answers: r.answers.map((a: Answer) => ({
+                answers: r.answers.map((a: { question_id: string; value: string | number | string[] }) => ({
                     questionId: a.question_id,
                     value: a.value,
                 })),
