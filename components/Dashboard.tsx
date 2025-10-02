@@ -191,7 +191,9 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                                             formatter={(value, entry) => {
                                                 // q.data já é ChartDataItem[] devido à asserção de tipo no componente Pie
                                                 const total = (q.data as ChartDataItem[]).reduce((sum, item) => sum + item.value, 0);
-                                                const percentage = total > 0 ? ((entry.payload.value / total) * 100).toFixed(2) : '0.00';
+                                                // Adiciona verificação para entry.payload
+                                                const entryValue = entry.payload?.value ?? 0; 
+                                                const percentage = total > 0 ? ((entryValue / total) * 100).toFixed(2) : '0.00';
                                                 return `${value} (${percentage}%)`;
                                             }}
                                         />
