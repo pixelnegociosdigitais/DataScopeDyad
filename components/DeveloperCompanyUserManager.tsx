@@ -8,11 +8,11 @@ import { CreateIcon } from './icons/CreateIcon';
 import { Company, User, UserRole, View } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
 import { showSuccess, showError } from '../src/utils/toast';
-import ConfirmationDialog from '../src/components/ConfirmationDialog';
-import CompanyEditModal from '../src/components/CompanyEditModal';
+import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
+import CompanyEditModal from '../src/components/CompanyEditModal'; // Caminho corrigido
 import { useAuth } from '../src/hooks/useAuth';
 import { logActivity } from '../src/utils/logger';
-import UserEditModal from '../src/components/UserEditModal'; // Importar UserEditModal
+import UserEditModal from '../src/components/UserEditModal'; // Caminho corrigido
 
 interface DeveloperCompanyUserManagerProps {
     onBack: () => void;
@@ -108,7 +108,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
 
         if (companyError || !newCompany) {
             showError('Erro ao criar a empresa: ' + companyError?.message);
-            logActivity('ERROR', `Erro ao criar empresa '${newCompanyName}': ${companyError?.message}`, 'COMPANIES', currentUser?.id, currentUser?.email);
+            logActivity('ERROR', `Erro ao criar empresa '${newCompanyName}': ${companyError?.message}`, 'COMPANIES', currentUser?.id, currentUser?.email, newCompany.id);
             return;
         }
         logActivity('INFO', `Empresa '${newCompanyName}' criada com sucesso (ID: ${newCompany.id}).`, 'COMPANIES', currentUser?.id, currentUser?.email, newCompany.id);
@@ -181,9 +181,9 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         setCompanies(prevCompanies => 
             prevCompanies.map(company => ({
                 ...company,
-                administrators: company.administrators.map(admin => 
+                administrators: company.administrators?.map((admin: User) => // Explicitly type admin as User
                     admin.id === updatedUser.id ? updatedUser : admin
-                )
+                ) || [], // Ensure it's an array even if undefined
             }))
         );
         fetchCompanies(); // Re-fetch para garantir que todos os dados estejam atualizados
@@ -308,13 +308,13 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                 <td className="py-3 px-4 text-sm text-gray-800 font-medium">{company.name}</td>
                                 <td className="py-3 px-4 text-sm text-gray-700">
                                     {company.administrators && company.administrators.length > 0 ? (
-                                        company.administrators.map((admin: any) => (
+                                        company.administrators.map((admin: User) => ( // Explicitly type admin as User
                                             <div 
                                                 key={admin.id} 
                                                 className="cursor-pointer hover:text-primary hover:underline"
-                                                onClick={() => handleOpenEditAdminModal(admin as User)}
+                                                onClick={() => handleOpenEditAdminModal(admin)}
                                             >
-                                                {admin.full_name} ({admin.email})
+                                                {admin.fullName} ({admin.email})
                                             </div>
                                         ))
                                     ) : (
@@ -347,7 +347,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                         </button>
                                         {company.administrators && company.administrators.length > 0 && (
                                             <button
-                                                onClick={() => handleOpenEditAdminModal(company.administrators[0] as User)}
+                                                onClick={() => handleOpenEditAdminModal(company.administrators[0])}
                                                 className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
                                                 aria-label="Editar administrador"
                                             >
@@ -363,7 +363,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                         </button>
                                         {company.administrators && company.administrators.length > 0 && (
                                             <button
-                                                onClick={() => confirmResetAdminPassword(company.administrators[0].id, company.administrators[0].full_name)}
+                                                onClick={() => confirmResetAdminPassword(company.administrators[0].id, company.administrators[0].fullName)}
                                                 className="px-3 py-1 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10"
                                             >
                                                 Redefinir Senha Admin

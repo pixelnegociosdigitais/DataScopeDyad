@@ -3,13 +3,13 @@ import { Survey, User, Company, UserRole, View } from '../../types';
 import { CreateIcon } from '../../components/icons/CreateIcon';
 import { PencilIcon } from '../../components/icons/PencilIcon';
 import { TrashIcon } from '../../components/icons/TrashIcon';
-import { EyeIcon } from '../../components/icons/EyeIcon';
-import { ShareIcon } from '../../components/icons/ShareIcon';
+import { EyeIcon } from '../../components/icons/EyeIcon'; // Importado
+import { ShareIcon } from '../../components/icons/ShareIcon'; // Importado
 import { DownloadIcon } from '../../components/icons/DownloadIcon';
-import { QuestionIcon } from '../../components/icons/QuestionIcon';
+import { QuestionIcon } from '../../components/icons/QuestionIcon'; // Importado
 import { GiftIcon } from '../../components/icons/GiftIcon'; // Usar GiftIcon para sorteios
-import { LinkIcon } from '../../components/icons/LinkIcon';
-import { TemplateIcon } from '../../components/icons/TemplateIcon';
+import { LinkIcon } from '../../components/icons/LinkIcon'; // Importado
+import { TemplateIcon } from '../../components/icons/TemplateIcon'; // Importado
 
 interface SurveyTableListProps {
     surveys: Survey[];
@@ -113,12 +113,12 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                                                 {survey.title}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light">
-                                                {/* Assuming companyName is available on survey object */}
-                                                {(survey as any).companyName || 'N/A'} 
+                                                {/* Accessing companyName from survey object */}
+                                                {survey.companyName || 'N/A'} 
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light">
-                                                {/* Assuming createdByName is available on survey object */}
-                                                {(survey as any).createdByName || 'Usuário Desconhecido'}
+                                                {/* Accessing createdByName from survey object */}
+                                                {survey.createdByName || 'Usuário Desconhecido'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light">
                                                 {new Date(survey.created_at!).toLocaleDateString('pt-BR')}

@@ -6,10 +6,10 @@ import { TrashIcon } from './icons/TrashIcon';
 import { CreateIcon } from './icons/CreateIcon';
 import { User, UserRole, Company, View, ModuleName } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
-import { showSuccess, showError } from '../src/utils/toast';
-import ConfirmationDialog from '../src/components/ConfirmationDialog';
+import { showError } from '../src/utils/toast'; // Removido showSuccess
+import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
 import { useAuth } from '../src/hooks/useAuth';
-import UserEditModal from '../src/components/UserEditModal';
+import UserEditModal from '../src/components/UserEditModal'; // Caminho corrigido
 
 // Mapeamento de tradução para os nomes dos módulos
 const moduleNameTranslations: Record<ModuleName, string> = {
@@ -50,7 +50,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
     const [currentPermissions, setCurrentPermissions] = useState<Record<string, boolean>>({});
     const [showEditUserModal, setShowEditUserModal] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null); // Mantido para a função confirmDeleteUser
 
     const { handleResetUserPassword, handleCreateUserForCompany, handleUpdateUserPermissions, handleAdminUpdateUserProfile, handleDeleteUser } = useAuth(setCurrentView);
 

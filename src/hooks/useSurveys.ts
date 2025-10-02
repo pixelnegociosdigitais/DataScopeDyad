@@ -69,8 +69,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     position: q.position || 0,
                 })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
                 responseCount: s.survey_responses ? s.survey_responses.length : 0,
-                companyName: s.companies?.name || 'N/A', // Adicionado
-                createdByName: s.profiles?.full_name || 'Usuário Desconhecido' // Adicionado
+                companyName: s.companies?.name || 'N/A', // Acessando diretamente 'name' do objeto 'companies'
+                createdByName: s.profiles?.full_name || 'Usuário Desconhecido' // Acessando diretamente 'full_name' do objeto 'profiles'
             }));
             console.log('useSurveys: fetchSurveys - Pesquisas processadas e definidas:', fetchedSurveys);
             logActivity('INFO', `Pesquisas carregadas para a empresa ${companyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, companyId);
@@ -308,7 +308,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     id: updatedSurveyData.id,
                     title: updatedSurveyData.title,
                     companyId: updatedSurveyData.company_id,
-                    created_by: updatedSurveyData.created_by,
+                    created_by: updatedSurveyData.created_by, // Corrected type
                     created_at: updatedSurveyData.created_at,
                     questions: updatedSurveyData.questions.map((q: any) => ({
                         id: q.id,
@@ -318,8 +318,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         position: q.position || 0,
                     })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
                     responseCount: updatedSurveyData.survey_responses ? updatedSurveyData.survey_responses.length : 0,
-                    companyName: updatedSurveyData.companies?.name || 'N/A',
-                    createdByName: updatedSurveyData.profiles?.full_name || 'Usuário Desconhecido'
+                    companyName: updatedSurveyData.companies?.name || 'N/A', // Accessing directly 'name'
+                    createdByName: updatedSurveyData.profiles?.full_name || 'Usuário Desconhecido' // Accessing directly 'full_name'
                 };
                 console.log('useSurveys: handleSaveSurvey - Dados da pesquisa atualizada:', updatedSurvey);
 

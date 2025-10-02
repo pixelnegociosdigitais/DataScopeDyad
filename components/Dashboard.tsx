@@ -159,7 +159,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                         {([QuestionType.MULTIPLE_CHOICE, QuestionType.CHECKBOX, QuestionType.RATING].includes(q.type as QuestionType)) && Array.isArray(q.data) && q.data.length > 0 && (
                              <ResponsiveContainer width="100%" height={300}>
                                 {q.type === QuestionType.RATING ? (
-                                    <BarChart data={q.data as ChartDataItem[]}> {/* Adicionando asserção de tipo aqui */}
+                                    <BarChart data={q.data as ChartDataItem[]}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis dataKey="name" />
                                         <YAxis allowDecimals={false} />
@@ -172,7 +172,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                                         <Pie
                                             activeIndex={activeIndex}
                                             activeShape={renderActiveShape}
-                                            data={q.data as ChartDataItem[]} {/* Adicionando asserção de tipo aqui */}
+                                            data={q.data as ChartDataItem[]}
                                             cx="50%"
                                             cy="50%"
                                             innerRadius={60}
@@ -182,13 +182,13 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                                             onMouseEnter={onPieEnter}
                                         >
                                           {/* Mapeamento de células para PieChart */}
-                                          {(q.data as ChartDataItem[]).map((entry, index) => (
+                                          {(q.data as ChartDataItem[]).map((_entry, index) => ( // Removed unused 'entry'
                                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                           ))}
                                         </Pie>
                                         <Tooltip />
                                         <Legend 
-                                            formatter={(legendValue: string | number, legendEntry: any) => {
+                                            formatter={(_legendValue: string | number, legendEntry: any) => { // Removed unused 'legendValue'
                                                 const dataItem = legendEntry.payload as ChartDataItem; // Type assertion here
                                                 const total = (q.data as ChartDataItem[]).reduce((sum, item) => sum + item.value, 0);
                                                 const entryValue = dataItem.value ?? 0; 
@@ -203,7 +203,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                         {([QuestionType.SHORT_TEXT, QuestionType.LONG_TEXT, QuestionType.EMAIL, QuestionType.PHONE].includes(q.type as QuestionType)) && Array.isArray(q.data) && (
                             <div className="max-h-60 overflow-y-auto pr-2">
                                 <ul className="space-y-3">
-                                    {q.data.map((text, index) => (
+                                    {q.data.map((text: string, index: number) => ( // Explicitly type 'text' as string
                                         <li key={index} className="bg-gray-50 p-3 rounded-md border-l-4 border-primary/50 text-sm text-gray-700">
                                             {text}
                                         </li>

@@ -28,6 +28,7 @@ export interface Company {
     address_city?: string;
     address_state?: string;
     status?: 'active' | 'inactive'; // Adicionado para o status da empresa
+    administrators?: User[]; // Adicionado para armazenar administradores da empresa
 }
 
 export enum QuestionType {
@@ -55,6 +56,9 @@ export interface Survey {
     questions: Question[];
     responseCount?: number; // Adicionado para armazenar a contagem de respostas
     created_at?: string; // Adicionado para a data de criação
+    created_by?: string; // Adicionado para o ID do criador
+    companyName?: string; // Adicionado para o nome da empresa
+    createdByName?: string; // Adicionado para o nome do criador
 }
 
 export interface Answer {
