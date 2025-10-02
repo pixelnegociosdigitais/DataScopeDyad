@@ -17,7 +17,7 @@ interface UseAuthReturn {
     modulePermissions: Record<ModuleName, boolean>;
     handleToggleCompanyStatus: (companyId: string, newStatus: 'active' | 'inactive') => Promise<void>;
     handleResetUserPassword: (userId: string, newPassword?: string) => Promise<void>;
-    handleCreateUserForCompany: (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword?: string) => Promise<void>;
+    handleCreateUserForCompany: (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword: string) => Promise<void>;
     handleUpdateUserPermissions: (userId: string, permissions: Record<string, boolean>) => Promise<void>;
     handleAdminUpdateUserProfile: (userId: string, updatedFields: Partial<User>) => Promise<void>;
     handleDeleteUser: (userId: string, userEmail: string) => Promise<void>;
@@ -359,25 +359,25 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
     }, [currentUser, showError, showSuccess, currentCompany]);
 
-    const _handleCreateUserForCompany = useCallback(async (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword?: string) => {
+    const _handleCreateUserForCompany = useCallback(async (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword: string) => {
         if (currentUser?.role !== UserRole.DEVELOPER && currentUser?.role !== UserRole.ADMIN) {
             showError('Você não tem permissão para criar usuários.');
             logActivity('WARN', `Tentativa de criar usuário para empresa ${companyId} por usuário sem permissão (${currentUser?.email}).`, 'AUTH', currentUser?.id, currentUser?.email, companyId);
             return;
         }
 
-        if (!temporaryPassword) {
-            showError('A senha temporária é obrigatória.');
-            logActivity('ERROR', `Tentativa de criar usuário para empresa ${companyId} sem senha temporária.`, 'AUTH', currentUser?.id, currentUser?.email, companyId);
+        if (!temporaryPassword.trim()) { // Validação robusta para senha vazia ou só com espaços
+            showError('A senha temporária não pode estar vazia.');
+            logActivity('ERROR', `Tentativa de criar usuário para empresa ${companyId} com senha temporária vazia.`, 'AUTH', currentUser?.id, currentUser?.email, companyId);
             return;
         }
 
         const { data, error } = await supabase.functions.invoke('create-user', {
             body: {
                 email,
-                password: temporaryPassword,
-                fullName: fullName, // Passar como string
-                role: role,         // Passar como string
+                password: temporaryPassword.trim(), // Garante que a senha seja enviada sem espaços em branco nas extremidades
+                fullName: fullName,
+                role: role,         
                 companyId,
             },
         });
