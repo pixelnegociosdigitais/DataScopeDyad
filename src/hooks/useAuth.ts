@@ -4,7 +4,7 @@ import { supabase } from '@/src/integrations/supabase/client';
 import { showSuccess, showError } from '@/src/utils/toast';
 import { logActivity } from '@/src/utils/logger';
 import { AuthApiError } from '@supabase/supabase-js';
-import { useAuthSession } from '@/src/context/AuthSessionContext'; // Adicionado: Importação do useAuthSession
+import { useAuthSession } from '@/src/context/AuthSessionContext';
 
 interface UseAuthReturn {
     currentUser: User | null;
@@ -48,7 +48,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
     const [modulePermissions, setModulePermissions] = useState<Record<ModuleName, boolean>>(DEFAULT_MODULE_PERMISSIONS);
 
     const fetchModulePermissions = useCallback(async (userRole: UserRole, userSpecificPermissions: Record<string, boolean> = {}) => {
-        console.log('useAuth: fetchModulePermissions - Buscando permissões para o papel:', userRole, 'e aplicando overrides:', userSpecificPermissions);
+        console.log('useAuth: fetchModulePermissions - Iniciando busca de permissões para o papel:', userRole, 'e aplicando overrides:', userSpecificPermissions);
         
         let combinedPermissions: Record<ModuleName, boolean> = { ...DEFAULT_MODULE_PERMISSIONS };
 
@@ -142,7 +142,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 profilePictureUrl: profileData.avatar_url || undefined,
                 permissions: profileData.permissions || {},
                 status: profileData.status || 'active',
-                company_id: profileData.company_id || undefined, // Adicionado company_id
+                company_id: profileData.company_id || undefined,
             };
 
             if (user.email === DEVELOPER_EMAIL && user.role !== UserRole.DEVELOPER) {
@@ -151,35 +151,34 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 logActivity('WARN', `Papel de 'Desenvolvedor' forçado para o usuário ${userEmail}.`, 'AUTH', userId, userEmail);
             }
 
-            // Only update currentUser if content has changed
-            if (JSON.stringify(user) !== JSON.stringify(currentUser)) {
-                setCurrentUser(user);
-            }
+            // Atualiza currentUser diretamente
+            setCurrentUser(user);
             
             await fetchModulePermissions(user.role, user.permissions);
 
             const company: Company | null = profileData.companies ? (profileData.companies as unknown as Company) : null;
-            // Only update currentCompany if content has changed
-            if (JSON.stringify(company) !== JSON.stringify(currentCompany)) {
-                setCurrentCompany(company);
-            }
+            // Atualiza currentCompany diretamente
+            setCurrentCompany(company);
 
             if (company) {
                 console.log('useAuth: Empresa encontrada:', profileData.companies);
+                console.log('useAuth: Company ID do perfil:', profileData.company_id); // Log detalhado
                 logActivity('INFO', `Usuário ${user.fullName} logado e vinculado à empresa ${company.name}.`, 'AUTH', userId, userEmail, company.id);
             } else {
                 console.log('useAuth: Nenhuma empresa associada ao perfil.');
+                console.log('useAuth: Company ID do perfil:', profileData.company_id); // Log detalhado
                 logActivity('INFO', `Usuário ${user.fullName} logado, mas sem empresa vinculada.`, 'AUTH', userId, userEmail);
             }
         }
         setLoadingAuth(false);
         console.log('useAuth: fetchUserData concluído. loadingAuth = false.');
-    }, [fetchModulePermissions, currentUser, currentCompany]); // Adicionar currentUser e currentCompany às dependências para a comparação
+    }, [fetchModulePermissions]); // Removido currentUser e currentCompany das dependências
 
     useEffect(() => {
         console.log('useAuth: useEffect - loadingSession:', loadingSession, 'session:', session);
         if (!loadingSession) {
             if (session) {
+                // Força a busca dos dados do usuário sempre que a sessão muda
                 fetchUserData(session.user.id, session.user.email || '');
             } else {
                 console.log('useAuth: Nenhuma sessão ativa. Resetando estados.');
@@ -190,7 +189,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
             }
         }
-    }, [session, loadingSession, fetchUserData]);
+    }, [session, loadingSession, fetchUserData]); // Adicionado fetchUserData como dependência
 
     const handleCreateCompany = useCallback(async (companyData: Omit<Company, 'id' | 'created_at'>) => {
         if (!currentUser) {
@@ -248,7 +247,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
 
         setCurrentCompany(newCompany);
-        setCurrentUser(prev => prev ? { ...prev, role: roleToAssign, company_id: newCompany.id } : null); // Atualizar company_id no currentUser
+        setCurrentUser(prev => prev ? { ...prev, role: roleToAssign, company_id: newCompany.id } : null);
         await fetchModulePermissions(roleToAssign);
         showSuccess('Empresa criada e vinculada com sucesso!');
         setCurrentView(View.SURVEY_LIST);
@@ -287,7 +286,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         } else {
             setCurrentUser(updatedUser);
             if (currentUser?.role !== updatedUser.role) {
-                await fetchModulePermissions(updatedUser.role, updatedUser.permissions); // Passar as permissões do usuário
+                await fetchModulePermissions(updatedUser.role, updatedUser.permissions);
             }
             showSuccess('Perfil atualizado com sucesso!');
             setCurrentView(View.SURVEY_LIST);

@@ -17,10 +17,8 @@ export const AuthSessionProvider: React.FC<{ children: ReactNode }> = ({ childre
         const getSession = async () => {
             console.log('AuthSessionContext: Iniciando busca da sessão...');
             const { data: { session: initialSession } } = await supabase.auth.getSession();
-            // Only update if the session is truly different
-            if (JSON.stringify(initialSession) !== JSON.stringify(session)) { // Deep comparison for stability
-                setSession(initialSession);
-            }
+            // Atualiza a sessão diretamente, sem comparação profunda
+            setSession(initialSession);
             setLoadingSession(false);
             console.log('AuthSessionContext: Sessão buscada. loadingSession = false. Sessão:', initialSession);
         };
@@ -29,10 +27,8 @@ export const AuthSessionProvider: React.FC<{ children: ReactNode }> = ({ childre
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
             console.log('AuthSessionContext: Evento onAuthStateChange. Evento:', _event, 'Sessão:', newSession);
-            // Only update if the session is truly different
-            if (JSON.stringify(newSession) !== JSON.stringify(session)) { // Deep comparison for stability
-                setSession(newSession);
-            }
+            // Atualiza a sessão diretamente, sem comparação profunda
+            setSession(newSession);
             setLoadingSession(false);
             console.log('AuthSessionContext: onAuthStateChange concluído. loadingSession = false.');
         });
@@ -41,7 +37,7 @@ export const AuthSessionProvider: React.FC<{ children: ReactNode }> = ({ childre
             console.log('AuthSessionContext: Desinscrevendo do onAuthStateChange.');
             subscription.unsubscribe();
         };
-    }, [session]); // Adicionar session como dependência para garantir que a comparação seja feita com o estado atual
+    }, []); // Removido 'session' das dependências para evitar loops e garantir que o onAuthStateChange seja o único a atualizar
 
     return (
         <AuthSessionContext.Provider value={{ session, loadingSession }}>
