@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { User, Company, UserRole, View, ModuleName, Notice } from '@/types';
+import { User, Company, UserRole, View, ModuleName } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { showSuccess, showError } from '@/src/utils/toast';
 import { logActivity } from '@/src/utils/logger';
