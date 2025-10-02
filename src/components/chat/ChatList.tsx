@@ -65,7 +65,24 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
             if (allParticipantsError) throw allParticipantsError;
 
             const chatsWithDetails: Chat[] = chatParticipantsData.map(cp => {
-                const chatData = cp.chats as Chat; // Já é do tipo Chat
+                // Explicitamente tipar o objeto aninhado 'chats' para ajudar o TypeScript
+                const rawChatData = cp.chats as {
+                    id: string;
+                    name: string | null;
+                    is_group_chat: boolean | null;
+                    last_message_at: string | null;
+                    company_id: string | null;
+                    created_at: string;
+                };
+
+                const chatData: Chat = {
+                    id: rawChatData.id,
+                    created_at: rawChatData.created_at,
+                    company_id: rawChatData.company_id,
+                    name: rawChatData.name,
+                    is_group_chat: rawChatData.is_group_chat,
+                    last_message_at: rawChatData.last_message_at,
+                };
                 const unreadCount = cp.unread_count;
                 
                 const participantsInChat: ChatParticipant[] = allParticipantsData
@@ -74,12 +91,12 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                         chat_id: p.chat_id,
                         user_id: p.user_id,
                         joined_at: p.joined_at,
-                        unread_count: p.unread_count, // Pode ser 0 ou o valor real se for o próprio usuário
-                        profiles: p.profiles as User, // O perfil do participante
+                        unread_count: p.unread_count,
+                        profiles: p.profiles as User,
                     }));
 
                 let chatDisplayName = chatData.name;
-                if (!chatData.is_group_chat) {
+                if (!chatData.is_group_chat) { // Usar o valor diretamente, que agora pode ser null
                     const otherParticipant = participantsInChat.find(p => p.profiles?.id !== currentUser.id);
                     chatDisplayName = otherParticipant?.profiles?.full_name || 'Chat Individual';
                 }
@@ -89,7 +106,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     displayName: chatDisplayName,
                     unread_count: unreadCount,
                     participants: participantsInChat,
-                } as Chat; // Cast final para garantir o tipo
+                };
             });
 
             setChats(chatsWithDetails);

@@ -109,10 +109,10 @@ export interface UserNotice {
 export interface Chat {
     id: string;
     created_at: string;
-    company_id: string;
-    name?: string; // For group chats
-    is_group_chat: boolean;
-    last_message_at?: string;
+    company_id: string | null; // Pode ser null
+    name?: string | null; // Pode ser null
+    is_group_chat: boolean | null; // Pode ser null
+    last_message_at?: string | null; // Pode ser null
     participants?: ChatParticipant[]; // Joined data
     displayName?: string; // Adicionado para exibir o nome do chat na lista
     unread_count?: number; // Adicionado para exibir a contagem de mensagens não lidas
