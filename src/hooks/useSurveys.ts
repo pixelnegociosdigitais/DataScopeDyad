@@ -397,7 +397,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         console.log('useSurveys: handleSaveResponse - Resposta principal inserida com sucesso:', newResponse);
 
         if (newResponse) {
-            const answersToInsert = answers.map(a => ({
+            const answersToInsert = answers.map((a: Answer) => ({
                 response_id: newResponse.id,
                 question_id: a.questionId,
                 value: a.value,
