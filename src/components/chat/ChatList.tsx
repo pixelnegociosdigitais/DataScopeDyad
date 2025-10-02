@@ -75,35 +75,32 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     created_at: string;
                 };
 
-                const chatData: Chat = {
+                const unreadCount: number = cp.unread_count as number; // Explicitamente tipar como number
+                
+                const participantsInChat: ChatParticipant[] = allParticipantsData
+                    .filter(p => p.chat_id === rawChatData.id)
+                    .map(p => ({
+                        chat_id: p.chat_id,
+                        user_id: p.user_id,
+                        joined_at: p.joined_at,
+                        unread_count: p.unread_count as number, // Explicitamente tipar como number
+                        profiles: p.profiles as User,
+                    }));
+
+                let chatDisplayName: string | null = rawChatData.name; // Explicitamente tipar como string | null
+                if (!rawChatData.is_group_chat) {
+                    const otherParticipant = participantsInChat.find(p => p.profiles?.id !== currentUser.id);
+                    chatDisplayName = otherParticipant?.profiles?.full_name || 'Chat Individual';
+                }
+
+                return {
                     id: rawChatData.id,
                     created_at: rawChatData.created_at,
                     company_id: rawChatData.company_id,
                     name: rawChatData.name,
                     is_group_chat: rawChatData.is_group_chat,
                     last_message_at: rawChatData.last_message_at,
-                };
-                const unreadCount = cp.unread_count;
-                
-                const participantsInChat: ChatParticipant[] = allParticipantsData
-                    .filter(p => p.chat_id === chatData.id)
-                    .map(p => ({
-                        chat_id: p.chat_id,
-                        user_id: p.user_id,
-                        joined_at: p.joined_at,
-                        unread_count: p.unread_count,
-                        profiles: p.profiles as User,
-                    }));
-
-                let chatDisplayName = chatData.name;
-                if (!chatData.is_group_chat) { // Usar o valor diretamente, que agora pode ser null
-                    const otherParticipant = participantsInChat.find(p => p.profiles?.id !== currentUser.id);
-                    chatDisplayName = otherParticipant?.profiles?.full_name || 'Chat Individual';
-                }
-
-                return {
-                    ...chatData,
-                    displayName: chatDisplayName,
+                    displayName: chatDisplayName, // Agora é string | null
                     unread_count: unreadCount,
                     participants: participantsInChat,
                 };
