@@ -55,7 +55,8 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                     phone,
                     address,
                     avatar_url,
-                    status
+                    status,
+                    company_id
                 )
             `);
 
@@ -67,7 +68,20 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         } else {
             const companiesWithAdmins = data.map(company => ({
                 ...company,
-                administrators: company.profiles.filter((p: any) => p.role === UserRole.ADMIN)
+                administrators: company.profiles
+                    .filter((p: any) => p.role === UserRole.ADMIN)
+                    .map((adminProfile: any) => ({
+                        id: adminProfile.id,
+                        fullName: adminProfile.full_name || '', // Mapeamento explícito aqui
+                        role: adminProfile.role as UserRole,
+                        email: adminProfile.email || '',
+                        phone: adminProfile.phone || undefined,
+                        address: adminProfile.address || undefined,
+                        profilePictureUrl: adminProfile.avatar_url || undefined,
+                        permissions: adminProfile.permissions || {},
+                        status: adminProfile.status || 'active',
+                        company_id: adminProfile.company_id || undefined,
+                    }))
             }));
             setCompanies(companiesWithAdmins as Company[]);
             logActivity('INFO', 'Empresas carregadas com sucesso.', 'COMPANIES', currentUser?.id, currentUser?.email);
@@ -295,7 +309,11 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                 <td className="py-3 px-4 text-sm text-gray-700">
                                     {company.administrators && company.administrators.length > 0 ? (
                                         company.administrators.map((admin: any) => (
-                                            <div key={admin.id}>
+                                            <div 
+                                                key={admin.id} 
+                                                className="cursor-pointer hover:text-primary hover:underline"
+                                                onClick={() => handleOpenEditAdminModal(admin as User)}
+                                            >
                                                 {admin.full_name} ({admin.email})
                                             </div>
                                         ))
