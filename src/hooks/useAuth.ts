@@ -251,7 +251,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         const { error } = await supabase
             .from('profiles')
             .update({
-                full_name: updatedUser.fullName,
+                full_name: updatedUser.fullName, // Mapeado para 'full_name'
                 phone: updatedUser.phone,
                 address: updatedUser.address,
                 avatar_url: updatedUser.profilePictureUrl,
@@ -426,6 +426,11 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
 
         const fieldsToUpdate: Partial<User> = { ...updatedFields };
+        // Mapear fullName para full_name para o banco de dados
+        if (fieldsToUpdate.fullName !== undefined) {
+            (fieldsToUpdate as any).full_name = fieldsToUpdate.fullName;
+            delete fieldsToUpdate.fullName;
+        }
         delete fieldsToUpdate.email;
         delete fieldsToUpdate.role;
         delete fieldsToUpdate.id;

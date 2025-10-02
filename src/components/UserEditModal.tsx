@@ -47,7 +47,7 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, onClose, onUpdateSu
         try {
             // Chamar a função do hook useAuth para atualizar o perfil
             await onAdminUpdateUserProfile(user.id, {
-                fullName: formData.fullName,
+                fullName: formData.fullName, // Será mapeado para 'full_name' no useAuth
                 phone: formData.phone,
                 address: formData.address,
                 profilePictureUrl: formData.profilePictureUrl,
