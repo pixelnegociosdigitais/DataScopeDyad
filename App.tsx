@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { UserRole, View, Survey, ModuleName, Notice } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
-import SurveyList from './components/SurveyList';
+import SurveyTableList from './src/components/SurveyTableList'; // Alterado para SurveyTableList
 import SurveyCreator from './components/SurveyCreator';
 import Dashboard from './components/Dashboard';
 import Profile from './components/Profile';
@@ -24,8 +24,9 @@ import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
 import { useSurveys } from './src/hooks/useSurveys';
-import { showError } from './src/utils/toast';
-import ConfirmationDialog from './src/components/ConfirmationDialog'; // Importar ConfirmationDialog
+import { showError, showSuccess } from './src/utils/toast'; // Importar showSuccess
+import ConfirmationDialog from './src/components/ConfirmationDialog';
+import { generatePdfReport } from './src/utils/pdfGenerator'; // Importar generatePdfReport
 
 const App: React.FC = () => {
     const { session, loadingSession } = useAuthSession();
@@ -35,8 +36,8 @@ const App: React.FC = () => {
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const [companySettingsAccessDenied, setCompanySettingsAccessDenied] = useState(false);
     const [activeNotice, setActiveNotice] = useState<Notice | null>(null);
-    const [showDeleteSurveyConfirm, setShowDeleteSurveyConfirm] = useState(false); // Estado para o diálogo de confirmação
-    const [surveyToDelete, setSurveyToDelete] = useState<Survey | null>(null); // Pesquisa a ser excluída
+    const [showDeleteSurveyConfirm, setShowDeleteSurveyConfirm] = useState(false);
+    const [surveyToDelete, setSurveyToDelete] = useState<Survey | null>(null);
 
     const {
         currentUser,
@@ -57,6 +58,7 @@ const App: React.FC = () => {
         handleSaveSurvey,
         handleDeleteSurvey,
         handleSaveResponse,
+        fetchSurveys, // Adicionado para poder recarregar as pesquisas
     } = useSurveys(currentCompany, currentUser);
 
     useEffect(() => {
@@ -83,7 +85,7 @@ const App: React.FC = () => {
         }
     }, [currentView, currentCompany, modulePermissions, loadingAuth, loadingSession, session, currentUser, setCurrentView]);
 
-    const handleSelectSurvey = useCallback(async (survey: Survey) => {
+    const handleSelectSurveyForDashboard = useCallback(async (survey: Survey) => {
         if (!modulePermissions[ModuleName.VIEW_DASHBOARD]) {
             showError('Você não tem permissão para visualizar o painel desta pesquisa.');
             return;
@@ -104,26 +106,32 @@ const App: React.FC = () => {
         setCurrentView(View.RESPOND_SURVEY);
     }, []);
 
-    const handleEditSurvey = (survey: Survey) => {
+    const handleCreateSurvey = useCallback(() => {
+        if (!modulePermissions[ModuleName.CREATE_SURVEY]) {
+            showError('Você não tem permissão para criar pesquisas.');
+            return;
+        }
+        setEditingSurvey(null);
+        setCurrentView(View.CREATE_SURVEY);
+    }, [modulePermissions]);
+
+    const handleEditSurvey = useCallback((survey: Survey) => {
         if (!modulePermissions[ModuleName.MANAGE_SURVEYS]) {
             showError('Você não tem permissão para editar pesquisas.');
             return;
         }
         setEditingSurvey(survey);
         setCurrentView(View.EDIT_SURVEY);
-    };
+    }, [modulePermissions]);
 
-    const handleDeleteSurveyWrapper = useCallback(async (surveyId: string) => {
+    const handleDeleteSurveyWrapper = useCallback(async (survey: Survey) => {
         if (!modulePermissions[ModuleName.MANAGE_SURVEYS]) {
             showError('Você não tem permissão para excluir pesquisas.');
             return;
         }
-        const survey = surveys.find(s => s.id === surveyId);
-        if (survey) {
-            setSurveyToDelete(survey);
-            setShowDeleteSurveyConfirm(true);
-        }
-    }, [surveys, modulePermissions]);
+        setSurveyToDelete(survey);
+        setShowDeleteSurveyConfirm(true);
+    }, [modulePermissions]);
 
     const confirmDeleteSurvey = useCallback(async () => {
         if (surveyToDelete) {
@@ -135,30 +143,34 @@ const App: React.FC = () => {
                 if (editingSurvey?.id === surveyToDelete.id) {
                     setEditingSurvey(null);
                 }
-                setCurrentView(View.SURVEY_LIST);
+                // No need to explicitly set view to SURVEY_LIST, as fetchSurveys will update the list
+                // and the current view will remain SURVEY_LIST if it was already there.
             }
         }
         setShowDeleteSurveyConfirm(false);
         setSurveyToDelete(null);
-    }, [surveyToDelete, handleDeleteSurvey, selectedSurvey, editingSurvey, setCurrentView]);
+    }, [surveyToDelete, handleDeleteSurvey, selectedSurvey, editingSurvey]);
 
-    const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey) => {
+    const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey, isEditing: boolean) => {
         if (!currentCompany) {
             showError('Você precisa ter uma empresa associada para criar ou editar pesquisas.');
             return;
         }
-        if (!modulePermissions[ModuleName.CREATE_SURVEY] && !editingSurvey) {
+        if (!modulePermissions[ModuleName.CREATE_SURVEY] && !isEditing) {
             showError('Você não tem permissão para criar pesquisas.');
             return;
         }
-        if (!modulePermissions[ModuleName.MANAGE_SURVEYS] && editingSurvey) {
+        if (!modulePermissions[ModuleName.MANAGE_SURVEYS] && isEditing) {
             showError('Você não tem permissão para editar pesquisas.');
             return;
         }
-        await handleSaveSurvey(surveyData, editingSurvey?.id);
+        await handleSaveSurvey(surveyData, isEditing ? surveyData.id : undefined);
         setEditingSurvey(null);
         setCurrentView(View.SURVEY_LIST);
-    }, [handleSaveSurvey, editingSurvey, modulePermissions, currentCompany]);
+        if (currentCompany?.id) {
+            fetchSurveys(currentCompany.id); // Recarregar a lista de pesquisas
+        }
+    }, [handleSaveSurvey, modulePermissions, currentCompany, fetchSurveys]);
 
     const handleSaveResponseWrapper = useCallback(async (answers: any[]) => {
         console.log('App: handleSaveResponseWrapper called with answers:', answers);
@@ -175,6 +187,60 @@ const App: React.FC = () => {
             return false;
         }
     }, [handleSaveResponse, selectedSurvey, currentUser]);
+
+    const handleManageQuestions = useCallback((survey: Survey) => {
+        setSelectedSurvey(survey);
+        setCurrentView(View.SURVEY_QUESTIONS);
+    }, []);
+
+    const handleManageGiveaway = useCallback((survey: Survey) => {
+        setSelectedSurvey(survey);
+        setCurrentView(View.GIVEAWAYS); // Giveaways já é uma view, apenas seleciona a pesquisa
+    }, []);
+
+    const handleShareSurvey = useCallback((surveyId: string) => {
+        const surveyLink = `${window.location.origin}/responder-pesquisa/${surveyId}`;
+        navigator.clipboard.writeText(surveyLink);
+        showSuccess('Link da pesquisa copiado para a área de transferência!');
+    }, []);
+
+    const handleDownloadReport = useCallback(async (survey: Survey) => {
+        try {
+            const { data: responses, error: responsesError } = await supabase
+                .from('survey_responses')
+                .select(`
+                    id,
+                    created_at,
+                    respondent_id,
+                    answers (question_id, value, questions (text, type))
+                `)
+                .eq('survey_id', survey.id);
+
+            if (responsesError) throw responsesError;
+
+            const formattedResponses = responses.map((response: any) => ({
+                id: response.id,
+                created_at: response.created_at,
+                respondent_id: response.respondent_id,
+                answers: response.answers.map((answer: any) => ({
+                    question_id: answer.question_id,
+                    value: answer.value,
+                    question_text: answer.questions?.text,
+                    question_type: answer.questions?.type,
+                }))
+            }));
+
+            await generatePdfReport(survey, formattedResponses);
+            showSuccess('Relatório PDF gerado com sucesso!');
+        } catch (error: any) {
+            console.error('Erro ao gerar relatório PDF:', error.message);
+            showError('Não foi possível gerar o relatório PDF.');
+        }
+    }, []);
+
+    const handleManageTemplates = useCallback(() => {
+        setCurrentView(View.SURVEY_TEMPLATES);
+    }, []);
 
     const handleBack = useCallback(() => {
         setCurrentView(View.SURVEY_LIST);
@@ -234,11 +300,31 @@ const App: React.FC = () => {
 
         switch (currentView) {
             case View.SURVEY_LIST:
-                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
+                return (
+                    <SurveyTableList
+                        surveys={surveys}
+                        loading={loadingSurveys}
+                        currentUser={currentUser}
+                        currentCompany={currentCompany}
+                        canManageSurveys={canManageSurveys}
+                        onCreateSurvey={handleCreateSurvey}
+                        onEditSurvey={handleEditSurvey}
+                        onDeleteSurvey={handleDeleteSurveyWrapper}
+                        onViewResponses={handleSelectSurveyForDashboard} // Usar para ir para o Dashboard
+                        onManageGiveaway={handleManageGiveaway}
+                        onManageQuestions={handleManageQuestions}
+                        onShareSurvey={handleShareSurvey}
+                        onDownloadReport={handleDownloadReport}
+                        onManageTemplates={handleManageTemplates}
+                    />
+                );
             case View.CREATE_SURVEY:
-                return <SurveyCreator onSave={handleSaveSurveyWrapper} onBack={handleBack} templates={templates} />;
+                return <SurveyCreator onSave={(surveyData) => handleSaveSurveyWrapper(surveyData, false)} onBack={handleBack} templates={templates} />;
             case View.EDIT_SURVEY:
-                return <SurveyCreator onSave={handleSaveSurveyWrapper} onBack={handleBack} surveyToEdit={editingSurvey} templates={templates} />;
+                if (editingSurvey) {
+                    return <SurveyCreator onSave={(surveyData) => handleSaveSurveyWrapper(surveyData, true)} onBack={handleBack} surveyToEdit={editingSurvey} templates={templates} />;
+                }
+                return null;
             case View.DASHBOARD:
                 if (selectedSurvey) {
                     return <Dashboard survey={selectedSurvey} responses={surveyResponses} onBack={handleBack} />;
@@ -257,6 +343,7 @@ const App: React.FC = () => {
                 }
                 return <CompanySettings company={currentCompany} onUpdate={handleUpdateCompany} onBack={handleBack} />;
             case View.GIVEAWAYS:
+                // O componente Giveaways já lida com a seleção de pesquisa internamente
                 return <Giveaways currentUser={currentUser} currentCompany={currentCompany} />;
             case View.SETTINGS_PANEL:
                 return <SettingsPanel onBack={() => setCurrentView(View.SURVEY_LIST)} setView={setCurrentView} />;
@@ -283,8 +370,56 @@ const App: React.FC = () => {
                     );
                 }
                 return <ChatLayout currentUser={currentUser} currentCompanyId={currentCompany.id} />;
+            case View.SURVEY_QUESTIONS: // Nova view para gerenciar perguntas
+                if (selectedSurvey) {
+                    // Assumindo que SurveyQuestions é um componente de página
+                    // e precisa de props semelhantes a SurveyCreator ou Dashboard
+                    // Como não tenho o código de SurveyQuestions, vou usar um placeholder
+                    return (
+                        <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
+                            <div className="flex items-center gap-4 mb-6">
+                                <button onClick={handleBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Voltar">
+                                    <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
+                                </button>
+                                <h2 className="text-2xl font-bold text-text-main">Gerenciar Perguntas da Pesquisa: {selectedSurvey.title}</h2>
+                            </div>
+                            <p className="text-text-light">Conteúdo para gerenciar perguntas...</p>
+                        </div>
+                    );
+                }
+                return null;
+            case View.SURVEY_TEMPLATES: // Nova view para gerenciar modelos
+                // Como não tenho o código de SurveyTemplates, vou usar um placeholder
+                return (
+                    <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
+                        <div className="flex items-center gap-4 mb-6">
+                            <button onClick={handleBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Voltar">
+                                <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
+                            </button>
+                            <h2 className="text-2xl font-bold text-text-main">Gerenciar Modelos de Pesquisa</h2>
+                        </div>
+                        <p className="text-text-light">Conteúdo para gerenciar modelos...</p>
+                    </div>
+                );
             default:
-                return <SurveyList surveys={surveys} onSelectSurvey={handleSelectSurvey} onStartResponse={handleStartResponse} onEditSurvey={handleEditSurvey} onDeleteSurvey={handleDeleteSurveyWrapper} canManage={canManageSurveys} currentCompany={currentCompany} />;
+                return (
+                    <SurveyTableList
+                        surveys={surveys}
+                        loading={loadingSurveys}
+                        currentUser={currentUser}
+                        currentCompany={currentCompany}
+                        canManageSurveys={canManageSurveys}
+                        onCreateSurvey={handleCreateSurvey}
+                        onEditSurvey={handleEditSurvey}
+                        onDeleteSurvey={handleDeleteSurveyWrapper}
+                        onViewResponses={handleSelectSurveyForDashboard}
+                        onManageGiveaway={handleManageGiveaway}
+                        onManageQuestions={handleManageQuestions}
+                        onShareSurvey={handleShareSurvey}
+                        onDownloadReport={handleDownloadReport}
+                        onManageTemplates={handleManageTemplates}
+                    />
+                );
         }
     };
 

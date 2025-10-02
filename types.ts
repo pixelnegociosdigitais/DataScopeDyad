@@ -54,6 +54,7 @@ export interface Survey {
     companyId: string;
     questions: Question[];
     responseCount?: number; // Adicionado para armazenar a contagem de respostas
+    created_at?: string; // Adicionado para a data de criação
 }
 
 export interface Answer {
@@ -113,6 +114,8 @@ export interface Chat {
     is_group_chat: boolean;
     last_message_at?: string;
     participants?: ChatParticipant[]; // Joined data
+    displayName?: string; // Adicionado para exibir o nome do chat na lista
+    unread_count?: number; // Adicionado para exibir a contagem de mensagens não lidas
 }
 
 export interface ChatParticipant {
@@ -120,7 +123,7 @@ export interface ChatParticipant {
     user_id: string;
     joined_at: string;
     unread_count: number;
-    profiles?: User; // Joined data for participant details
+    profiles?: User; // Joined data
 }
 
 export interface ChatMessage {
@@ -140,14 +143,16 @@ export enum View {
     PROFILE = 'PROFILE',
     RESPOND_SURVEY = 'RESPOND_SURVEY',
     COMPANY_SETTINGS = 'COMPANY_SETTINGS',
-    GIVEAWAYS = 'GIVEAWAYS', // Nova view para sorteios
-    SETTINGS_PANEL = 'SETTINGS_PANEL', // Nova view para o painel de configurações
-    MODULE_PERMISSIONS_MANAGER = 'MODULE_PERMISSIONS_MANAGER', // Nova view para gerenciamento de permissões
-    DEVELOPER_COMPANY_USER_MANAGER = 'DEVELOPER_COMPANY_USER_MANAGER', // Nova view para o Developer
-    ADMIN_USER_MANAGER = 'ADMIN_USER_MANAGER', // Nova view para o Administrador
-    LOGS_AND_AUDIT = 'LOGS_AND_AUDIT', // Nova view para Logs e Auditoria
-    MANAGE_NOTICES = 'MANAGE_NOTICES', // Nova view para gerenciar avisos
-    CHAT = 'CHAT', // Nova view para o chat
+    GIVEAWAYS = 'GIVEAWAYS',
+    SETTINGS_PANEL = 'SETTINGS_PANEL',
+    MODULE_PERMISSIONS_MANAGER = 'MODULE_PERMISSIONS_MANAGER',
+    DEVELOPER_COMPANY_USER_MANAGER = 'DEVELOPER_COMPANY_USER_MANAGER',
+    ADMIN_USER_MANAGER = 'ADMIN_USER_MANAGER',
+    LOGS_AND_AUDIT = 'LOGS_AND_AUDIT',
+    MANAGE_NOTICES = 'MANAGE_NOTICES',
+    CHAT = 'CHAT',
+    SURVEY_QUESTIONS = 'SURVEY_QUESTIONS', // Nova view para gerenciar perguntas
+    SURVEY_TEMPLATES = 'SURVEY_TEMPLATES', // Nova view para gerenciar modelos
 }
 
 export enum ModuleName {

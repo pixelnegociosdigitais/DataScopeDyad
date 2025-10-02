@@ -40,7 +40,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     options,
                     position
                 ),
-                survey_responses(*)
+                survey_responses(*),
+                companies (name),
+                profiles (full_name)
             `)
             .eq('company_id', companyId)
             .order('created_at', { ascending: false });
@@ -57,6 +59,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 id: s.id,
                 title: s.title,
                 companyId: s.company_id,
+                created_by: s.created_by,
+                created_at: s.created_at,
                 questions: s.questions.map((q: any) => ({
                     id: q.id,
                     text: q.text,
@@ -65,6 +69,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     position: q.position || 0,
                 })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
                 responseCount: s.survey_responses ? s.survey_responses.length : 0,
+                companyName: s.companies?.name || 'N/A', // Adicionado
+                createdByName: s.profiles?.full_name || 'Usuário Desconhecido' // Adicionado
             }));
             console.log('useSurveys: fetchSurveys - Pesquisas processadas e definidas:', fetchedSurveys);
             logActivity('INFO', `Pesquisas carregadas para a empresa ${companyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, companyId);
@@ -75,7 +81,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         setLoadingSurveys(false);
         console.log('useSurveys: fetchSurveys - Nenhuma pesquisa encontrada ou erro. loadingSurveys = false.');
         return [];
-    }, []);
+    }, [currentUser]);
 
     const fetchSurveyResponses = useCallback(async (surveyId: string) => {
         console.log('useSurveys: fetchSurveyResponses - Iniciando busca de respostas para surveyId:', surveyId);
@@ -283,7 +289,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         options,
                         position
                     ),
-                    survey_responses(*)
+                    survey_responses(*),
+                    companies (name),
+                    profiles (full_name)
                 `)
                 .eq('id', targetSurveyId)
                 .single();
@@ -300,6 +308,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     id: updatedSurveyData.id,
                     title: updatedSurveyData.title,
                     companyId: updatedSurveyData.company_id,
+                    created_by: updatedSurveyData.created_by,
+                    created_at: updatedSurveyData.created_at,
                     questions: updatedSurveyData.questions.map((q: any) => ({
                         id: q.id,
                         text: q.text,
@@ -308,6 +318,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         position: q.position || 0,
                     })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
                     responseCount: updatedSurveyData.survey_responses ? updatedSurveyData.survey_responses.length : 0,
+                    companyName: updatedSurveyData.companies?.name || 'N/A',
+                    createdByName: updatedSurveyData.profiles?.full_name || 'Usuário Desconhecido'
                 };
                 console.log('useSurveys: handleSaveSurvey - Dados da pesquisa atualizada:', updatedSurvey);
 
@@ -419,6 +431,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             
             if (currentCompany?.id) {
                 console.log('useSurveys: handleSaveResponse - Chamando fetchSurveys e fetchSurveyResponses para atualizar contagens e dados do painel.');
+                fetchSurveys(currentCompany.id); // Recarregar a lista de pesquisas para atualizar a contagem de respostas
             }
             showSuccess('Resposta enviada com sucesso!');
             logActivity('INFO', `Resposta enviada com sucesso para pesquisa '${selectedSurvey.title}' (Resposta ID: ${newResponse.id}).`, 'SURVEY_RESPONSES', currentUser.id, currentUser.email, currentCompany?.id);
