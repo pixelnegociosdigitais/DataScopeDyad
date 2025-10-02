@@ -376,8 +376,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             body: {
                 email,
                 password: temporaryPassword,
-                fullName,
-                role,
+                fullName: fullName, // Passar como string
+                role: role,         // Passar como string
                 companyId,
             },
         });
