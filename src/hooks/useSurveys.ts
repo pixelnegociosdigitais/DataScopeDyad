@@ -63,7 +63,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     type: q.type,
                     options: q.options || undefined,
                     position: q.position || 0,
-                })).sort((a, b) => (a.position || 0) - (b.position || 0)),
+                })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
                 responseCount: s.survey_responses ? s.survey_responses.length : 0,
             }));
             console.log('useSurveys: fetchSurveys - Pesquisas processadas e definidas:', fetchedSurveys);
@@ -105,7 +105,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             const fetchedResponses: SurveyResponse[] = data.map(r => ({
                 id: r.id,
                 surveyId: r.survey_id,
-                answers: r.answers.map((a: any) => ({
+                answers: r.answers.map((a: Answer) => ({
                     questionId: a.question_id,
                     value: a.value,
                 })),
@@ -306,7 +306,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         type: q.type,
                         options: q.options || undefined,
                         position: q.position || 0,
-                    })).sort((a, b) => (a.position || 0) - (b.position || 0)),
+                    })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
                     responseCount: updatedSurveyData.survey_responses ? updatedSurveyData.survey_responses.length : 0,
                 };
                 console.log('useSurveys: handleSaveSurvey - Dados da pesquisa atualizada:', updatedSurvey);
