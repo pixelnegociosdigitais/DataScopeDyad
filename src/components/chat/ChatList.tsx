@@ -64,9 +64,10 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
 
             if (allParticipantsError) throw allParticipantsError;
 
-            const chatsWithDetails: Chat[] = chatParticipantsData.map(cp => {
-                // Explicitamente tipar o objeto aninhado 'chats' para ajudar o TypeScript
-                const rawChatData = cp.chats as {
+            const chatsWithDetails: Chat[] = chatParticipantsData.map((cp: { // Tipagem explícita para 'cp'
+                chat_id: string;
+                unread_count: number;
+                chats: {
                     id: string;
                     name: string | null;
                     is_group_chat: boolean | null;
@@ -74,8 +75,10 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     company_id: string | null;
                     created_at: string;
                 };
+            }) => {
+                const rawChatData = cp.chats; // Agora TypeScript deve inferir corretamente como objeto único
 
-                const unreadCount: number = cp.unread_count as number; // Explicitamente tipar como number
+                const unreadCount: number = cp.unread_count; // Já é number, mas mantendo a clareza
                 
                 const participantsInChat: ChatParticipant[] = allParticipantsData
                     .filter(p => p.chat_id === rawChatData.id)
@@ -83,19 +86,17 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                         chat_id: p.chat_id,
                         user_id: p.user_id,
                         joined_at: p.joined_at,
-                        unread_count: p.unread_count as number, // Explicitamente tipar como number
-                        profiles: p.profiles ? { // Mapear explicitamente para a interface User
+                        unread_count: p.unread_count, // Já é number
+                        profiles: p.profiles ? { // Mapeamento explícito para a interface User
                             id: p.profiles.id,
                             fullName: p.profiles.full_name || '',
                             role: p.profiles.role as UserRole,
                             email: p.profiles.email || '',
                             profilePictureUrl: p.profiles.avatar_url || undefined,
-                            // Outras propriedades opcionais da interface User não são selecionadas aqui,
-                            // então elas serão undefined, o que é aceitável.
                         } : undefined,
                     }));
 
-                let chatDisplayName: string | null = rawChatData.name; // Explicitamente tipar como string | null
+                let chatDisplayName: string | null = rawChatData.name;
                 if (!rawChatData.is_group_chat) {
                     const otherParticipant = participantsInChat.find(p => p.profiles?.id !== currentUser.id);
                     chatDisplayName = otherParticipant?.profiles?.fullName || 'Chat Individual';
@@ -108,7 +109,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     name: rawChatData.name,
                     is_group_chat: rawChatData.is_group_chat,
                     last_message_at: rawChatData.last_message_at,
-                    displayName: chatDisplayName, // Agora é string | null
+                    displayName: chatDisplayName,
                     unread_count: unreadCount,
                     participants: participantsInChat,
                 };
