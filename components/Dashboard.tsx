@@ -18,15 +18,6 @@ interface ChartDataItem {
     value: number;
 }
 
-// Interface para o payload da legenda do Recharts
-interface RechartsLegendPayload {
-    value: string | number;
-    id: string | number;
-    type: string;
-    color?: string;
-    payload?: ChartDataItem; // O item de dados original
-}
-
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#14B8A6', '#F97316'];
 
 const renderActiveShape = (props: any) => {
@@ -197,9 +188,9 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                                         </Pie>
                                         <Tooltip />
                                         <Legend 
-                                            formatter={(name: string, entry: RechartsLegendPayload) => {
+                                            formatter={(name: string, { payload }: { payload?: ChartDataItem }) => {
                                                 const total = (q.data as ChartDataItem[]).reduce((sum, item) => sum + item.value, 0);
-                                                const entryValue = entry.payload?.value ?? 0; 
+                                                const entryValue = payload?.value ?? 0; 
                                                 const percentage = total > 0 ? ((entryValue / total) * 100).toFixed(2) : '0.00';
                                                 return `${name} (${percentage}%)`;
                                             }}
