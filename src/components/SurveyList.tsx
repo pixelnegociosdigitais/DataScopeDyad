@@ -2,24 +2,24 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { Survey, User, Company, UserRole } from '../../types';
 import { showError, showSuccess } from '../utils/toast';
-import { CreateIcon } from './icons/CreateIcon';
-import { EditIcon } from './icons/EditIcon';
-import { TrashIcon } from './icons/TrashIcon'; // Usando TrashIcon
-import { EyeIcon } from './icons/EyeIcon';
-import { ShareIcon } from './icons/ShareIcon';
-import { DownloadIcon } from './icons/DownloadIcon';
-import { ChartIcon } from './icons/ChartIcon';
-import { PrizeIcon } from './icons/PrizeIcon';
-import { LinkIcon } from './icons/LinkIcon';
-import { QuestionIcon } from './icons/QuestionIcon';
-import { TemplateIcon } from './icons/TemplateIcon';
-import SurveyForm from './SurveyForm';
-import SurveyResponses from './SurveyResponses';
-import SurveyGiveaway from './SurveyGiveaway';
-import SurveyQuestions from './SurveyQuestions';
-import SurveyTemplates from './SurveyTemplates';
+import { CreateIcon } from '../../components/icons/CreateIcon';
+import { PencilIcon } from '../../components/icons/PencilIcon';
+import { TrashIcon } from '../../components/icons/TrashIcon'; // Usando TrashIcon
+import { EyeIcon } from '../../components/icons/EyeIcon';
+import { ShareIcon } from '../../components/icons/ShareIcon';
+import { DownloadIcon } from '../../components/icons/DownloadIcon';
+import { ChartIcon } from '../../components/icons/ChartIcon';
+import { PrizeIcon } from '../../components/icons/PrizeIcon';
+import { LinkIcon } from '../../components/icons/LinkIcon';
+import { QuestionIcon } from '../../components/icons/QuestionIcon';
+import { TemplateIcon } from '../../components/icons/TemplateIcon';
+import SurveyForm from '../../components/SurveyForm';
+import SurveyResponses from '../../components/SurveyResponses';
+import SurveyGiveaway from '../../components/SurveyGiveaway';
+import SurveyQuestions from '../../components/SurveyQuestions';
+import SurveyTemplates from '../../components/SurveyTemplates';
 import { generatePdfReport } from '../utils/pdfGenerator';
-import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Importar ConfirmationDialog
+import ConfirmationDialog from '../ConfirmationDialog'; // Importar ConfirmationDialog
 
 interface SurveyListProps {
     currentUser: User;
@@ -52,6 +52,13 @@ const SurveyList: React.FC<SurveyListProps> = ({ currentUser, currentCompany }) 
                     company_id,
                     created_by,
                     created_at,
+                    questions (
+                        id,
+                        text,
+                        type,
+                        options,
+                        position
+                    ),
                     companies (name),
                     profiles (full_name)
                 `)
@@ -69,8 +76,19 @@ const SurveyList: React.FC<SurveyListProps> = ({ currentUser, currentCompany }) 
 
             if (error) throw error;
 
-            setSurveys(data.map(s => ({
-                ...s,
+            setSurveys(data.map((s: any) => ({
+                id: s.id,
+                title: s.title,
+                companyId: s.company_id,
+                created_by: s.created_by,
+                created_at: s.created_at,
+                questions: s.questions.map((q: any) => ({
+                    id: q.id,
+                    text: q.text,
+                    type: q.type,
+                    options: q.options || undefined,
+                    position: q.position || 0,
+                })).sort((a: any, b: any) => (a.position || 0) - (b.position || 0)),
                 companyName: s.companies?.name || 'N/A',
                 createdByName: s.profiles?.full_name || 'Usuário Desconhecido'
             })) as Survey[]);
@@ -182,7 +200,7 @@ const SurveyList: React.FC<SurveyListProps> = ({ currentUser, currentCompany }) 
         }
     };
 
-    const canManageSurveys = currentUser.role === UserRole.ADMINISTRATOR || currentUser.role === UserRole.DEVELOPER;
+    const canManageSurveys = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
 
     return (
         <div className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -259,7 +277,7 @@ const SurveyList: React.FC<SurveyListProps> = ({ currentUser, currentCompany }) 
                                                 {survey.createdByName}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light">
-                                                {new Date(survey.created_at).toLocaleDateString('pt-BR')}
+                                                {new Date(survey.created_at!).toLocaleDateString('pt-BR')}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <div className="flex justify-end space-x-2">
@@ -302,10 +320,10 @@ const SurveyList: React.FC<SurveyListProps> = ({ currentUser, currentCompany }) 
                                                         <>
                                                             <button
                                                                 onClick={() => handleEditSurvey(survey)}
-                                                                className="text-primary hover:text-primary-dark p-2 rounded-full hover:bg-primary-light"
+                                                                className="text-primary hover:text-primary-dark p-2 rounded-full hover:bg-primary/10"
                                                                 title="Editar Pesquisa"
                                                             >
-                                                                <EditIcon className="h-5 w-5" />
+                                                                <PencilIcon className="h-5 w-5" />
                                                             </button>
                                                             <button
                                                                 onClick={() => handleDeleteSurvey(survey)}

@@ -23,24 +23,26 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
     const fetchChats = useCallback(async () => {
         setLoading(true);
         try {
-            const { data: chatParticipants, error: participantsError } = await supabase
+            // Primeiro, buscar os chats dos quais o usuário é participante
+            const { data: chatParticipantsData, error: participantsError } = await supabase
                 .from('chat_participants')
                 .select(`
                     chat_id,
+                    unread_count,
                     chats (
                         id,
                         name,
                         is_group_chat,
                         last_message_at,
-                        company_id
-                    ),
-                    unread_count
+                        company_id,
+                        created_at
+                    )
                 `)
                 .eq('user_id', currentUser.id);
 
             if (participantsError) throw participantsError;
 
-            const chatIds = chatParticipants.map(cp => cp.chat_id);
+            const chatIds = chatParticipantsData.map(cp => cp.chat_id);
 
             if (chatIds.length === 0) {
                 setChats([]);
@@ -48,20 +50,33 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                 return;
             }
 
-            const { data: allParticipants, error: allParticipantsError } = await supabase
+            // Em seguida, buscar todos os participantes para esses chats, incluindo seus perfis
+            const { data: allParticipantsData, error: allParticipantsError } = await supabase
                 .from('chat_participants')
                 .select(`
                     chat_id,
+                    user_id,
+                    joined_at,
+                    unread_count,
                     profiles(id, full_name, avatar_url)
                 `)
                 .in('chat_id', chatIds);
 
             if (allParticipantsError) throw allParticipantsError;
 
-            const chatsWithDetails = chatParticipants.map(cp => {
-                const chatData = cp.chats as Chat;
+            const chatsWithDetails: Chat[] = chatParticipantsData.map(cp => {
+                const chatData = cp.chats as Chat; // Já é do tipo Chat
                 const unreadCount = cp.unread_count;
-                const participantsInChat = allParticipants.filter(p => p.chat_id === chatData.id);
+                
+                const participantsInChat: ChatParticipant[] = allParticipantsData
+                    .filter(p => p.chat_id === chatData.id)
+                    .map(p => ({
+                        chat_id: p.chat_id,
+                        user_id: p.user_id,
+                        joined_at: p.joined_at,
+                        unread_count: p.unread_count, // Pode ser 0 ou o valor real se for o próprio usuário
+                        profiles: p.profiles as User, // O perfil do participante
+                    }));
 
                 let chatDisplayName = chatData.name;
                 if (!chatData.is_group_chat) {
@@ -73,11 +88,11 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     ...chatData,
                     displayName: chatDisplayName,
                     unread_count: unreadCount,
-                    participants: participantsInChat.map(p => p.profiles)
-                };
+                    participants: participantsInChat,
+                } as Chat; // Cast final para garantir o tipo
             });
 
-            setChats(chatsWithDetails as Chat[]);
+            setChats(chatsWithDetails);
         } catch (error: any) {
             console.error('Erro ao buscar chats:', error.message);
             showError('Não foi possível carregar os chats.');
@@ -148,7 +163,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
         setShowDeleteChatConfirm(true);
     }, []);
 
-    const canDeleteChat = currentUser.role === UserRole.ADMINISTRATOR || currentUser.role === UserRole.DEVELOPER;
+    const canDeleteChat = currentUser.role === UserRole.ADMIN || currentUser.role === UserRole.DEVELOPER;
 
     return (
         <div className="flex flex-col h-full bg-white border-r border-gray-200">

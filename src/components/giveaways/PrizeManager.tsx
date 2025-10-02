@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Prize, Company, User, UserRole, ModuleName } from '../../../types';
 import { supabase } from '../../integrations/supabase/client';
 import { showError, showSuccess } from '../../utils/toast';
-import { CreateIcon } from '../../../components/icons/CreateIcon';
+import { CreateIcon } from '../../components/icons/CreateIcon';
 import { PencilIcon } from '../../../components/icons/PencilIcon';
 import { TrashIcon } from '../../../components/icons/TrashIcon';
 import ConfirmationDialog from '../ConfirmationDialog';
