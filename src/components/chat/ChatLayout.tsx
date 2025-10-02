@@ -11,7 +11,8 @@ interface ChatLayoutProps {
 const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }) => {
     const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
 
-    const handleSelectChat = (chat: Chat) => {
+    // A função agora aceita 'Chat | null'
+    const handleSelectChat = (chat: Chat | null) => {
         setSelectedChat(chat);
     };
 
@@ -24,7 +25,13 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
             {selectedChat ? (
                 <ChatWindow chat={selectedChat} currentUser={currentUser} onBack={handleBackToChatList} />
             ) : (
-                <ChatList currentUser={currentUser} currentCompanyId={currentCompanyId} onSelectChat={handleSelectChat} />
+                <ChatList 
+                    currentUser={currentUser} 
+                    currentCompanyId={currentCompanyId} 
+                    onSelectChat={handleSelectChat} 
+                    onCreateChat={() => { /* Implementar lógica de criação de chat */ }}
+                    selectedChatId={selectedChat?.id || null}
+                />
             )}
         </div>
     );
