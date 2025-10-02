@@ -11,7 +11,6 @@ interface ChatLayoutProps {
 const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }) => {
     const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
 
-    // A função agora aceita 'Chat | null'
     const handleSelectChat = (chat: Chat | null) => {
         setSelectedChat(chat);
     };
@@ -28,7 +27,7 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
                 <ChatList 
                     currentUser={currentUser} 
                     currentCompanyId={currentCompanyId} 
-                    onSelectChat={handleSelectChat} 
+                    onSelectChat={handleSelectChat as (chat: Chat | null) => void} // Asserção de tipo explícita
                     onCreateChat={() => { /* Implementar lógica de criação de chat */ }}
                     selectedChatId={selectedChat?.id || null}
                 />
