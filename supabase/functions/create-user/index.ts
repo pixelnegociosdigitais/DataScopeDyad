@@ -30,7 +30,7 @@ serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: fullName, company_id: companyId } // Adicionando company_id aqui
+      user_metadata: { full_name: fullName, company_id: companyId } // Ainda passamos company_id aqui para o gatilho
     })
 
     if (authError) {
@@ -44,14 +44,14 @@ serve(async (req) => {
     }
     if (!user) throw new Error("Criação do usuário falhou, nenhum usuário retornado.")
 
-    // O gatilho 'handle_new_user_with_company' já criou um perfil e agora também define o company_id.
-    // Precisamos apenas atualizar o papel, caso seja diferente do padrão do gatilho.
-    const { error: profileError } = await adminClient
+    // Explicitamente atualiza o perfil com o papel E o company_id.
+    // Isso garante que o company_id seja definido, mesmo que haja algum atraso ou problema com o gatilho.
+    const { error: profileUpdateError } = await adminClient
       .from('profiles')
-      .update({ role: role }) // Apenas atualiza o papel
+      .update({ role: role, company_id: companyId }) // Adicionado company_id aqui
       .eq('id', user.id)
 
-    if (profileError) throw profileError
+    if (profileUpdateError) throw profileUpdateError
 
     return new Response(JSON.stringify({ user }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
