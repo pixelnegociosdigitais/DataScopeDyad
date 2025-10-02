@@ -30,25 +30,25 @@ serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: fullName }
+      user_metadata: { full_name: fullName, company_id: companyId } // Adicionando company_id aqui
     })
 
     if (authError) {
         if (authError instanceof AuthApiError && authError.status === 409) {
             return new Response(JSON.stringify({ error: 'Já existe um usuário com este e-mail.' }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                status: 409, // Retorna 409 para conflito de e-mail
+                status: 409,
             })
         }
         throw authError
     }
     if (!user) throw new Error("Criação do usuário falhou, nenhum usuário retornado.")
 
-    // O gatilho 'handle_new_user_with_company' já criou um perfil.
-    // Agora, atualizamos esse perfil com o company_id e o papel correto.
+    // O gatilho 'handle_new_user_with_company' já criou um perfil e agora também define o company_id.
+    // Precisamos apenas atualizar o papel, caso seja diferente do padrão do gatilho.
     const { error: profileError } = await adminClient
       .from('profiles')
-      .update({ company_id: companyId, role: role })
+      .update({ role: role }) // Apenas atualiza o papel
       .eq('id', user.id)
 
     if (profileError) throw profileError
