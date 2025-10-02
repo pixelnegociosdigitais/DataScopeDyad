@@ -58,7 +58,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                     user_id,
                     joined_at,
                     unread_count,
-                    profiles(id, full_name, avatar_url)
+                    profiles(id, full_name, avatar_url, role, email)
                 `)
                 .in('chat_id', chatIds);
 
@@ -84,13 +84,21 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSe
                         user_id: p.user_id,
                         joined_at: p.joined_at,
                         unread_count: p.unread_count as number, // Explicitamente tipar como number
-                        profiles: p.profiles as User,
+                        profiles: p.profiles ? { // Mapear explicitamente para a interface User
+                            id: p.profiles.id,
+                            fullName: p.profiles.full_name || '',
+                            role: p.profiles.role as UserRole,
+                            email: p.profiles.email || '',
+                            profilePictureUrl: p.profiles.avatar_url || undefined,
+                            // Outras propriedades opcionais da interface User não são selecionadas aqui,
+                            // então elas serão undefined, o que é aceitável.
+                        } : undefined,
                     }));
 
                 let chatDisplayName: string | null = rawChatData.name; // Explicitamente tipar como string | null
                 if (!rawChatData.is_group_chat) {
                     const otherParticipant = participantsInChat.find(p => p.profiles?.id !== currentUser.id);
-                    chatDisplayName = otherParticipant?.profiles?.full_name || 'Chat Individual';
+                    chatDisplayName = otherParticipant?.profiles?.fullName || 'Chat Individual';
                 }
 
                 return {
