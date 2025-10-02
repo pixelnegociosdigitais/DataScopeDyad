@@ -188,10 +188,10 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                                         </Pie>
                                         <Tooltip />
                                         <Legend 
-                                            formatter={(name: string, entry: { payload?: ChartDataItem, value: number }) => {
+                                            formatter={(name: string, entry: ChartDataItem) => {
                                                 // q.data já é ChartDataItem[] devido à asserção de tipo no componente Pie
                                                 const total = (q.data as ChartDataItem[]).reduce((sum, item) => sum + item.value, 0);
-                                                // Adiciona verificação para entry.payload
+                                                // entry é agora o ChartDataItem completo
                                                 const entryValue = entry.value ?? 0; 
                                                 const percentage = total > 0 ? ((entryValue / total) * 100).toFixed(2) : '0.00';
                                                 return `${name} (${percentage}%)`;
