@@ -3,7 +3,8 @@ import { User, Company, UserRole, View, ModuleName, ModulePermission, Notice } f
 import { supabase } from '@/src/integrations/supabase/client';
 import { showSuccess, showError } from '@/src/utils/toast';
 import { logActivity } from '@/src/utils/logger';
-import { AuthApiError } from '@supabase/supabase-js'; // Importar AuthApiError
+import { AuthApiError } from '@supabase/supabase-js';
+import { useAuthSession } from '@/src/context/AuthSessionContext'; // Adicionado: Importação do useAuthSession
 
 interface UseAuthReturn {
     currentUser: User | null;
