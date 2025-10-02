@@ -106,7 +106,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 id: r.id,
                 surveyId: r.survey_id,
                 answers: r.answers.map((a: { question_id: string; value: string | number | string[] }) => ({
-                    questionId: a.question_id,
+                    questionId: a.question_id, // Corrigido aqui
                     value: a.value,
                 })),
             }));
@@ -399,7 +399,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         if (newResponse) {
             const answersToInsert = answers.map((a: Answer) => ({
                 response_id: newResponse.id,
-                question_id: a.questionId,
+                question_id: a.questionId, // Corrigido aqui
                 value: a.value,
             }));
             console.log('useSurveys: handleSaveResponse - Respostas detalhadas a serem inseridas:', answersToInsert);
