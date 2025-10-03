@@ -20,6 +20,7 @@ import JoinCompanyPrompt from './components/JoinCompanyPrompt';
 import NoticeCreator from './src/components/NoticeCreator';
 import ChatLayout from './src/components/chat/ChatLayout';
 import { ChatIcon } from './components/icons/ChatIcon';
+import { ArrowLeftIcon } from './components/icons/ArrowLeftIcon'; // Added import
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
