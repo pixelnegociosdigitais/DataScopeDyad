@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
-import { BuildingIcon } from './icons/BuildingIcon';
-import { UserIcon } from './icons/UserIcon';
-import { TrashIcon } from './icons/TrashIcon';
-import { CreateIcon } from './icons/CreateIcon';
-import { Company, User, UserRole, View } from '../types';
-import { supabase } from '../src/integrations/supabase/client';
-import { showSuccess, showError } from '../src/utils/toast';
-import ConfirmationDialog from './ConfirmationDialog'; // Corrected path
-import CompanyEditModal from './CompanyEditModal'; // Corrected path
-import { useAuth } from '../src/hooks/useAuth';
-import { logActivity } from '../src/utils/logger';
-import UserEditModal from './UserEditModal'; // Corrected path
+import { ArrowLeftIcon } from 'components/icons/ArrowLeftIcon';
+import { BuildingIcon } from 'components/icons/BuildingIcon';
+import { UserIcon } from 'components/icons/UserIcon';
+import { TrashIcon } from 'components/icons/TrashIcon';
+import { CreateIcon } from 'components/icons/CreateIcon';
+import { Company, User, UserRole, View } from '@/types';
+import { supabase } from '@/src/integrations/supabase/client';
+import { showSuccess, showError } from '@/src/utils/toast';
+import ConfirmationDialog from './ConfirmationDialog';
+import CompanyEditModal from './CompanyEditModal';
+import { useAuth } from '@/src/hooks/useAuth';
+import { logActivity } from '@/src/utils/logger';
+import UserEditModal from './UserEditModal';
 
 interface DeveloperCompanyUserManagerProps {
     onBack: () => void;
@@ -34,8 +34,8 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     const [showEditCompanyModal, setShowEditCompanyModal] = useState(false);
     const [editingCompany, setEditingCompany] = useState<Company | null>(null);
     const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
-    const [showEditAdminModal, setShowEditAdminModal] = useState(false); // Novo estado para o modal de edição do admin
-    const [editingAdmin, setEditingAdmin] = useState<User | null>(null); // Novo estado para o admin sendo editado
+    const [showEditAdminModal, setShowEditAdminModal] = useState(false);
+    const [editingAdmin, setEditingAdmin] = useState<User | null>(null);
 
     const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany, currentUser, handleAdminUpdateUserProfile } = useAuth(setCurrentView);
 
@@ -65,13 +65,13 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             setCompanies([]);
             logActivity('ERROR', `Erro ao buscar empresas: ${error.message}`, 'COMPANIES', currentUser?.id, currentUser?.email);
         } else {
-            const companiesWithAdmins = data.map(company => ({
+            const companiesWithAdmins = data.map((company: any) => ({ // Explicitly type company
                 ...company,
                 administrators: company.profiles
                     .filter((p: any) => p.role === UserRole.ADMIN)
                     .map((adminProfile: any) => ({
                         id: adminProfile.id,
-                        fullName: adminProfile.full_name || '', // Mapeamento explícito aqui
+                        fullName: adminProfile.full_name || '',
                         role: adminProfile.role as UserRole,
                         email: adminProfile.email || '',
                         phone: adminProfile.phone || undefined,
@@ -208,14 +208,14 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                 .select('id')
                 .eq('company_id', companyToDelete.id);
             if (surveysError) throw surveysError;
-            const surveyIds = surveysData.map(s => s.id);
+            const surveyIds = surveysData.map((s: { id: string }) => s.id); // Explicitly type s
 
             const { data: responsesData, error: responsesError } = await supabase
                 .from('survey_responses')
                 .select('id')
                 .in('survey_id', surveyIds);
             if (responsesError) throw responsesError;
-            const responseIds = responsesData.map(r => r.id);
+            const responseIds = responsesData.map((r: { id: string }) => r.id); // Explicitly type r
 
             const { error: deleteWinnersError } = await supabase.from('giveaway_winners').delete().in('survey_id', surveyIds);
             if (deleteWinnersError) throw deleteWinnersError;
