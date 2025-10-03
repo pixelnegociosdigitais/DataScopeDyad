@@ -12,42 +12,61 @@ export const generatePdfReport = async (survey: Survey, elementToCapture: HTMLEl
         const canvas = await html2canvas(elementToCapture, { scale: 2 });
         const imgData = canvas.toDataURL('image/png');
 
-        const imgWidth = pageWidth - 2 * margin; // Adjust image width to fit page with margins
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        const imgWidth = pageWidth - 2 * margin; // Image width in PDF (mm)
+        const imgHeight = (canvas.height * imgWidth) / canvas.width; // Image height in PDF (mm)
 
-        let currentImgHeight = 0;
-        let remainingImgHeight = imgHeight;
+        let position = 0; // Current Y position in the PDF (mm)
+        let heightLeft = imgHeight; // Remaining height of the image to be added (mm)
 
-        // Add image, handling multiple pages if necessary
-        while (remainingImgHeight > 0) {
-            const pageBreakHeight = pageHeight - 2 * margin; // Usable height per page
+        // Calculate the ratio of canvas pixels to PDF millimeters
+        const pxToMmRatio = canvas.width / imgWidth;
 
-            if (currentImgHeight > 0) {
+        while (heightLeft > 0) {
+            if (position > 0) {
                 doc.addPage();
             }
 
-            const sX = 0; // Source X
-            const sY = Math.max(0, imgHeight - remainingImgHeight); // Source Y
-            const sWidth = canvas.width; // Source Width
-            const sHeight = Math.min(canvas.height, remainingImgHeight * (canvas.width / imgWidth)); // Source Height
+            // Calculate the portion of the original canvas to draw for the current page
+            const clipHeightPx = Math.min(heightLeft, pageHeight - 2 * margin) * pxToMmRatio;
+            const clipYPx = (imgHeight - heightLeft) * pxToMmRatio;
 
-            doc.addImage(
-                imgData,
-                'PNG',
-                margin,
-                margin,
-                imgWidth,
-                Math.min(imgHeight, pageBreakHeight),
-                undefined,
-                'FAST',
-                sX,
-                sY,
-                sWidth,
-                sHeight
-            );
+            // Create a temporary canvas for the current page's content
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = clipHeightPx;
+            const tempCtx = tempCanvas.getContext('2d');
 
-            remainingImgHeight -= pageBreakHeight;
-            currentImgHeight += pageBreakHeight;
+            if (tempCtx) {
+                // Draw the specific portion of the original canvas onto the temporary canvas
+                tempCtx.drawImage(
+                    canvas,
+                    0, // sX: Start X on source canvas
+                    clipYPx, // sY: Start Y on source canvas
+                    canvas.width, // sWidth: Width to draw from source canvas
+                    clipHeightPx, // sHeight: Height to draw from source canvas
+                    0, // dX: Start X on destination canvas
+                    0, // dY: Start Y on destination canvas
+                    canvas.width, // dWidth: Width to draw on destination canvas
+                    clipHeightPx // dHeight: Height to draw on destination canvas
+                );
+
+                const tempImgData = tempCanvas.toDataURL('image/png');
+                const tempImgHeightMm = (tempCanvas.height * imgWidth) / tempCanvas.width;
+
+                doc.addImage(
+                    tempImgData,
+                    'PNG',
+                    margin,
+                    margin,
+                    imgWidth,
+                    tempImgHeightMm,
+                    undefined,
+                    'FAST'
+                );
+            }
+
+            heightLeft -= (pageHeight - 2 * margin);
+            position += (pageHeight - 2 * margin);
         }
 
         doc.save(`${survey.title.replace(/\s/g, '_')}_relatorio.pdf`);
