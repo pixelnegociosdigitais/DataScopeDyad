@@ -103,8 +103,8 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                     .filter(p => p.chat_id === rawChatData.id)
                     .map(p => {
                         // Extrair o primeiro perfil do array, se existir
-                        const rawProfileData = p.profiles;
-                        const profileData = rawProfileData && rawProfileData.length > 0 ? rawProfileData[0] : null;
+                        const rawProfileDataArray = p.profiles;
+                        const profileData = rawProfileDataArray && rawProfileDataArray.length > 0 ? rawProfileDataArray[0] : null;
                         
                         return {
                             chat_id: p.chat_id,
