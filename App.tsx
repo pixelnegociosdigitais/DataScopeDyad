@@ -76,6 +76,7 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (!loadingAuth && !loadingSession && session && currentUser) {
+            console.log('App: Surveys loaded:', surveys); // ADDED LOG
             if (currentView === View.COMPANY_SETTINGS) {
                 if (currentCompany && !modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS]) {
                     showError('Você não tem permissão para configurar a empresa.');
@@ -83,7 +84,7 @@ const App: React.FC = () => {
                 }
             }
         }
-    }, [currentView, currentCompany, modulePermissions, loadingAuth, loadingSession, session, currentUser, setCurrentView]);
+    }, [currentView, currentCompany, modulePermissions, loadingAuth, loadingSession, session, currentUser, setCurrentView, surveys]);
 
     const handleSelectSurveyForDashboard = useCallback(async (survey: Survey) => {
         if (!modulePermissions[ModuleName.VIEW_DASHBOARD]) {
@@ -145,6 +146,7 @@ const App: React.FC = () => {
     }, [surveyToDelete, handleDeleteSurvey, selectedSurvey, editingSurvey]);
 
     const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey, isEditing: boolean) => {
+        console.log('App: handleSaveSurveyWrapper called. currentUser:', currentUser, 'currentCompany:', currentCompany); // ADDED LOG
         if (!currentCompany) {
             showError('Você precisa ter uma empresa associada para criar ou editar pesquisas.');
             return;
@@ -163,7 +165,7 @@ const App: React.FC = () => {
         if (currentCompany?.id) {
             fetchSurveys(currentCompany.id);
         }
-    }, [handleSaveSurvey, modulePermissions, currentCompany, fetchSurveys]);
+    }, [handleSaveSurvey, modulePermissions, currentCompany, fetchSurveys, currentUser]);
 
     const handleSaveResponseWrapper = useCallback(async (answers: any[]) => {
         console.log('App: handleSaveResponseWrapper called with answers:', answers);

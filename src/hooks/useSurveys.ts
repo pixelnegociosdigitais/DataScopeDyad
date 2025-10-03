@@ -56,7 +56,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             setLoadingSurveys(false);
             return [];
         } else if (data) {
-            console.log('useSurveys: fetchSurveys - Dados de pesquisas recebidos:', data);
+            console.log('useSurveys: fetchSurveys - RAW data received from Supabase:', data); // ADDED LOG
             const fetchedSurveys: Survey[] = (data as RawSurveyData[]).map((s) => ({
                 id: s.id,
                 title: s.title,
@@ -74,7 +74,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 companyName: s.companies && s.companies.length > 0 ? s.companies[0].name : 'N/A', // Accessing from array
                 createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido' // Accessing from array
             }));
-            console.log('useSurveys: fetchSurveys - Pesquisas processadas e definidas:', fetchedSurveys);
+            console.log('useSurveys: fetchSurveys - Processed surveys:', fetchedSurveys); // ADDED LOG
             logActivity('INFO', `Pesquisas carregadas para a empresa ${companyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, companyId);
             setSurveys(fetchedSurveys);
             setLoadingSurveys(false);
@@ -231,6 +231,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
         } else {
             console.log('useSurveys: handleSaveSurvey - Criando nova pesquisa.');
+            console.log('useSurveys: handleSaveSurvey - Inserting with company_id:', currentCompany.id, 'and created_by:', currentUser.id); // ADDED LOG
             const { data: newSurvey, error: surveyInsertError } = await supabase
                 .from('surveys')
                 .insert({
