@@ -41,7 +41,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             console.error('Erro ao buscar mensagens:', error);
             showError('Não foi possível carregar as mensagens.');
         } else {
-            setMessages(data as ChatMessage[]);
+            // Mapear os dados para corresponder às interfaces ChatMessage e User
+            const mappedMessages: ChatMessage[] = (data || []).map((msg: any) => ({
+                ...msg,
+                sender: msg.sender ? {
+                    id: msg.sender.id,
+                    fullName: msg.sender.full_name, // Mapear full_name para fullName
+                    avatar_url: msg.sender.avatar_url,
+                    // Outras propriedades de User não são buscadas aqui, então serão undefined
+                } as User : undefined,
+            }));
+            setMessages(mappedMessages);
         }
         setLoadingMessages(false);
     }, [chat.id]);
@@ -58,7 +68,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
         if (error) {
             console.error('Erro ao buscar participantes:', error);
         } else {
-            setParticipants(data as ChatParticipant[]);
+            // Mapear os dados para corresponder à interface ChatParticipant e User
+            const mappedParticipants: ChatParticipant[] = (data || []).map((p: any) => ({
+                ...p,
+                profiles: p.profiles ? {
+                    id: p.profiles.id,
+                    fullName: p.profiles.full_name, // Mapear full_name para fullName
+                    avatar_url: p.profiles.avatar_url,
+                    // Outras propriedades de User não são buscadas aqui, então serão undefined
+                } as User : undefined,
+            }));
+            setParticipants(mappedParticipants);
         }
     }, [chat.id]);
 
@@ -111,11 +131,11 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
 
                 // Usar participantsRef.current para acessar a lista de participantes mais recente
                 const participant = participantsRef.current.find(p => p.user_id === userId);
-                if (participant?.profiles?.full_name) {
+                if (participant?.profiles?.fullName) { // Acessar fullName
                     setTypingUsers(prev => {
                         const newTypingUsers = { ...prev };
                         if (isTyping) {
-                            newTypingUsers[userId] = participant.profiles.full_name;
+                            newTypingUsers[userId] = participant.profiles.fullName; // Acessar fullName
                         } else {
                             delete newTypingUsers[userId];
                         }
@@ -183,8 +203,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
         }
         // Encontra o outro participante que não seja o usuário atual
         const otherParticipant = participants.find(p => p.user_id !== currentUser.id);
-        // Retorna o nome completo do outro participante, usando 'full_name'
-        return otherParticipant?.profiles?.full_name || 'Chat Individual';
+        // Retorna o nome completo do outro participante, usando 'fullName'
+        return otherParticipant?.profiles?.fullName || 'Chat Individual';
     };
 
     const typingUserNames = Object.values(typingUsers);
