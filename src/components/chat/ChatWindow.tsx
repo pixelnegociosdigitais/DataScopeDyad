@@ -125,10 +125,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
                         role: rawNewMessage.sender.role as UserRole || UserRole.USER, // Garantir role
                         email: rawNewMessage.sender.email || '', // Garantir email
                         phone: rawNewMessage.sender.phone || undefined,
-                        address: rawNewMessage.sender.address || undefined,
-                        permissions: rawNewMessage.sender.permissions || {},
-                        status: rawNewMessage.sender.status || 'active',
-                        company_id: rawNewMessage.sender.company_id || undefined,
+                        address: rawNewMessage.address || undefined,
+                        permissions: rawNewMessage.permissions || {},
+                        status: rawNewMessage.status || 'active',
+                        company_id: rawNewMessage.company_id || undefined,
                     } as User : undefined,
                 };
 
@@ -233,7 +233,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
         // Encontra o outro participante que não seja o usuário atual
         const otherParticipant = participants.find(p => p.user_id !== currentUser.id);
         // Retorna o nome completo do outro participante, usando 'fullName'
-        return otherParticipant?.profiles?.fullName || 'Chat Individual';
+        if (otherParticipant && otherParticipant.profiles) {
+            return otherParticipant.profiles.fullName || 'Chat Individual';
+        }
+        return 'Chat Individual';
     };
 
     const typingUserNames = Object.values(typingUsers);
