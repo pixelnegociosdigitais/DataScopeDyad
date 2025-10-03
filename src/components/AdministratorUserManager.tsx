@@ -6,10 +6,10 @@ import { TrashIcon } from '../../components/icons/TrashIcon';
 import { CreateIcon } from '../../components/icons/CreateIcon';
 import { User, UserRole, Company, View, ModuleName } from '../../types';
 import { supabase } from '../integrations/supabase/client';
-import { showSuccess, showError } from '../utils/toast';
-import ConfirmationDialog from '../ConfirmationDialog';
+import { showError } from '../utils/toast'; // Removed showSuccess
+import ConfirmationDialog from './ConfirmationDialog'; // Corrected path
 import { useAuth } from '../hooks/useAuth';
-import UserEditModal from '../UserEditModal';
+import UserEditModal from './UserEditModal'; // Corrected path
 
 // Mapeamento de tradução para os nomes dos módulos
 const moduleNameTranslations: Record<ModuleName, string> = {
@@ -177,9 +177,12 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
         setDialogTitle('Confirmar Exclusão de Usuário');
         setDialogMessage(`Tem certeza que deseja excluir o usuário "${user.fullName}" (${user.email})? Esta ação é irreversível.`);
         setDialogConfirmAction(() => async () => {
-            await handleDeleteUser(user.id, user.email);
-            setShowConfirmationDialog(false);
-            fetchUsers();
+            if (userToDelete) { // Garante que userToDelete não é nulo
+                await handleDeleteUser(userToDelete.id, userToDelete.email);
+                setShowConfirmationDialog(false);
+                fetchUsers();
+                setUserToDelete(null); // Limpa o estado após a ação
+            }
         });
         setShowConfirmationDialog(true);
     };
@@ -414,7 +417,10 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                     confirmText="Confirmar"
                     onConfirm={dialogConfirmAction || (() => setShowConfirmationDialog(false))}
                     cancelText="Cancelar"
-                    onCancel={() => setShowConfirmationDialog(false)}
+                    onCancel={() => {
+                        setShowConfirmationDialog(false);
+                        setUserToDelete(null); // Limpa o estado ao cancelar
+                    }}
                 />
             )}
         </div>

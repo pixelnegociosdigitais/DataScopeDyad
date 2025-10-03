@@ -1,18 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeftIcon } from '../../components/icons/ArrowLeftIcon';
-import { BuildingIcon } from '../../components/icons/BuildingIcon';
-import { UserIcon } from '../../components/icons/UserIcon';
-import { PencilIcon } from '../../components/icons/PencilIcon';
-import { TrashIcon } from '../../components/icons/TrashIcon';
-import { CreateIcon } from '../../components/icons/CreateIcon';
-import { Company, User, UserRole, View } from '../../types';
-import { supabase } from '../integrations/supabase/client';
-import { showSuccess, showError } from '../utils/toast';
-import ConfirmationDialog from '../ConfirmationDialog';
-import CompanyEditModal from '../CompanyEditModal';
-import { useAuth } from '../hooks/useAuth';
-import { logActivity } from '../utils/logger';
-import UserEditModal from '../UserEditModal'; // Importar UserEditModal
+import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
+import { BuildingIcon } from './icons/BuildingIcon';
+import { UserIcon } from './icons/UserIcon';
+import { TrashIcon } from './icons/TrashIcon';
+import { CreateIcon } from './icons/CreateIcon';
+import { Company, User, UserRole, View } from '../types';
+import { supabase } from '../src/integrations/supabase/client';
+import { showSuccess, showError } from '../src/utils/toast';
+import ConfirmationDialog from './ConfirmationDialog'; // Corrected path
+import CompanyEditModal from './CompanyEditModal'; // Corrected path
+import { useAuth } from '../src/hooks/useAuth';
+import { logActivity } from '../src/utils/logger';
+import UserEditModal from './UserEditModal'; // Corrected path
 
 interface DeveloperCompanyUserManagerProps {
     onBack: () => void;
@@ -108,7 +107,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
 
         if (companyError || !newCompany) {
             showError('Erro ao criar a empresa: ' + companyError?.message);
-            logActivity('ERROR', `Erro ao criar empresa '${newCompanyName}': ${companyError?.message}`, 'COMPANIES', currentUser?.id, currentUser?.email);
+            logActivity('ERROR', `Erro ao criar empresa '${newCompanyName}': ${companyError?.message}`, 'COMPANIES', currentUser?.id, currentUser?.email, newCompany.id);
             return;
         }
         logActivity('INFO', `Empresa '${newCompanyName}' criada com sucesso (ID: ${newCompany.id}).`, 'COMPANIES', currentUser?.id, currentUser?.email, newCompany.id);
@@ -181,9 +180,9 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         setCompanies(prevCompanies => 
             prevCompanies.map(company => ({
                 ...company,
-                administrators: company.administrators.map(admin => 
+                administrators: company.administrators?.map((admin: User) => // Explicitly type admin as User
                     admin.id === updatedUser.id ? updatedUser : admin
-                )
+                ) || [], // Ensure it's an array even if undefined
             }))
         );
         fetchCompanies(); // Re-fetch para garantir que todos os dados estejam atualizados
@@ -308,13 +307,13 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                 <td className="py-3 px-4 text-sm text-gray-800 font-medium">{company.name}</td>
                                 <td className="py-3 px-4 text-sm text-gray-700">
                                     {company.administrators && company.administrators.length > 0 ? (
-                                        company.administrators.map((admin: any) => (
+                                        company.administrators.map((admin: User) => ( // Explicitly type admin as User
                                             <div 
                                                 key={admin.id} 
                                                 className="cursor-pointer hover:text-primary hover:underline"
-                                                onClick={() => handleOpenEditAdminModal(admin as User)}
+                                                onClick={() => handleOpenEditAdminModal(admin)}
                                             >
-                                                {admin.full_name} ({admin.email})
+                                                {admin.fullName} ({admin.email})
                                             </div>
                                         ))
                                     ) : (
@@ -347,7 +346,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                         </button>
                                         {company.administrators && company.administrators.length > 0 && (
                                             <button
-                                                onClick={() => handleOpenEditAdminModal(company.administrators[0] as User)}
+                                                onClick={() => handleOpenEditAdminModal(company.administrators[0])}
                                                 className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
                                                 aria-label="Editar administrador"
                                             >
@@ -469,7 +468,10 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                     confirmText="Confirmar"
                     onConfirm={dialogConfirmAction || (() => setShowConfirmationDialog(false))}
                     cancelText="Cancelar"
-                    onCancel={() => setShowConfirmationDialog(false)}
+                    onCancel={() => {
+                        setShowConfirmationDialog(false);
+                        setCompanyToDelete(null);
+                    }}
                 />
             )}
         </div>

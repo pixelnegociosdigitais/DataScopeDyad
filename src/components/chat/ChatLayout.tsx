@@ -119,7 +119,7 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
                     currentUser={currentUser} 
                     onSelectChat={handleSelectChat}
                     onCreateChat={handleCreateChat} // Passar a função implementada
-                    selectedChatId={selectedChat ? selectedChat.id : null}
+                    selectedChatId={selectedChat?.id || null}
                     currentCompanyId={currentCompanyId} // Passar currentCompanyId
                 />
             )}
