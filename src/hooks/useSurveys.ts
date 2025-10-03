@@ -69,8 +69,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     position: q.position || 0,
                 })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
                 responseCount: s.survey_responses ? s.survey_responses.length : 0,
-                companyName: s.companies?.name || 'N/A', // Acessando diretamente 'name' do objeto 'companies'
-                createdByName: s.profiles?.full_name || 'Usuário Desconhecido' // Acessando diretamente 'full_name' do objeto 'profiles'
+                companyName: s.companies && s.companies.length > 0 ? s.companies[0].name : 'N/A', // Accessing from array
+                createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido' // Accessing from array
             }));
             console.log('useSurveys: fetchSurveys - Pesquisas processadas e definidas:', fetchedSurveys);
             logActivity('INFO', `Pesquisas carregadas para a empresa ${companyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, companyId);
@@ -318,8 +318,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         position: q.position || 0,
                     })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
                     responseCount: updatedSurveyData.survey_responses ? updatedSurveyData.survey_responses.length : 0,
-                    companyName: updatedSurveyData.companies?.name || 'N/A', // Accessing directly 'name'
-                    createdByName: updatedSurveyData.profiles?.full_name || 'Usuário Desconhecido' // Accessing directly 'full_name'
+                    companyName: updatedSurveyData.companies && updatedSurveyData.companies.length > 0 ? updatedSurveyData.companies[0].name : 'N/A', // Accessing from array
+                    createdByName: updatedSurveyData.profiles && updatedSurveyData.profiles.length > 0 ? updatedSurveyData.profiles[0].full_name : 'Usuário Desconhecido' // Accessing from array
                 };
                 console.log('useSurveys: handleSaveSurvey - Dados da pesquisa atualizada:', updatedSurvey);
 

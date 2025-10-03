@@ -200,6 +200,6 @@ export interface RawSurveyData {
     created_at: string;
     questions: Question[];
     survey_responses: any[]; // Adjust if a more specific type is needed for responses
-    companies: { name: string } | null; // Expecting a single object or null
-    profiles: { full_name: string } | null; // Expecting a single object or null
+    companies: { name: string }[] | null; // Expecting an array of objects or null
+    profiles: { full_name: string }[] | null; // Expecting an array of objects or null
 }
