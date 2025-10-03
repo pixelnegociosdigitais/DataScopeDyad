@@ -12,13 +12,13 @@ interface RawChatParticipantData {
     user_id: string;
     joined_at: string;
     unread_count: number;
-    profiles: {
+    profiles: Array<{ // Corrigido para esperar um array de perfis
         id: string;
         full_name: string | null;
         avatar_url: string | null;
         role: UserRole | null;
         email: string | null;
-    } | null; // Supabase pode retornar um objeto único ou null para 'profiles'
+    }> | null; // Supabase pode retornar um array de objetos ou null para 'profiles'
 }
 
 interface ChatListProps {
@@ -73,8 +73,8 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                     joined_at,
                     unread_count,
                     profiles(id, full_name, avatar_url, role, email)
-                `); // Não usar .in('chat_id', chatIds) aqui para evitar problemas de RLS se a política não permitir.
-                    // A filtragem será feita no cliente.
+                `)
+                .in('chat_id', chatIds);
 
             if (allParticipantsError) throw allParticipantsError;
 
@@ -102,8 +102,10 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                 const participantsInChat: ChatParticipant[] = (allParticipantsData as RawChatParticipantData[])
                     .filter(p => p.chat_id === rawChatData.id)
                     .map(p => {
-                        // 'p.profiles' já deve ser um objeto ou null devido à interface RawChatParticipantData
-                        const profileData = p.profiles; 
+                        // Extrair o primeiro perfil do array, se existir
+                        const rawProfileData = p.profiles;
+                        const profileData = rawProfileData && rawProfileData.length > 0 ? rawProfileData[0] : null;
+                        
                         return {
                             chat_id: p.chat_id,
                             user_id: p.user_id,
