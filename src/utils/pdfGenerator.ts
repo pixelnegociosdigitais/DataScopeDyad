@@ -2,7 +2,11 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Survey } from '../../types';
 
-export const generatePdfReport = async (survey: Survey, elementToCapture: HTMLElement) => {
+export const generatePdfReport = async (survey: Survey, elementToCapture: HTMLElement | null) => { // Updated type
+    if (!elementToCapture) {
+        throw new Error('Element to capture for PDF report is null.');
+    }
+
     const doc = new jsPDF('p', 'mm', 'a4');
     const margin = 10;
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -43,7 +47,7 @@ export const generatePdfReport = async (survey: Survey, elementToCapture: HTMLEl
                     0, // sX: Start X on source canvas
                     clipYPx, // sY: Start Y on source canvas
                     canvas.width, // sWidth: Width to draw from source canvas
-                    clipHeightPx, // sHeight: Height to draw from source canvas
+                    clipHeightPx, // sHeight: Height to draw on source canvas
                     0, // dX: Start X on destination canvas
                     0, // dY: Start Y on destination canvas
                     canvas.width, // dWidth: Width to draw on destination canvas
