@@ -208,6 +208,7 @@ export interface RawSurveyData {
 export interface ChartDataItem {
     name: string;
     value: number;
+    [key: string]: any; // Adicionado para permitir propriedades adicionais
 }
 
 // New interface to combine Question with its analysis data
