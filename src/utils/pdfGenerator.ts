@@ -10,7 +10,7 @@ export const generatePdfReport = async (survey: Survey, elementToCapture: HTMLEl
 
     try {
         const canvas = await html2canvas(elementToCapture, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
+        // const imgData = canvas.toDataURL('image/png'); // Removed unused variable
 
         const imgWidth = pageWidth - 2 * margin; // Image width in PDF (mm)
         const imgHeight = (canvas.height * imgWidth) / canvas.width; // Image height in PDF (mm)
