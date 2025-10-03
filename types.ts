@@ -216,3 +216,12 @@ export interface ChartDataItem {
 export interface QuestionAnalysis extends Question {
     data: string[] | ChartDataItem[];
 }
+
+export interface SurveyTemplateManagerProps {
+    onBack: () => void;
+    templates: Survey[];
+    currentUser: User; // Added currentUser prop
+    modulePermissions: Record<ModuleName, boolean>;
+    onSaveTemplate: (templateData: Survey, editingTemplateId?: string) => Promise<void>;
+    onDeleteTemplate: (templateId: string) => Promise<boolean>;
+}

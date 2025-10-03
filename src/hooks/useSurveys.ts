@@ -136,7 +136,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
         if (error) {
             console.error('useSurveys: fetchTemplates - Erro ao buscar templates:', error);
-            logActivity('ERROR', `Erro ao buscar templates de pesquisa: ${error.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
+            logActivity('ERROR', `Erro ao buscar templates de pesquisa: ${error.message}`, 'SURVEY_TEMPLATES', currentUser?.id, currentUser?.email, currentCompany?.id);
             return;
         }
 
@@ -149,7 +149,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 questions: template.questions as Question[],
             }));
             setTemplates(fetchedTemplates);
-            logActivity('INFO', `Templates de pesquisa carregados.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
+            logActivity('INFO', `Templates de pesquisa carregados.`, 'SURVEY_TEMPLATES', currentUser?.id, currentUser?.email, currentCompany?.id);
             console.log('useSurveys: fetchTemplates - Templates processados e definidos:', fetchedTemplates);
         }
     }, [currentUser, currentCompany]); // Adicionado currentUser e currentCompany para logActivity
@@ -449,7 +449,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
     const handleSaveTemplate = useCallback(async (templateData: Survey, editingTemplateId?: string) => {
         if (!currentUser) {
             showError('Usuário não identificado para salvar o modelo.');
-            logActivity('ERROR', `Tentativa de salvar modelo sem usuário logado.`, 'SURVEY_TEMPLATES', currentUser?.id, currentUser?.email, currentCompany?.id);
+            logActivity('ERROR', `Tentativa de salvar modelo sem usuário logado.`, 'SURVEY_TEMPLATES', undefined, undefined, currentCompany?.id);
             return;
         }
 
@@ -483,7 +483,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
     const handleDeleteTemplate = useCallback(async (templateId: string): Promise<boolean> => {
         if (!currentUser) {
             showError('Usuário não identificado para excluir o modelo.');
-            logActivity('ERROR', `Tentativa de excluir modelo sem usuário logado.`, 'SURVEY_TEMPLATES', currentUser?.id, currentUser?.email, currentCompany?.id);
+            logActivity('ERROR', `Tentativa de excluir modelo sem usuário logado.`, 'SURVEY_TEMPLATES', undefined, undefined, currentCompany?.id);
             return false;
         }
 
