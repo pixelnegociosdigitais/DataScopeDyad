@@ -41,6 +41,42 @@ const renderActiveShape = (props: any) => {
   );
 };
 
+// Define a type for the active shape renderer
+type ActiveShapeRenderer = (props: any) => React.ReactElement;
+
+// Define props for our custom interactive Pie component
+interface InteractivePieChartProps {
+    data: ChartDataItem[];
+    activeIndex: number;
+    onPieEnter: (_: any, index: number) => void;
+    renderActiveShape: ActiveShapeRenderer;
+}
+
+const InteractivePie: React.FC<InteractivePieChartProps> = ({
+    data,
+    activeIndex,
+    onPieEnter,
+    renderActiveShape
+}) => (
+    <Pie
+        activeIndex={activeIndex}
+        activeShape={renderActiveShape}
+        data={data}
+        cx="50%"
+        cy="50%"
+        innerRadius={60}
+        outerRadius={80}
+        fill="#8884d8" // This fill is for the default segments, activeShape will override
+        dataKey="value"
+        onMouseEnter={onPieEnter}
+    >
+        {data.map((_entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+        ))}
+    </Pie>
+);
+
+
 const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashboardRef }) => {
     const [activeIndex, setActiveIndex] = React.useState(0);
 
@@ -147,23 +183,12 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
                                     </BarChart>
                                 ) : (
                                     <PieChart>
-                                        <Pie
-                                            activeIndex={activeIndex}
-                                            activeShape={renderActiveShape}
+                                        <InteractivePie
                                             data={q.data as ChartDataItem[]}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            fill="#8884d8"
-                                            dataKey="value"
-                                            onMouseEnter={onPieEnter}
-                                        >
-                                          {/* Mapeamento de células para PieChart */}
-                                          {(q.data as ChartDataItem[]).map((_entry, index) => (
-                                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                          ))}
-                                        </Pie>
+                                            activeIndex={activeIndex}
+                                            onPieEnter={onPieEnter}
+                                            renderActiveShape={renderActiveShape}
+                                        />
                                         <Tooltip />
                                         <Legend 
                                             formatter={(_legendValue: string | number, legendEntry: any) => {
