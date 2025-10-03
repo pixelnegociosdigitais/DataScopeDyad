@@ -154,10 +154,10 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
 
         const channel = supabase
             .channel(`public:chats`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, payload => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, (_payload) => { // Renomeado para _payload
                 fetchChats();
             })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participants', filter: `user_id=eq.${currentUser.id}` }, payload => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participants', filter: `user_id=eq.${currentUser.id}` }, (_payload) => { // Renomeado para _payload
                 fetchChats();
             })
             .subscribe();
