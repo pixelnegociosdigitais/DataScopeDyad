@@ -2,56 +2,57 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Survey, SurveyResponse, QuestionType } from '../../types';
 
-export const generatePdfReport = async (survey: Survey, responses: any[]) => {
+export const generatePdfReport = async (survey: Survey, elementToCapture: HTMLElement) => {
     const doc = new jsPDF('p', 'mm', 'a4');
     const margin = 10;
-    let yPos = margin;
-    const lineHeight = 7;
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-    doc.setFontSize(18);
-    doc.text(`Relatório da Pesquisa: ${survey.title}`, margin, yPos);
-    yPos += lineHeight * 2;
+    try {
+        const canvas = await html2canvas(elementToCapture, { scale: 2 });
+        const imgData = canvas.toDataURL('image/png');
 
-    doc.setFontSize(12);
-    doc.text(`Total de Respostas: ${responses.length}`, margin, yPos);
-    yPos += lineHeight;
-    doc.text(`Criado em: ${new Date(survey.created_at!).toLocaleDateString('pt-BR')}`, margin, yPos);
-    yPos += lineHeight * 2;
+        const imgWidth = pageWidth - 2 * margin; // Adjust image width to fit page with margins
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    responses.forEach((response, responseIndex) => {
-        if (yPos + lineHeight * 5 > doc.internal.pageSize.getHeight() - margin) {
-            doc.addPage();
-            yPos = margin;
+        let currentImgHeight = 0;
+        let remainingImgHeight = imgHeight;
+
+        // Add image, handling multiple pages if necessary
+        while (remainingImgHeight > 0) {
+            const pageBreakHeight = pageHeight - 2 * margin; // Usable height per page
+
+            if (currentImgHeight > 0) {
+                doc.addPage();
+            }
+
+            const sX = 0; // Source X
+            const sY = Math.max(0, imgHeight - remainingImgHeight); // Source Y
+            const sWidth = canvas.width; // Source Width
+            const sHeight = Math.min(canvas.height, remainingImgHeight * (canvas.width / imgWidth)); // Source Height
+
+            doc.addImage(
+                imgData,
+                'PNG',
+                margin,
+                margin,
+                imgWidth,
+                Math.min(imgHeight, pageBreakHeight),
+                undefined,
+                'FAST',
+                sX,
+                sY,
+                sWidth,
+                sHeight
+            );
+
+            remainingImgHeight -= pageBreakHeight;
+            currentImgHeight += pageBreakHeight;
         }
 
-        doc.setFontSize(14);
-        doc.text(`Resposta #${responseIndex + 1}`, margin, yPos);
-        yPos += lineHeight;
-
-        doc.setFontSize(10);
-        doc.text(`ID da Resposta: ${response.id}`, margin, yPos);
-        yPos += lineHeight;
-        doc.text(`Data da Resposta: ${new Date(response.created_at).toLocaleString('pt-BR')}`, margin, yPos);
-        yPos += lineHeight * 1.5;
-
-        response.answers.forEach((answer: any) => {
-            if (yPos + lineHeight * 2 > doc.internal.pageSize.getHeight() - margin) {
-                doc.addPage();
-                yPos = margin;
-            }
-            doc.setFontSize(10);
-            doc.text(`Pergunta: ${answer.question_text || 'N/A'}`, margin, yPos);
-            yPos += lineHeight;
-            let answerValue = answer.value;
-            if (Array.isArray(answerValue)) {
-                answerValue = answerValue.join(', ');
-            }
-            doc.text(`Resposta: ${answerValue || 'Não respondido'}`, margin + 5, yPos);
-            yPos += lineHeight * 1.5;
-        });
-        yPos += lineHeight; // Espaço entre as respostas
-    });
-
-    doc.save(`${survey.title.replace(/\s/g, '_')}_relatorio.pdf`);
+        doc.save(`${survey.title.replace(/\s/g, '_')}_relatorio.pdf`);
+    } catch (error) {
+        console.error('Error generating PDF from HTML:', error);
+        throw new Error('Failed to generate PDF report from dashboard content.');
+    }
 };

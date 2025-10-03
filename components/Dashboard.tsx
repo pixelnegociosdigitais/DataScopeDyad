@@ -10,6 +10,7 @@ interface DashboardProps {
     survey: Survey;
     responses: SurveyResponse[];
     onBack: () => void;
+    dashboardRef: React.RefObject<HTMLDivElement>; // Adicionar a prop dashboardRef
 }
 
 // Nova interface para os itens de dados dos gráficos
@@ -48,8 +49,7 @@ const renderActiveShape = (props: any) => {
   );
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
-    const dashboardRef = useRef<HTMLDivElement>(null);
+const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashboardRef }) => {
     const [activeIndex, setActiveIndex] = React.useState(0);
 
     const onPieEnter = (_: any, index: number) => {
@@ -85,20 +85,6 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
             return { ...q, data: [] };
         });
     }, [survey, responses]);
-
-    const exportToPDF = () => {
-        const input = dashboardRef.current;
-        if (input) {
-            html2canvas(input, { scale: 2 }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`${survey.title.replace(/\s/g, '_')}_relatorio.pdf`);
-            });
-        }
-    };
 
     const exportToCSV = () => {
         let csvContent = "data:text/csv;charset=utf-8,";
@@ -143,7 +129,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack }) => {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={exportToPDF} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">
+                    <button onClick={() => dashboardRef.current && (window as any).handleDownloadReport(survey, dashboardRef.current)} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">
                         <DownloadIcon className="h-4 w-4" /> Exportar PDF
                     </button>
                     <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">

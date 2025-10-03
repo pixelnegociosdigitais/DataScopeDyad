@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { UserRole, View, Survey, ModuleName, Notice } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -38,6 +38,8 @@ const App: React.FC = () => {
     const [activeNotice, setActiveNotice] = useState<Notice | null>(null);
     const [showDeleteSurveyConfirm, setShowDeleteSurveyConfirm] = useState(false);
     const [surveyToDelete, setSurveyToDelete] = useState<Survey | null>(null);
+
+    const dashboardRef = useRef<HTMLDivElement>(null); // Adicionar ref para o dashboard
 
     const {
         currentUser,
@@ -205,32 +207,12 @@ const App: React.FC = () => {
     }, []);
 
     const handleDownloadReport = useCallback(async (survey: Survey) => {
+        if (!dashboardRef.current) {
+            showError('Não foi possível encontrar o conteúdo do dashboard para exportar.');
+            return;
+        }
         try {
-            const { data: responses, error: responsesError } = await supabase
-                .from('survey_responses')
-                .select(`
-                    id,
-                    created_at,
-                    respondent_id,
-                    answers (question_id, value, questions (text, type))
-                `)
-                .eq('survey_id', survey.id);
-
-            if (responsesError) throw responsesError;
-
-            const formattedResponses = responses.map((response: any) => ({
-                id: response.id,
-                created_at: response.created_at,
-                respondent_id: response.respondent_id,
-                answers: response.answers.map((answer: any) => ({
-                    question_id: answer.question_id,
-                    value: answer.value,
-                    question_text: answer.questions?.text,
-                    question_type: answer.questions?.type,
-                }))
-            }));
-
-            await generatePdfReport(survey, formattedResponses);
+            await generatePdfReport(survey, dashboardRef.current);
             showSuccess('Relatório PDF gerado com sucesso!');
         } catch (error: any) {
             console.error('Erro ao gerar relatório PDF:', error.message);
@@ -327,7 +309,7 @@ const App: React.FC = () => {
                 return null;
             case View.DASHBOARD:
                 if (selectedSurvey) {
-                    return <Dashboard survey={selectedSurvey} responses={surveyResponses} onBack={handleBack} />;
+                    return <Dashboard survey={selectedSurvey} responses={surveyResponses} onBack={handleBack} dashboardRef={dashboardRef} />;
                 }
                 return null;
             case View.PROFILE:
