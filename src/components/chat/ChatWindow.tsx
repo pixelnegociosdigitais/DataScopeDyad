@@ -103,7 +103,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
         const channel = supabase
             .channel(`chat_${chat.id}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chat.id}` }, payload => {
-                const newMessage = payload.new as ChatMessage;
+                const rawNewMessage = payload.new as any; // Cast para any para acessar full_name
+                const newMessage: ChatMessage = {
+                    ...rawNewMessage,
+                    sender: rawNewMessage.sender ? {
+                        id: rawNewMessage.sender.id,
+                        fullName: rawNewMessage.sender.full_name, // Mapear full_name para fullName
+                        avatar_url: rawNewMessage.sender.avatar_url,
+                    } as User : undefined,
+                };
+
                 // Usar participantsRef.current para acessar a lista de participantes mais recente
                 const senderProfile = participantsRef.current.find(p => p.user_id === newMessage.sender_id)?.profiles || currentUser;
                 setMessages(prev => {
