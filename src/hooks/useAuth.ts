@@ -290,7 +290,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             .update({
                 name: updatedCompany.name,
                 cnpj: updatedCompany.cnpj,
-                phone: updatedUpdatedCompany.phone,
+                phone: updatedCompany.phone, // Corrected typo here
                 address_street: updatedCompany.address_street,
                 address_neighborhood: updatedCompany.address_neighborhood,
                 address_complement: updatedCompany.address_complement,
