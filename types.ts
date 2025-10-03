@@ -28,7 +28,7 @@ export interface Company {
     address_city?: string;
     address_state?: string;
     status?: 'active' | 'inactive'; // Adicionado para o status da empresa
-    administrators?: User[]; // Adicionado para armazenar administradores da empresa
+    administrators: User[]; // Alterado para ser sempre um array, não opcional
 }
 
 export enum QuestionType {
