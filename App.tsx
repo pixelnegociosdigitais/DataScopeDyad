@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { UserRole, View, Survey, ModuleName, Notice } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
-import SurveyTableList from './src/components/SurveyTableList'; // Alterado para SurveyTableList
+import SurveyTableList from './src/components/SurveyTableList';
 import SurveyCreator from './components/SurveyCreator';
 import Dashboard from './components/Dashboard';
 import Profile from './components/Profile';
@@ -24,9 +24,9 @@ import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
 import { useSurveys } from './src/hooks/useSurveys';
-import { showError, showSuccess } from './src/utils/toast'; // Importar showSuccess
+import { showError, showSuccess } from './src/utils/toast';
 import ConfirmationDialog from './src/components/ConfirmationDialog';
-import { generatePdfReport } from './src/utils/pdfGenerator'; // Importar generatePdfReport
+import { generatePdfReport } from './src/utils/pdfGenerator';
 
 const App: React.FC = () => {
     const { session, loadingSession } = useAuthSession();
@@ -34,12 +34,11 @@ const App: React.FC = () => {
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
-    const [companySettingsAccessDenied, setCompanySettingsAccessDenied] = useState(false);
     const [activeNotice, setActiveNotice] = useState<Notice | null>(null);
     const [showDeleteSurveyConfirm, setShowDeleteSurveyConfirm] = useState(false);
     const [surveyToDelete, setSurveyToDelete] = useState<Survey | null>(null);
 
-    const dashboardRef = useRef<HTMLDivElement>(null); // Adicionar ref para o dashboard
+    const dashboardRef = useRef<HTMLDivElement>(null);
 
     const {
         currentUser,
@@ -60,7 +59,7 @@ const App: React.FC = () => {
         handleSaveSurvey,
         handleDeleteSurvey,
         handleSaveResponse,
-        fetchSurveys, // Adicionado para poder recarregar as pesquisas
+        fetchSurveys,
     } = useSurveys(currentCompany, currentUser);
 
     useEffect(() => {
@@ -75,14 +74,9 @@ const App: React.FC = () => {
         if (!loadingAuth && !loadingSession && session && currentUser) {
             if (currentView === View.COMPANY_SETTINGS) {
                 if (currentCompany && !modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS]) {
-                    setCompanySettingsAccessDenied(true);
                     showError('Você não tem permissão para configurar a empresa.');
                     setCurrentView(View.SURVEY_LIST);
-                } else {
-                    setCompanySettingsAccessDenied(false);
                 }
-            } else {
-                setCompanySettingsAccessDenied(false);
             }
         }
     }, [currentView, currentCompany, modulePermissions, loadingAuth, loadingSession, session, currentUser, setCurrentView]);
@@ -145,8 +139,6 @@ const App: React.FC = () => {
                 if (editingSurvey?.id === surveyToDelete.id) {
                     setEditingSurvey(null);
                 }
-                // No need to explicitly set view to SURVEY_LIST, as fetchSurveys will update the list
-                // and the current view will remain SURVEY_LIST if it was already there.
             }
         }
         setShowDeleteSurveyConfirm(false);
@@ -170,7 +162,7 @@ const App: React.FC = () => {
         setEditingSurvey(null);
         setCurrentView(View.SURVEY_LIST);
         if (currentCompany?.id) {
-            fetchSurveys(currentCompany.id); // Recarregar a lista de pesquisas
+            fetchSurveys(currentCompany.id);
         }
     }, [handleSaveSurvey, modulePermissions, currentCompany, fetchSurveys]);
 
@@ -197,7 +189,7 @@ const App: React.FC = () => {
 
     const handleManageGiveaway = useCallback((survey: Survey) => {
         setSelectedSurvey(survey);
-        setCurrentView(View.GIVEAWAYS); // Giveaways já é uma view, apenas seleciona a pesquisa
+        setCurrentView(View.GIVEAWAYS);
     }, []);
 
     const handleShareSurvey = useCallback((surveyId: string) => {
@@ -275,7 +267,6 @@ const App: React.FC = () => {
             );
         }
 
-        // Se o usuário não tem empresa e não é desenvolvedor, mostra o prompt para criar/vincular empresa
         if (!currentCompany && currentUser.role !== UserRole.DEVELOPER) {
             return <JoinCompanyPrompt user={currentUser} onLogout={() => supabase.auth.signOut()} />;
         }
@@ -292,7 +283,7 @@ const App: React.FC = () => {
                         onCreateSurvey={handleCreateSurvey}
                         onEditSurvey={handleEditSurvey}
                         onDeleteSurvey={handleDeleteSurveyWrapper}
-                        onViewResponses={handleSelectSurveyForDashboard} // Usar para ir para o Dashboard
+                        onViewResponses={handleSelectSurveyForDashboard}
                         onManageGiveaway={handleManageGiveaway}
                         onManageQuestions={handleManageQuestions}
                         onShareSurvey={handleShareSurvey}
@@ -325,7 +316,6 @@ const App: React.FC = () => {
                 }
                 return <CompanySettings company={currentCompany} onUpdate={handleUpdateCompany} onBack={handleBack} />;
             case View.GIVEAWAYS:
-                // O componente Giveaways já lida com a seleção de pesquisa internamente
                 return <Giveaways currentUser={currentUser} currentCompany={currentCompany} />;
             case View.SETTINGS_PANEL:
                 return <SettingsPanel onBack={() => setCurrentView(View.SURVEY_LIST)} setView={setCurrentView} />;
@@ -352,11 +342,8 @@ const App: React.FC = () => {
                     );
                 }
                 return <ChatLayout currentUser={currentUser} currentCompanyId={currentCompany.id} />;
-            case View.SURVEY_QUESTIONS: // Nova view para gerenciar perguntas
+            case View.SURVEY_QUESTIONS:
                 if (selectedSurvey) {
-                    // Assumindo que SurveyQuestions é um componente de página
-                    // e precisa de props semelhantes a SurveyCreator ou Dashboard
-                    // Como não tenho o código de SurveyQuestions, vou usar um placeholder
                     return (
                         <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
                             <div className="flex items-center gap-4 mb-6">
@@ -370,8 +357,7 @@ const App: React.FC = () => {
                     );
                 }
                 return null;
-            case View.SURVEY_TEMPLATES: // Nova view para gerenciar modelos
-                // Como não tenho o código de SurveyTemplates, vou usar um placeholder
+            case View.SURVEY_TEMPLATES:
                 return (
                     <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
                         <div className="flex items-center gap-4 mb-6">
