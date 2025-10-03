@@ -12,6 +12,11 @@ interface ProfileDataFromJoin {
     avatar_url: string | null;
     role: UserRole | null;
     email: string | null;
+    phone: string | null; // Added missing fields from User interface
+    address: string | null; // Added missing fields from User interface
+    permissions: Record<string, boolean> | null; // Added missing fields from User interface
+    status: 'active' | 'inactive' | null; // Added missing fields from User interface
+    company_id: string | null; // Added missing fields from User interface
 }
 
 interface ChatLayoutProps {
@@ -59,7 +64,7 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
                         user_id,
                         joined_at,
                         unread_count,
-                        profiles(id, full_name, avatar_url, role, email)
+                        profiles(id, full_name, avatar_url, role, email, phone, address, permissions, status, company_id)
                     )
                 `)
                 .eq('id', newChatData.id)
@@ -85,18 +90,28 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
                 }) => {
                     const profileData = p.profiles && p.profiles.length > 0 ? p.profiles[0] : null;
 
+                    let userProfile: User | undefined = undefined;
+                    if (profileData && profileData.id) {
+                        userProfile = {
+                            id: profileData.id,
+                            fullName: profileData.full_name || '',
+                            role: profileData.role || UserRole.USER,
+                            email: profileData.email || '',
+                            profilePictureUrl: profileData.avatar_url || undefined,
+                            phone: profileData.phone || undefined,
+                            address: profileData.address || undefined,
+                            permissions: profileData.permissions || {},
+                            status: profileData.status || 'active',
+                            company_id: profileData.company_id || undefined,
+                        };
+                    }
+                    
                     return {
                         chat_id: p.chat_id,
                         user_id: p.user_id,
                         joined_at: p.joined_at,
                         unread_count: p.unread_count,
-                        profiles: profileData && profileData.id ? {
-                            id: profileData.id,
-                            fullName: profileData.full_name || '',
-                            role: profileData.role || UserRole.USER, // Provide a default role if null
-                            email: profileData.email || '',
-                            profilePictureUrl: profileData.avatar_url || undefined,
-                        } : undefined,
+                        profiles: userProfile,
                     };
                 }),
                 displayName: fetchedChat.name || 'Novo Chat', // Default display name
