@@ -154,10 +154,10 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
 
         const channel = supabase
             .channel(`public:chats`)
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, (_payload) => { // Renomeado para _payload
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'chats' }, (_payload) => {
                 fetchChats();
             })
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participants', filter: `user_id=eq.${currentUser.id}` }, (_payload) => { // Renomeado para _payload
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participants', filter: `user_id=eq.${currentUser.id}` }, (_payload) => {
                 fetchChats();
             })
             .subscribe();
@@ -239,9 +239,9 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                         >
                             <div className="flex-1">
                                 <h4 className="font-semibold text-text-main">{chat.displayName}</h4>
-                                {chat.unread_count > 0 && (
+                                {(chat.unread_count ?? 0) > 0 && (
                                     <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
-                                        {chat.unread_count}
+                                        {chat.unread_count ?? 0}
                                     </span>
                                 )}
                             </div>
