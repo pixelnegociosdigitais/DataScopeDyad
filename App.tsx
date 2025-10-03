@@ -38,7 +38,7 @@ const App: React.FC = () => {
     const [showDeleteSurveyConfirm, setShowDeleteSurveyConfirm] = useState(false);
     const [surveyToDelete, setSurveyToDelete] = useState<Survey | null>(null);
 
-    const dashboardRef = useRef<HTMLDivElement>(null);
+    const dashboardRef = useRef<HTMLDivElement | null>(null); // Corrected useRef declaration
 
     const {
         currentUser,
