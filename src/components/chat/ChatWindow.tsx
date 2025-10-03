@@ -51,10 +51,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
                     role: msg.sender.role as UserRole || UserRole.USER, // Garantir role
                     email: msg.sender.email || '', // Garantir email
                     phone: msg.sender.phone || undefined,
-                    address: msg.sender.address || undefined,
-                    permissions: msg.sender.permissions || {},
-                    status: msg.sender.status || 'active',
-                    company_id: msg.sender.company_id || undefined,
+                    address: msg.address || undefined,
+                    permissions: msg.permissions || {},
+                    status: msg.status || 'active',
+                    company_id: msg.company_id || undefined,
                 } as User : undefined,
             }));
             setMessages(mappedMessages);
@@ -84,10 +84,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
                     role: p.profiles.role as UserRole || UserRole.USER, // Garantir role
                     email: p.profiles.email || '', // Garantir email
                     phone: p.profiles.phone || undefined,
-                    address: p.profiles.address || undefined,
-                    permissions: p.profiles.permissions || {},
-                    status: p.profiles.status || 'active',
-                    company_id: p.profiles.company_id || undefined,
+                    address: p.address || undefined,
+                    permissions: p.permissions || {},
+                    status: p.status || 'active',
+                    company_id: p.company_id || undefined,
                 } as User : undefined,
             }));
             setParticipants(mappedParticipants);
@@ -124,7 +124,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
                         avatar_url: rawNewMessage.sender.avatar_url || undefined,
                         role: rawNewMessage.sender.role as UserRole || UserRole.USER, // Garantir role
                         email: rawNewMessage.sender.email || '', // Garantir email
-                        phone: rawNewMessage.sender.phone || undefined,
+                        phone: rawNewMessage.phone || undefined,
                         address: rawNewMessage.address || undefined,
                         permissions: rawNewMessage.permissions || {},
                         status: rawNewMessage.status || 'active',
@@ -164,7 +164,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
                     setTypingUsers(prev => {
                         const newTypingUsers = { ...prev };
                         if (isTyping) {
-                            newTypingUsers[userId] = participant.profiles.fullName;
+                            newTypingUsers[userId] = participant.profiles!.fullName; // Non-null assertion here
                         } else {
                             delete newTypingUsers[userId];
                         }
