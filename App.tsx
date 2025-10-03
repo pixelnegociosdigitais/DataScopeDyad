@@ -15,7 +15,7 @@ import SettingsPanel from './components/SettingsPanel';
 import ModulePermissionsManager from './components/ModulePermissionsManager';
 import DeveloperCompanyUserManager from './components/DeveloperCompanyUserManager';
 import AdministratorUserManager from './src/components/AdministratorUserManager';
-import LogsAndAuditPanel from './components/LogsAndAuditPanel'; // Corrected import path
+import LogsAndAuditPanel from './components/LogsAndAuditPanel';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
 import NoticeCreator from './src/components/NoticeCreator';
 import ChatLayout from './src/components/chat/ChatLayout';
@@ -75,16 +75,35 @@ const App: React.FC = () => {
     }, [loadingSession, loadingAuth, loadingSurveys]);
 
     useEffect(() => {
+        console.log('App: useEffect - loadingSession:', loadingSession, 'loadingAuth:', loadingAuth, 'session:', session, 'currentUser:', currentUser);
         if (!loadingAuth && !loadingSession && session && currentUser) {
-            console.log('App: Surveys loaded:', surveys); // ADDED LOG
+            console.log('App: Current User:', currentUser);
+            console.log('App: Current Company:', currentCompany);
+            console.log('App: Module Permissions:', modulePermissions);
+            console.log('App: Surveys state:', surveys);
+            
+            // Ensure surveys are fetched when currentUser and currentCompany are ready
+            // This handles initial load and changes to currentCompany/currentUser
+            if (currentUser.role === UserRole.DEVELOPER) {
+                fetchSurveys(undefined); // Developers fetch all surveys
+            } else if (currentCompany?.id) {
+                fetchSurveys(currentCompany.id);
+            } else {
+                // If not a developer and no company, clear surveys
+                setSurveys([]);
+            }
+
             if (currentView === View.COMPANY_SETTINGS) {
                 if (currentCompany && !modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS]) {
                     showError('Você não tem permissão para configurar a empresa.');
                     setCurrentView(View.SURVEY_LIST);
                 }
             }
+        } else if (!loadingAuth && !loadingSession && !session) {
+            // User is not logged in, clear surveys
+            setSurveys([]);
         }
-    }, [currentView, currentCompany, modulePermissions, loadingAuth, loadingSession, session, currentUser, setCurrentView, surveys]);
+    }, [currentView, currentCompany, modulePermissions, loadingAuth, loadingSession, session, currentUser, setCurrentView, surveys, fetchSurveys]);
 
     const handleSelectSurveyForDashboard = useCallback(async (survey: Survey) => {
         if (!modulePermissions[ModuleName.VIEW_DASHBOARD]) {
@@ -146,8 +165,8 @@ const App: React.FC = () => {
     }, [surveyToDelete, handleDeleteSurvey, selectedSurvey, editingSurvey]);
 
     const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey, isEditing: boolean) => {
-        console.log('App: handleSaveSurveyWrapper called. currentUser:', currentUser, 'currentCompany:', currentCompany); // ADDED LOG
-        if (!currentCompany) {
+        console.log('App: handleSaveSurveyWrapper called. currentUser:', currentUser, 'currentCompany:', currentCompany);
+        if (!currentCompany && currentUser?.role !== UserRole.DEVELOPER) { // Allow developers to save without a company_id
             showError('Você precisa ter uma empresa associada para criar ou editar pesquisas.');
             return;
         }
@@ -162,8 +181,15 @@ const App: React.FC = () => {
         await handleSaveSurvey(surveyData, isEditing ? surveyData.id : undefined);
         setEditingSurvey(null);
         setCurrentView(View.SURVEY_LIST);
-        if (currentCompany?.id) {
+        // Re-fetch surveys based on current user's context
+        if (currentUser?.role === UserRole.DEVELOPER) {
+            console.log('App: Calling fetchSurveys after save for DEVELOPER.');
+            fetchSurveys(undefined); // Developers fetch all surveys
+        } else if (currentCompany?.id) {
+            console.log('App: Calling fetchSurveys after save for companyId:', currentCompany.id);
             fetchSurveys(currentCompany.id);
+        } else {
+            console.warn('App: currentCompany.id is null and not a developer, not refetching surveys after save.');
         }
     }, [handleSaveSurvey, modulePermissions, currentCompany, fetchSurveys, currentUser]);
 
