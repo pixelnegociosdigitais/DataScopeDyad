@@ -18,7 +18,7 @@ const WinnerDisplayPopup: React.FC<WinnerDisplayPopupProps> = ({ winners, onClos
                     <TrophyIcon className="h-8 w-8 text-yellow-300" />
                 </div>
                 <div className="flex flex-col items-center justify-center space-y-6 max-h-96 overflow-y-auto pr-2">
-                    {winners.map((winnerEntry, _index) => ( {/* Renamed to _index */}
+                    {winners.map((winnerEntry, _index) => (
                         <div key={winnerEntry.id} className="bg-red-600 p-4 rounded-lg w-full">
                             <p className="text-xl font-semibold mb-2">
                                 {winnerEntry.rank}º Lugar: {winnerEntry.prize?.name || 'Prêmio Desconhecido'}
