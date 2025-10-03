@@ -82,16 +82,8 @@ const App: React.FC = () => {
             console.log('App: Module Permissions:', modulePermissions);
             console.log('App: Surveys state:', surveys);
             
-            // Ensure surveys are fetched when currentUser and currentCompany are ready
-            // This handles initial load and changes to currentCompany/currentUser
-            if (currentUser.role === UserRole.DEVELOPER) {
-                fetchSurveys(undefined); // Developers fetch all surveys
-            } else if (currentCompany?.id) {
-                fetchSurveys(currentCompany.id);
-            } else {
-                // If not a developer and no company, clear surveys
-                setSurveys([]);
-            }
+            // The useSurveys hook already handles setting/clearing surveys based on these conditions.
+            // No need for explicit setSurveys([]) or fetchSurveys() calls here.
 
             if (currentView === View.COMPANY_SETTINGS) {
                 if (currentCompany && !modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS]) {
@@ -100,10 +92,9 @@ const App: React.FC = () => {
                 }
             }
         } else if (!loadingAuth && !loadingSession && !session) {
-            // User is not logged in, clear surveys
-            setSurveys([]);
+            // User is not logged in. The useSurveys hook will handle clearing its internal state.
         }
-    }, [currentView, currentCompany, modulePermissions, loadingAuth, loadingSession, session, currentUser, setCurrentView, surveys, fetchSurveys]);
+    }, [currentView, currentCompany, modulePermissions, loadingAuth, loadingSession, session, currentUser, setCurrentView, surveys]);
 
     const handleSelectSurveyForDashboard = useCallback(async (survey: Survey) => {
         if (!modulePermissions[ModuleName.VIEW_DASHBOARD]) {
