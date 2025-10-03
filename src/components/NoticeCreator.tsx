@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeftIcon } from '../../components/icons/ArrowLeftIcon';
 import { BellIcon } from '../../components/icons/BellIcon';
-import { UserRole, ModuleName } from '../../types'; // Removido View
+import { UserRole, ModuleName } from '../../types';
 import { useAuth } from '../hooks/useAuth';
 import { showError, showSuccess } from '../utils/toast';
 
@@ -14,8 +14,6 @@ const NoticeCreator: React.FC<NoticeCreatorProps> = ({ onBack }) => {
     const [message, setMessage] = useState('');
     const [targetRoles, setTargetRoles] = useState<UserRole[]>([]);
     const [saving, setSaving] = useState(false);
-
-    const availableTargetRoles = [UserRole.ADMIN, UserRole.USER];
 
     useEffect(() => {
         if (currentUser?.role === UserRole.ADMIN) {
