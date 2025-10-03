@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Chat, ChatMessage, User, ChatParticipant } from '../../../types';
+import { Chat, ChatMessage, User, ChatParticipant, UserRole } from '../../../types';
 import { supabase } from '../../integrations/supabase/client';
 import { showError } from '../../utils/toast';
 import MessageBubble from './MessageBubble';
@@ -32,7 +32,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             .from('messages')
             .select(`
                 *,
-                sender:profiles(id, full_name, avatar_url)
+                sender:profiles(id, full_name, avatar_url, role, email, phone, address, permissions, status, company_id)
             `)
             .eq('chat_id', chat.id)
             .order('created_at', { ascending: true });
@@ -46,9 +46,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
                 ...msg,
                 sender: msg.sender ? {
                     id: msg.sender.id,
-                    fullName: msg.sender.full_name, // Mapear full_name para fullName
-                    avatar_url: msg.sender.avatar_url,
-                    // Outras propriedades de User não são buscadas aqui, então serão undefined
+                    fullName: msg.sender.full_name || '', // Mapear full_name para fullName e garantir string
+                    avatar_url: msg.sender.avatar_url || undefined,
+                    role: msg.sender.role as UserRole || UserRole.USER, // Garantir role
+                    email: msg.sender.email || '', // Garantir email
+                    phone: msg.sender.phone || undefined,
+                    address: msg.sender.address || undefined,
+                    permissions: msg.sender.permissions || {},
+                    status: msg.sender.status || 'active',
+                    company_id: msg.sender.company_id || undefined,
                 } as User : undefined,
             }));
             setMessages(mappedMessages);
@@ -61,7 +67,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             .from('chat_participants')
             .select(`
                 *,
-                profiles(id, full_name, avatar_url)
+                profiles(id, full_name, avatar_url, role, email, phone, address, permissions, status, company_id)
             `)
             .eq('chat_id', chat.id);
 
@@ -73,9 +79,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
                 ...p,
                 profiles: p.profiles ? {
                     id: p.profiles.id,
-                    fullName: p.profiles.full_name, // Mapear full_name para fullName
-                    avatar_url: p.profiles.avatar_url,
-                    // Outras propriedades de User não são buscadas aqui, então serão undefined
+                    fullName: p.profiles.full_name || '', // Mapear full_name para fullName e garantir string
+                    avatar_url: p.profiles.avatar_url || undefined,
+                    role: p.profiles.role as UserRole || UserRole.USER, // Garantir role
+                    email: p.profiles.email || '', // Garantir email
+                    phone: p.profiles.phone || undefined,
+                    address: p.profiles.address || undefined,
+                    permissions: p.profiles.permissions || {},
+                    status: p.profiles.status || 'active',
+                    company_id: p.profiles.company_id || undefined,
                 } as User : undefined,
             }));
             setParticipants(mappedParticipants);
@@ -108,8 +120,15 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
                     ...rawNewMessage,
                     sender: rawNewMessage.sender ? {
                         id: rawNewMessage.sender.id,
-                        fullName: rawNewMessage.sender.full_name, // Mapear full_name para fullName
-                        avatar_url: rawNewMessage.sender.avatar_url,
+                        fullName: rawNewMessage.sender.full_name || '', // Mapear full_name para fullName e garantir string
+                        avatar_url: rawNewMessage.sender.avatar_url || undefined,
+                        role: rawNewMessage.sender.role as UserRole || UserRole.USER, // Garantir role
+                        email: rawNewMessage.sender.email || '', // Garantir email
+                        phone: rawNewMessage.sender.phone || undefined,
+                        address: rawNewMessage.sender.address || undefined,
+                        permissions: rawNewMessage.sender.permissions || {},
+                        status: rawNewMessage.sender.status || 'active',
+                        company_id: rawNewMessage.sender.company_id || undefined,
                     } as User : undefined,
                 };
 
