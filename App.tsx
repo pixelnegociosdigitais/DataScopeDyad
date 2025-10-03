@@ -157,10 +157,14 @@ const App: React.FC = () => {
 
     const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey, isEditing: boolean) => {
         console.log('App: handleSaveSurveyWrapper called. currentUser:', currentUser, 'currentCompany:', currentCompany);
-        if (!currentCompany && currentUser?.role !== UserRole.DEVELOPER) { // Allow developers to save without a company_id
-            showError('Você precisa ter uma empresa associada para criar ou editar pesquisas.');
+        
+        // All users, including developers, must have a company_id to create a survey
+        // because the 'company_id' column in 'surveys' table is NOT NULL.
+        if (!currentUser?.company_id) {
+            showError('Você precisa estar vinculado a uma empresa para criar ou editar pesquisas.');
             return;
         }
+        
         if (!modulePermissions[ModuleName.CREATE_SURVEY] && !isEditing) {
             showError('Você não tem permissão para criar pesquisas.');
             return;
@@ -169,20 +173,27 @@ const App: React.FC = () => {
             showError('Você não tem permissão para editar pesquisas.');
             return;
         }
-        await handleSaveSurvey(surveyData, isEditing ? surveyData.id : undefined);
+        
+        // Pass the companyId from currentUser to handleSaveSurvey
+        const surveyToSave: Survey = {
+            ...surveyData,
+            companyId: currentUser.company_id // Ensure companyId is always set from currentUser
+        };
+
+        await handleSaveSurvey(surveyToSave, isEditing ? surveyData.id : undefined);
         setEditingSurvey(null);
         setCurrentView(View.SURVEY_LIST);
         // Re-fetch surveys based on current user's context
         if (currentUser?.role === UserRole.DEVELOPER) {
             console.log('App: Calling fetchSurveys after save for DEVELOPER.');
             fetchSurveys(undefined); // Developers fetch all surveys
-        } else if (currentCompany?.id) {
-            console.log('App: Calling fetchSurveys after save for companyId:', currentCompany.id);
-            fetchSurveys(currentCompany.id);
+        } else if (currentUser?.company_id) { // Use currentUser.company_id here
+            console.log('App: Calling fetchSurveys after save for companyId:', currentUser.company_id);
+            fetchSurveys(currentUser.company_id);
         } else {
-            console.warn('App: currentCompany.id is null and not a developer, not refetching surveys after save.');
+            console.warn('App: currentUser.company_id is null and not a developer, not refetching surveys after save.');
         }
-    }, [handleSaveSurvey, modulePermissions, currentCompany, fetchSurveys, currentUser]);
+    }, [handleSaveSurvey, modulePermissions, fetchSurveys, currentUser]);
 
     const handleSaveResponseWrapper = useCallback(async (answers: any[]) => {
         console.log('App: handleSaveResponseWrapper called with answers:', answers);
