@@ -6,6 +6,21 @@ import { PlusIcon } from '../../../components/icons/PlusIcon';
 import { TrashIcon } from '../../../components/icons/TrashIcon'; // Usando TrashIcon em vez de DeleteIcon
 import ConfirmationDialog from '../ConfirmationDialog'; // Importar ConfirmationDialog
 
+// Interface para a estrutura de dados retornada pelo Supabase para chat_participants com profiles
+interface RawChatParticipantData {
+    chat_id: string;
+    user_id: string;
+    joined_at: string;
+    unread_count: number;
+    profiles: {
+        id: string;
+        full_name: string | null;
+        avatar_url: string | null;
+        role: UserRole | null;
+        email: string | null;
+    } | null; // Supabase pode retornar um objeto único ou null para 'profiles'
+}
+
 interface ChatListProps {
     currentUser: User;
     onSelectChat: (chat: Chat | null) => void;
@@ -58,8 +73,8 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                     joined_at,
                     unread_count,
                     profiles(id, full_name, avatar_url, role, email)
-                `)
-                .in('chat_id', chatIds);
+                `); // Não usar .in('chat_id', chatIds) aqui para evitar problemas de RLS se a política não permitir.
+                    // A filtragem será feita no cliente.
 
             if (allParticipantsError) throw allParticipantsError;
 
@@ -84,10 +99,11 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
 
                 const unreadCount: number = cp.unread_count;
                 
-                const participantsInChat: ChatParticipant[] = allParticipantsData
+                const participantsInChat: ChatParticipant[] = (allParticipantsData as RawChatParticipantData[])
                     .filter(p => p.chat_id === rawChatData.id)
-                    .map((p: any) => { // Usar 'any' temporariamente para 'p' para lidar com a inferência flexível do Supabase
-                        const profileData = p.profiles && Array.isArray(p.profiles) ? p.profiles[0] : p.profiles; // Garante que profileData é um objeto
+                    .map(p => {
+                        // 'p.profiles' já deve ser um objeto ou null devido à interface RawChatParticipantData
+                        const profileData = p.profiles; 
                         return {
                             chat_id: p.chat_id,
                             user_id: p.user_id,
