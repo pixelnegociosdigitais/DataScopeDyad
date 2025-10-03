@@ -13,7 +13,7 @@ interface RawChatParticipantData {
     joined_at: string;
     unread_count: number;
     profiles: Array<{ // Corrigido para esperar um array de perfis
-        id: string;
+        id: string | null; // ID pode ser null se o perfil não for encontrado
         full_name: string | null;
         avatar_url: string | null;
         role: UserRole | null;
@@ -113,7 +113,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                             user_id: p.user_id,
                             joined_at: p.joined_at,
                             unread_count: p.unread_count,
-                            profiles: profileData ? {
+                            profiles: profileData && profileData.id ? { // Add check here too
                                 id: profileData.id,
                                 fullName: profileData.full_name || '',
                                 role: profileData.role as UserRole,

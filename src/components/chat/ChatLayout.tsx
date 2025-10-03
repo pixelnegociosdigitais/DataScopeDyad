@@ -1,9 +1,18 @@
 import React, { useState, useCallback } from 'react';
-import { Chat, User } from '../../../types';
+import { Chat, User, UserRole } from '../../../types';
 import ChatList from './ChatList';
 import ChatWindow from './ChatWindow';
 import { supabase } from '../../integrations/supabase/client';
 import { showError, showSuccess } from '../../utils/toast';
+
+// Helper interface for raw profile data from Supabase join
+interface RawProfileFromJoin {
+    id: string | null;
+    full_name: string | null;
+    avatar_url: string | null;
+    role: UserRole | null;
+    email: string | null;
+}
 
 interface ChatLayoutProps {
     currentUser: User;
@@ -67,19 +76,24 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
                 is_group_chat: fetchedChat.is_group_chat,
                 last_message_at: fetchedChat.last_message_at,
                 unread_count: 0, // New chat starts with 0 unread
-                participants: fetchedChat.participants.map((p: any) => ({
-                    chat_id: p.chat_id,
-                    user_id: p.user_id,
-                    joined_at: p.joined_at,
-                    unread_count: p.unread_count,
-                    profiles: p.profiles ? {
-                        id: p.profiles.id,
-                        fullName: p.profiles.full_name || '',
-                        role: p.profiles.role,
-                        email: p.profiles.email || '',
-                        profilePictureUrl: p.profiles.avatar_url || undefined,
-                    } : undefined,
-                })),
+                participants: fetchedChat.participants.map((p: any) => {
+                    const rawProfileDataArray = p.profiles as RawProfileFromJoin[] | null;
+                    const profileData = rawProfileDataArray && rawProfileDataArray.length > 0 ? rawProfileDataArray[0] : null;
+
+                    return {
+                        chat_id: p.chat_id,
+                        user_id: p.user_id,
+                        joined_at: p.joined_at,
+                        unread_count: p.unread_count,
+                        profiles: profileData && profileData.id ? {
+                            id: profileData.id,
+                            fullName: profileData.full_name || '',
+                            role: profileData.role as UserRole,
+                            email: profileData.email || '',
+                            profilePictureUrl: profileData.avatar_url || undefined,
+                        } : undefined,
+                    };
+                }),
                 displayName: fetchedChat.name || 'Novo Chat', // Default display name
             };
 
