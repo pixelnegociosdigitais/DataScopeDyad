@@ -50,7 +50,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
     const [currentPermissions, setCurrentPermissions] = useState<Record<string, boolean>>({});
     const [showEditUserModal, setShowEditUserModal] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [userToDelete, setUserToDelete] = useState<User | null>(null); // Mantido para a função confirmDeleteUser
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
 
     const { handleResetUserPassword, handleCreateUserForCompany, handleUpdateUserPermissions, handleAdminUpdateUserProfile, handleDeleteUser } = useAuth(setCurrentView);
 
@@ -177,9 +177,12 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
         setDialogTitle('Confirmar Exclusão de Usuário');
         setDialogMessage(`Tem certeza que deseja excluir o usuário "${user.fullName}" (${user.email})? Esta ação é irreversível.`);
         setDialogConfirmAction(() => async () => {
-            await handleDeleteUser(user.id, user.email);
-            setShowConfirmationDialog(false);
-            fetchUsers();
+            if (userToDelete) { // Garante que userToDelete não é nulo
+                await handleDeleteUser(userToDelete.id, userToDelete.email);
+                setShowConfirmationDialog(false);
+                fetchUsers();
+                setUserToDelete(null); // Limpa o estado após a ação
+            }
         });
         setShowConfirmationDialog(true);
     };
@@ -414,7 +417,10 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                     confirmText="Confirmar"
                     onConfirm={dialogConfirmAction || (() => setShowConfirmationDialog(false))}
                     cancelText="Cancelar"
-                    onCancel={() => setShowConfirmationDialog(false)}
+                    onCancel={() => {
+                        setShowConfirmationDialog(false);
+                        setUserToDelete(null); // Limpa o estado ao cancelar
+                    }}
                 />
             )}
         </div>
