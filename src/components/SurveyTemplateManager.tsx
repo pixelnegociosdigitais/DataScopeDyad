@@ -4,13 +4,14 @@ import { TemplateIcon } from '../../components/icons/TemplateIcon';
 import { CreateIcon } from '../../components/icons/CreateIcon';
 import { PencilIcon } from '../../components/icons/PencilIcon';
 import { TrashIcon } from '../../components/icons/TrashIcon';
-import { Survey, Question, QuestionType, ModuleName } from '../../types';
+import { Survey, Question, QuestionType, ModuleName, User } from '../../types';
 import { showError } from '../utils/toast';
 import ConfirmationDialog from './ConfirmationDialog';
 
 interface SurveyTemplateManagerProps {
     onBack: () => void;
     templates: Survey[];
+    currentUser: User; // Added currentUser prop
     modulePermissions: Record<ModuleName, boolean>;
     onSaveTemplate: (templateData: Survey, editingTemplateId?: string) => Promise<void>;
     onDeleteTemplate: (templateId: string) => Promise<boolean>;
@@ -29,6 +30,7 @@ const ALL_QUESTION_TYPES = [
 const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
     onBack,
     templates,
+    currentUser, // Destructure currentUser
     modulePermissions,
     onSaveTemplate,
     onDeleteTemplate,
