@@ -28,7 +28,7 @@ const LogsAndAuditPanel: React.FC<LogsAndAuditPanelProps> = ({ onBack }) => {
 
     const fetchLogs = useCallback(async () => {
         setLoading(true);
-        setError(null);
+        setError(null); // Limpa o erro anterior na UI
         try {
             let query = supabase.from('logs').select('*');
 
@@ -42,14 +42,16 @@ const LogsAndAuditPanel: React.FC<LogsAndAuditPanelProps> = ({ onBack }) => {
 
             if (error) {
                 console.error('Erro ao buscar logs:', error);
-                setError('Não foi possível carregar os logs. Verifique suas permissões.');
+                showError('Não foi possível carregar os logs. Verifique suas permissões.');
+                setError('Não foi possível carregar os logs. Verifique suas permissões.'); // Mantém o erro na UI também
                 setLogs([]);
             } else {
                 setLogs(data as LogEntry[] || []);
             }
         } catch (err: any) {
             console.error('Erro inesperado ao buscar logs:', err);
-            setError('Ocorreu um erro inesperado ao carregar os logs: ' + err.message);
+            showError('Ocorreu um erro inesperado ao carregar os logs: ' + err.message);
+            setError('Ocorreu um erro inesperado ao carregar os logs: ' + err.message); // Mantém o erro na UI também
         } finally {
             setLoading(false);
         }
