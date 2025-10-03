@@ -30,7 +30,7 @@ const ALL_QUESTION_TYPES = [
 const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
     onBack,
     templates,
-    currentUser, // Destructure currentUser
+    // currentUser, // Removed currentUser from destructuring as it's not used
     modulePermissions,
     onSaveTemplate,
     onDeleteTemplate,
