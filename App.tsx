@@ -97,11 +97,6 @@ const App: React.FC = () => {
         }
     }, [fetchSurveyResponses, modulePermissions]);
 
-    const handleStartResponse = useCallback((survey: Survey) => {
-        setSelectedSurvey(survey);
-        setCurrentView(View.RESPOND_SURVEY);
-    }, []);
-
     const handleCreateSurvey = useCallback(() => {
         if (!modulePermissions[ModuleName.CREATE_SURVEY]) {
             showError('Você não tem permissão para criar pesquisas.');
