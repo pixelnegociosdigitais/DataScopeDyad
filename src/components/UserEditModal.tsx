@@ -1,6 +1,6 @@
 import React, { useState, FormEvent, useEffect } from 'react';
 import { User } from '../../types';
-import { showError, showSuccess } from '../utils/toast';
+import { showError } from '../utils/toast';
 import { UserIcon } from '../../components/icons/UserIcon'; // Importar UserIcon
 import { UploadIcon } from '../../components/icons/UploadIcon'; // Importar UploadIcon
 
