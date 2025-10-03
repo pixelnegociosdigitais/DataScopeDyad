@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Survey, User, Company, UserRole, View } from '../../types';
 import { CreateIcon } from '../../components/icons/CreateIcon';
 import { PencilIcon } from '../../components/icons/PencilIcon';
