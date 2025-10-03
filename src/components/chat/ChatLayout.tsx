@@ -88,7 +88,7 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
                         profiles: profileData && profileData.id ? {
                             id: profileData.id as string, // Explicitly assert as string
                             fullName: profileData.full_name || '',
-                            role: profileData.role as UserRole,
+                            role: profileData.role || UserRole.USER, // Provide a default role if null
                             email: profileData.email || '',
                             profilePictureUrl: profileData.avatar_url || undefined,
                         } : undefined,

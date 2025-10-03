@@ -21,6 +21,15 @@ interface RawChatParticipantData {
     }> | null; // Supabase pode retornar um array de objetos ou null para 'profiles'
 }
 
+// Helper interface for raw profile data from Supabase join (same as in ChatLayout)
+interface RawProfileFromJoin {
+    id: string | null;
+    full_name: string | null;
+    avatar_url: string | null;
+    role: UserRole | null;
+    email: string | null;
+}
+
 interface ChatListProps {
     currentUser: User;
     onSelectChat: (chat: Chat | null) => void;
@@ -116,7 +125,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                             profiles: profileData && profileData.id ? { // Add check here too
                                 id: profileData.id as string, // Explicitly assert as string
                                 fullName: profileData.full_name || '',
-                                role: profileData.role as UserRole,
+                                role: profileData.role || UserRole.USER, // Provide a default role if null
                                 email: profileData.email || '',
                                 profilePictureUrl: profileData.avatar_url || undefined,
                             } : undefined,
