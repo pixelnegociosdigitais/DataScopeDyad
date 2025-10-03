@@ -203,3 +203,14 @@ export interface RawSurveyData {
     companies: { name: string }[] | null; // Expecting an array of objects or null
     profiles: { full_name: string }[] | null; // Expecting an array of objects or null
 }
+
+// New interface for the chart data items
+export interface ChartDataItem {
+    name: string;
+    value: number;
+}
+
+// New interface to combine Question with its analysis data
+export interface QuestionAnalysis extends Question {
+    data: string[] | ChartDataItem[];
+}

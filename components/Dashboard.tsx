@@ -2,7 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Survey, SurveyResponse, QuestionType, Answer } from '../types';
+import { Survey, SurveyResponse, QuestionType, Answer, ChartDataItem, QuestionAnalysis } from '../types'; // Importar ChartDataItem e QuestionAnalysis
 import { DownloadIcon } from './icons/DownloadIcon';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 
@@ -11,12 +11,6 @@ interface DashboardProps {
     responses: SurveyResponse[];
     onBack: () => void;
     dashboardRef: React.RefObject<HTMLDivElement>; // Adicionar a prop dashboardRef
-}
-
-// Nova interface para os itens de dados dos gráficos
-interface ChartDataItem {
-    name: string;
-    value: number;
 }
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#14B8A6', '#F97316'];
@@ -56,7 +50,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
         setActiveIndex(index);
     };
     
-    const analysis = useMemo(() => {
+    const analysis = useMemo<QuestionAnalysis[]>(() => {
         return survey.questions.map(q => {
             const questionResponses = responses.map(r => r.answers.find(a => a.questionId === q.id)).filter(Boolean) as Answer[];
             
@@ -168,14 +162,14 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
                                             onMouseEnter={onPieEnter}
                                         >
                                           {/* Mapeamento de células para PieChart */}
-                                          {(q.data as ChartDataItem[]).map((_entry, index) => ( // Removed unused 'entry'
+                                          {(q.data as ChartDataItem[]).map((_entry, index) => (
                                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                           ))}
                                         </Pie>
                                         <Tooltip />
                                         <Legend 
-                                            formatter={(_legendValue: string | number, legendEntry: any) => { // Removed unused 'legendValue'
-                                                const dataItem = legendEntry.payload as ChartDataItem; // Type assertion here
+                                            formatter={(_legendValue: string | number, legendEntry: any) => {
+                                                const dataItem = legendEntry.payload as ChartDataItem;
                                                 const total = (q.data as ChartDataItem[]).reduce((sum, item) => sum + item.value, 0);
                                                 const entryValue = dataItem.value ?? 0; 
                                                 const percentage = total > 0 ? ((entryValue / total) * 100).toFixed(2) : '0.00';
@@ -189,7 +183,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
                         {([QuestionType.SHORT_TEXT, QuestionType.LONG_TEXT, QuestionType.EMAIL, QuestionType.PHONE].includes(q.type as QuestionType)) && Array.isArray(q.data) && (
                             <div className="max-h-60 overflow-y-auto pr-2">
                                 <ul className="space-y-3">
-                                    {q.data.map((text: string, index: number) => ( // Explicitly type 'text' as string
+                                    {(q.data as string[]).map((text: string, index: number) => (
                                         <li key={index} className="bg-gray-50 p-3 rounded-md border-l-4 border-primary/50 text-sm text-gray-700">
                                             {text}
                                         </li>
