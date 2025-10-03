@@ -69,6 +69,7 @@ const InteractivePie: React.FC<InteractivePieChartProps> = ({
         fill="#8884d8" // This fill is for the default segments, activeShape will override
         dataKey="value"
         onMouseEnter={onPieEnter}
+        // Adicionando o cast 'as any' diretamente ao componente Pie do recharts
     >
         {data.map((_entry, index) => (
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
