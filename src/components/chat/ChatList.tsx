@@ -63,21 +63,27 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
 
             if (allParticipantsError) throw allParticipantsError;
 
-            const chatsWithDetails: Chat[] = chatParticipantsData.map((cp: { // Tipagem explícita para 'cp'
+            const chatsWithDetails: Chat[] = chatParticipantsData.map((cp: {
                 chat_id: string;
                 unread_count: number;
-                chats: {
+                chats: Array<{ // Corrigido para ser um array de objetos de chat
                     id: string;
                     name: string | null;
                     is_group_chat: boolean | null;
                     last_message_at: string | null;
                     company_id: string | null;
                     created_at: string;
-                };
+                }>;
             }) => {
-                const rawChatData = cp.chats; // Agora TypeScript deve inferir corretamente como objeto único
+                // Acessar o primeiro (e geralmente único) objeto de chat do array
+                const rawChatData = cp.chats[0]; 
 
-                const unreadCount: number = cp.unread_count; // Já é number, mas mantendo a clareza
+                if (!rawChatData) {
+                    console.warn(`Dados do chat ausentes para o participante ${cp.chat_id}`);
+                    return null; // Retorna null para ser filtrado depois
+                }
+
+                const unreadCount: number = cp.unread_count;
                 
                 const participantsInChat: ChatParticipant[] = allParticipantsData
                     .filter(p => p.chat_id === rawChatData.id)
@@ -85,8 +91,8 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                         chat_id: p.chat_id,
                         user_id: p.user_id,
                         joined_at: p.joined_at,
-                        unread_count: p.unread_count, // Já é number
-                        profiles: p.profiles ? { // Mapeamento explícito para a interface User
+                        unread_count: p.unread_count,
+                        profiles: p.profiles ? {
                             id: p.profiles.id,
                             fullName: p.profiles.full_name || '',
                             role: p.profiles.role as UserRole,
@@ -112,7 +118,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                     unread_count: unreadCount,
                     participants: participantsInChat,
                 };
-            });
+            }).filter(Boolean) as Chat[]; // Filtra quaisquer entradas nulas
 
             setChats(chatsWithDetails);
         } catch (error: any) {
