@@ -26,9 +26,9 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
             ) : (
                 <ChatList 
                     currentUser={currentUser} 
-                    onSelectChat={handleSelectChat as (chat: Chat | null) => void} // Asserção de tipo explícita
+                    onSelectChat={handleSelectChat}
                     onCreateChat={() => { /* Implementar lógica de criação de chat */ }}
-                    selectedChatId={selectedChat?.id || null}
+                    selectedChatId={selectedChat ? selectedChat.id : null}
                 />
             )}
         </div>
