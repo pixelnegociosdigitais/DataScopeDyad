@@ -1,8 +1,8 @@
-import React, { useMemo, useRef } from 'react';
+import React, { useMemo, /* Removido: useRef */ } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Survey, SurveyResponse, QuestionType, Answer, ChartDataItem, QuestionAnalysis } from '../types'; // Importar ChartDataItem e QuestionAnalysis
+import { Survey, SurveyResponse, QuestionType, Answer, ChartDataItem, QuestionAnalysis } from '../types';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 
@@ -10,7 +10,7 @@ interface DashboardProps {
     survey: Survey;
     responses: SurveyResponse[];
     onBack: () => void;
-    dashboardRef: React.RefObject<HTMLDivElement>; // Adicionar a prop dashboardRef
+    dashboardRef: React.RefObject<HTMLDivElement>;
 }
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#14B8A6', '#F97316'];
