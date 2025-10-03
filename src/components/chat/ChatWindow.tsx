@@ -159,11 +159,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
 
                 // Usar participantsRef.current para acessar a lista de participantes mais recente
                 const participant = participantsRef.current.find(p => p.user_id === userId);
-                if (participant?.profiles?.fullName) { // Acessar fullName
+                // Explicitamente verificar se participant e participant.profiles existem
+                if (participant && participant.profiles && participant.profiles.fullName) {
                     setTypingUsers(prev => {
                         const newTypingUsers = { ...prev };
                         if (isTyping) {
-                            newTypingUsers[userId] = participant.profiles.fullName; // Acessar fullName
+                            newTypingUsers[userId] = participant.profiles.fullName;
                         } else {
                             delete newTypingUsers[userId];
                         }
