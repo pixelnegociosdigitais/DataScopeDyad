@@ -178,8 +178,6 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             return;
         }
 
-        let targetSurveyId = editingSurveyId;
-
         if (editingSurveyId) {
             console.log('useSurveys: handleSaveSurvey - Atualizando pesquisa existente:', editingSurveyId);
             const { error: surveyUpdateError } = await supabase
@@ -250,7 +248,6 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             }
 
             if (newSurvey) {
-                targetSurveyId = newSurvey.id;
                 const questionsToInsert = surveyData.questions.map((q, index) => ({
                     survey_id: newSurvey.id,
                     text: q.text,
