@@ -3,13 +3,12 @@ import { Survey, User, Company, UserRole } from '../../types';
 import { CreateIcon } from '../../components/icons/CreateIcon';
 import { PencilIcon } from '../../components/icons/PencilIcon';
 import { TrashIcon } from '../../components/icons/TrashIcon';
-import { EyeIcon } from '../../components/icons/EyeIcon'; // Importado
-import { ShareIcon } from '../../components/icons/ShareIcon'; // Importado
+import { EyeIcon } from '../../components/icons/EyeIcon';
+import { ShareIcon } from '../../components/icons/ShareIcon';
 import { DownloadIcon } from '../../components/icons/DownloadIcon';
-import { QuestionIcon } from '../../components/icons/QuestionIcon'; // Importado
-import { GiftIcon } from '../../components/icons/GiftIcon'; // Usar GiftIcon para sorteios
-import { LinkIcon } from '../../components/icons/LinkIcon'; // Importado
-import { TemplateIcon } from '../../components/icons/TemplateIcon'; // Importado
+import { QuestionIcon } from '../../components/icons/QuestionIcon';
+import { GiftIcon } from '../../components/icons/GiftIcon';
+import { TemplateIcon } from '../../components/icons/TemplateIcon';
 
 interface SurveyTableListProps {
     surveys: Survey[];
@@ -151,7 +150,7 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                                                         className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-50"
                                                         title="Compartilhar Pesquisa"
                                                     >
-                                                        <ShareIcon className="h-5 w-5" /> {/* Added ShareIcon here */}
+                                                        <ShareIcon className="h-5 w-5" />
                                                     </button>
                                                     <button
                                                         onClick={() => onDownloadReport(survey)}
