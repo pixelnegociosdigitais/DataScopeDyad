@@ -114,7 +114,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                             joined_at: p.joined_at,
                             unread_count: p.unread_count,
                             profiles: profileData && profileData.id ? { // Add check here too
-                                id: profileData.id,
+                                id: profileData.id as string, // Explicitly assert as string
                                 fullName: profileData.full_name || '',
                                 role: profileData.role as UserRole,
                                 email: profileData.email || '',
