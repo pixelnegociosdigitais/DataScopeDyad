@@ -15,13 +15,13 @@ import SettingsPanel from './components/SettingsPanel';
 import ModulePermissionsManager from './components/ModulePermissionsManager';
 import DeveloperCompanyUserManager from './components/DeveloperCompanyUserManager';
 import AdministratorUserManager from './src/components/AdministratorUserManager';
-import LogsAndAuditPanel from './src/components/LogsAndAuditPanel';
+import LogsAndAuditPanel from './components/LogsAndAuditPanel'; // Corrected import path
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
 import NoticeCreator from './src/components/NoticeCreator';
 import ChatLayout from './src/components/chat/ChatLayout';
-import SurveyTemplateManager from './src/components/SurveyTemplateManager'; // Importar SurveyTemplateManager
+import SurveyTemplateManager from './src/components/SurveyTemplateManager';
 import { ChatIcon } from './components/icons/ChatIcon';
-import { ArrowLeftIcon } from './components/icons/ArrowLeftIcon'; // Added import
+import { ArrowLeftIcon } from './components/icons/ArrowLeftIcon';
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
 import { useAuth } from './src/hooks/useAuth';
@@ -40,7 +40,7 @@ const App: React.FC = () => {
     const [showDeleteSurveyConfirm, setShowDeleteSurveyConfirm] = useState(false);
     const [surveyToDelete, setSurveyToDelete] = useState<Survey | null>(null);
 
-    const dashboardRef = useRef<HTMLDivElement | null>(null); // Corrected useRef declaration
+    const dashboardRef = useRef<HTMLDivElement | null>(null);
 
     const {
         currentUser,
@@ -62,8 +62,8 @@ const App: React.FC = () => {
         handleDeleteSurvey,
         handleSaveResponse,
         fetchSurveys,
-        handleSaveTemplate, // Adicionado
-        handleDeleteTemplate, // Adicionado
+        handleSaveTemplate,
+        handleDeleteTemplate,
     } = useSurveys(currentCompany, currentUser);
 
     useEffect(() => {

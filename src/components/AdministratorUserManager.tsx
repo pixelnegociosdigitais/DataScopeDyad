@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeftIcon } from '../../components/icons/ArrowLeftIcon';
-import { UserIcon } from '../../components/icons/UserIcon';
-import { PencilIcon } from '../../components/icons/PencilIcon';
-import { TrashIcon } from '../../components/icons/TrashIcon';
-import { CreateIcon } from '../../components/icons/CreateIcon';
-import { User, UserRole, Company, View, ModuleName } from '../../types';
-import { supabase } from '../integrations/supabase/client';
-import { showError } from '../utils/toast'; // Removed showSuccess
-import ConfirmationDialog from './ConfirmationDialog'; // Corrected path
-import { useAuth } from '../hooks/useAuth';
-import UserEditModal from './UserEditModal'; // Corrected path
+import { ArrowLeftIcon } from '@/components/icons/ArrowLeftIcon';
+import { UserIcon } from '@/components/icons/UserIcon';
+import { PencilIcon } from '@/components/icons/PencilIcon';
+import { TrashIcon } from '@/components/icons/TrashIcon';
+import { CreateIcon } from '@/components/icons/CreateIcon';
+import { User, UserRole, Company, View, ModuleName } from '@/types';
+import { supabase } from '@/src/integrations/supabase/client';
+import { showError } from '@/src/utils/toast';
+import ConfirmationDialog from '@/src/components/ConfirmationDialog';
+import { useAuth } from '@/src/hooks/useAuth';
+import UserEditModal from '@/src/components/UserEditModal';
 
 // Mapeamento de tradução para os nomes dos módulos
 const moduleNameTranslations: Record<ModuleName, string> = {
@@ -24,6 +24,7 @@ const moduleNameTranslations: Record<ModuleName, string> = {
     [ModuleName.MANAGE_COMPANIES]: 'Gerenciar Empresas',
     [ModuleName.MANAGE_NOTICES]: 'Gerenciar Avisos',
     [ModuleName.ACCESS_CHAT]: 'Acessar Chat',
+    [ModuleName.MANAGE_SURVEY_TEMPLATES]: 'Gerenciar Modelos de Pesquisa',
 };
 
 interface AdministratorUserManagerProps {
