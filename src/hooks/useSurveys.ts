@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Survey, SurveyResponse, Question, Answer, Company, User } from '@/types';
+import { Survey, SurveyResponse, Question, Answer, Company, User, RawSurveyData } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { showSuccess, showError } from '@/src/utils/toast';
 import { logActivity } from '@/src/utils/logger';
@@ -55,7 +55,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             return [];
         } else if (data) {
             console.log('useSurveys: fetchSurveys - Dados de pesquisas recebidos:', data);
-            const fetchedSurveys: Survey[] = data.map((s: any) => ({
+            const fetchedSurveys: Survey[] = (data as RawSurveyData[]).map((s) => ({
                 id: s.id,
                 title: s.title,
                 companyId: s.company_id,

@@ -190,3 +190,16 @@ export interface LogEntry {
     companyId?: string;
     module?: string;
 }
+
+// New interface for raw data from Supabase query
+export interface RawSurveyData {
+    id: string;
+    title: string;
+    company_id: string;
+    created_by: string;
+    created_at: string;
+    questions: Question[];
+    survey_responses: any[]; // Adjust if a more specific type is needed for responses
+    companies: { name: string } | null; // Expecting a single object or null
+    profiles: { full_name: string } | null; // Expecting a single object or null
+}
