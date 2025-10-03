@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Survey, SurveyResponse, QuestionType } from '../../types';
+import { Survey, QuestionType } from '../../types';
 
 export const generatePdfReport = async (survey: Survey, elementToCapture: HTMLElement) => {
     const doc = new jsPDF('p', 'mm', 'a4');
