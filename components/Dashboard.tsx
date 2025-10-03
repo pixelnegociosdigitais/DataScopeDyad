@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
-import html2canvas from 'html2canvas';
 import { Survey, SurveyResponse, QuestionType, Answer, ChartDataItem, QuestionAnalysis } from '../types';
 import { DownloadIcon } from './icons/DownloadIcon';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
