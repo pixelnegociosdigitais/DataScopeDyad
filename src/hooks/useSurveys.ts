@@ -274,71 +274,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 logActivity('INFO', `Nova pesquisa '${surveyData.title}' (ID: ${newSurvey.id}) criada com sucesso.`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany.id);
             }
         }
-
-        if (targetSurveyId && currentCompany?.id) {
-            console.log('useSurveys: handleSaveSurvey - Buscando pesquisa única atualizada para ID:', targetSurveyId);
-            const { data: updatedSurveyData, error: fetchSingleError } = await supabase
-                .from('surveys')
-                .select(`
-                    id,
-                    title,
-                    company_id,
-                    created_by,
-                    created_at,
-                    questions (
-                        id,
-                        text,
-                        type,
-                        options,
-                        position
-                    ),
-                    survey_responses(*),
-                    companies (name),
-                    profiles (full_name)
-                `)
-                .eq('id', targetSurveyId)
-                .single();
-
-            if (fetchSingleError) {
-                console.error('useSurveys: handleSaveSurvey - Erro ao buscar pesquisa única atualizada:', fetchSingleError);
-                logActivity('ERROR', `Erro ao buscar pesquisa única atualizada (ID: ${targetSurveyId}): ${fetchSingleError.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany.id);
-                await fetchSurveys(currentCompany.id);
-                return;
-            }
-
-            if (updatedSurveyData) {
-                const updatedSurvey: Survey = {
-                    id: updatedSurveyData.id,
-                    title: updatedSurveyData.title,
-                    companyId: updatedSurveyData.company_id,
-                    created_by: updatedSurveyData.created_by, // Corrected type
-                    created_at: updatedSurveyData.created_at,
-                    questions: updatedSurveyData.questions.map((q: any) => ({
-                        id: q.id,
-                        text: q.text,
-                        type: q.type,
-                        options: q.options || undefined,
-                        position: q.position || 0,
-                    })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
-                    responseCount: updatedSurveyData.survey_responses ? updatedSurveyData.survey_responses.length : 0,
-                    companyName: updatedSurveyData.companies && updatedSurveyData.companies.length > 0 ? updatedSurveyData.companies[0].name : 'N/A', // Accessing from array
-                    createdByName: updatedSurveyData.profiles && updatedSurveyData.profiles.length > 0 ? updatedSurveyData.profiles[0].full_name : 'Usuário Desconhecido' // Accessing from array
-                };
-                console.log('useSurveys: handleSaveSurvey - Dados da pesquisa atualizada:', updatedSurvey);
-
-                setSurveys(prevSurveys => {
-                    const existingIndex = prevSurveys.findIndex(s => s.id === updatedSurvey.id);
-                    if (existingIndex > -1) {
-                        const newSurveys = [...prevSurveys];
-                        newSurveys[existingIndex] = updatedSurvey;
-                        return newSurveys;
-                    } else {
-                        return [updatedSurvey, ...prevSurveys];
-                    }
-                });
-            }
-        }
-    }, [currentUser, currentCompany, fetchSurveys, showSuccess, showError, setSurveys]);
+        // Removido o bloco de atualização de estado local aqui.
+        // A atualização da lista completa será feita pelo `fetchSurveys` no `App.tsx`.
+    }, [currentUser, currentCompany, showSuccess, showError]);
 
     const handleDeleteSurvey = useCallback(async (surveyId: string): Promise<boolean> => {
         console.log('useSurveys: handleDeleteSurvey - Excluindo pesquisa ID:', surveyId);
