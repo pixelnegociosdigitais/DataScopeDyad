@@ -66,7 +66,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
             const chatsWithDetails: Chat[] = chatParticipantsData.map((cp: {
                 chat_id: string;
                 unread_count: number;
-                chats: Array<{ // Corrigido para ser um array de objetos de chat
+                chats: Array<{
                     id: string;
                     name: string | null;
                     is_group_chat: boolean | null;
@@ -75,31 +75,33 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                     created_at: string;
                 }>;
             }) => {
-                // Acessar o primeiro (e geralmente único) objeto de chat do array
                 const rawChatData = cp.chats[0]; 
 
                 if (!rawChatData) {
                     console.warn(`Dados do chat ausentes para o participante ${cp.chat_id}`);
-                    return null; // Retorna null para ser filtrado depois
+                    return null;
                 }
 
                 const unreadCount: number = cp.unread_count;
                 
                 const participantsInChat: ChatParticipant[] = allParticipantsData
                     .filter(p => p.chat_id === rawChatData.id)
-                    .map(p => ({
-                        chat_id: p.chat_id,
-                        user_id: p.user_id,
-                        joined_at: p.joined_at,
-                        unread_count: p.unread_count,
-                        profiles: p.profiles ? {
-                            id: p.profiles.id,
-                            fullName: p.profiles.full_name || '',
-                            role: p.profiles.role as UserRole,
-                            email: p.profiles.email || '',
-                            profilePictureUrl: p.profiles.avatar_url || undefined,
-                        } : undefined,
-                    }));
+                    .map((p: any) => { // Usar 'any' temporariamente para 'p' para lidar com a inferência flexível do Supabase
+                        const profileData = p.profiles && Array.isArray(p.profiles) ? p.profiles[0] : p.profiles; // Garante que profileData é um objeto
+                        return {
+                            chat_id: p.chat_id,
+                            user_id: p.user_id,
+                            joined_at: p.joined_at,
+                            unread_count: p.unread_count,
+                            profiles: profileData ? {
+                                id: profileData.id,
+                                fullName: profileData.full_name || '',
+                                role: profileData.role as UserRole,
+                                email: profileData.email || '',
+                                profilePictureUrl: profileData.avatar_url || undefined,
+                            } : undefined,
+                        };
+                    });
 
                 let chatDisplayName: string | null = rawChatData.name;
                 if (!rawChatData.is_group_chat) {
@@ -118,7 +120,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                     unread_count: unreadCount,
                     participants: participantsInChat,
                 };
-            }).filter(Boolean) as Chat[]; // Filtra quaisquer entradas nulas
+            }).filter(Boolean) as Chat[];
 
             setChats(chatsWithDetails);
         } catch (error: any) {
