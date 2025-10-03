@@ -19,6 +19,7 @@ import LogsAndAuditPanel from './components/LogsAndAuditPanel';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
 import NoticeCreator from './src/components/NoticeCreator';
 import ChatLayout from './src/components/chat/ChatLayout';
+import SurveyTemplateManager from './src/components/SurveyTemplateManager'; // Importar SurveyTemplateManager
 import { ChatIcon } from './components/icons/ChatIcon';
 import { ArrowLeftIcon } from './components/icons/ArrowLeftIcon'; // Added import
 import { supabase } from './src/integrations/supabase/client';
@@ -61,6 +62,8 @@ const App: React.FC = () => {
         handleDeleteSurvey,
         handleSaveResponse,
         fetchSurveys,
+        handleSaveTemplate, // Adicionado
+        handleDeleteTemplate, // Adicionado
     } = useSurveys(currentCompany, currentUser);
 
     useEffect(() => {
@@ -355,15 +358,14 @@ const App: React.FC = () => {
                 return null;
             case View.SURVEY_TEMPLATES:
                 return (
-                    <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
-                        <div className="flex items-center gap-4 mb-6">
-                            <button onClick={handleBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Voltar">
-                                <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
-                            </button>
-                            <h2 className="text-2xl font-bold text-text-main">Gerenciar Modelos de Pesquisa</h2>
-                        </div>
-                        <p className="text-text-light">Conteúdo para gerenciar modelos...</p>
-                    </div>
+                    <SurveyTemplateManager
+                        onBack={handleBack}
+                        templates={templates}
+                        currentUser={currentUser}
+                        modulePermissions={modulePermissions}
+                        onSaveTemplate={handleSaveTemplate}
+                        onDeleteTemplate={handleDeleteTemplate}
+                    />
                 );
             default:
                 return (

@@ -10,6 +10,7 @@ import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
 import { BellIcon } from './icons/BellIcon';
 import { ChatIcon } from './icons/ChatIcon'; // Importar o novo ícone de chat
+import { TemplateIcon } from './icons/TemplateIcon'; // Importar TemplateIcon
 import { View, ModuleName, UserRole } from '../types';
 
 interface SidebarProps {
@@ -66,6 +67,12 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
             icon: BellIcon,
             view: View.MANAGE_NOTICES,
             permission: modulePermissions[ModuleName.MANAGE_NOTICES],
+        },
+        {
+            label: 'Gerenciar Modelos', // Novo item de menu para gerenciar modelos
+            icon: TemplateIcon,
+            view: View.SURVEY_TEMPLATES,
+            permission: modulePermissions[ModuleName.MANAGE_SURVEY_TEMPLATES], // Apenas desenvolvedores
         },
         {
             label: 'Configurações',

@@ -14,6 +14,8 @@ interface UseSurveysReturn {
     handleSaveSurvey: (surveyData: Survey, editingSurveyId?: string) => Promise<void>;
     handleDeleteSurvey: (surveyId: string) => Promise<boolean>; // Retorna Promise<boolean>
     handleSaveResponse: (answers: Answer[], selectedSurvey: Survey, currentUser: User) => Promise<boolean>;
+    handleSaveTemplate: (templateData: Survey, editingTemplateId?: string) => Promise<void>;
+    handleDeleteTemplate: (templateId: string) => Promise<boolean>;
 }
 
 export const useSurveys = (currentCompany: Company | null, currentUser: User | null): UseSurveysReturn => {
@@ -143,14 +145,14 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             const fetchedTemplates: Survey[] = data.map(template => ({
                 id: template.id,
                 title: template.title,
-                companyId: '',
+                companyId: '', // Templates não têm companyId
                 questions: template.questions as Question[],
             }));
             setTemplates(fetchedTemplates);
             logActivity('INFO', `Templates de pesquisa carregados.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             console.log('useSurveys: fetchTemplates - Templates processados e definidos:', fetchedTemplates);
         }
-    }, []);
+    }, [currentUser, currentCompany]); // Adicionado currentUser e currentCompany para logActivity
 
     useEffect(() => {
         fetchTemplates();
@@ -444,6 +446,66 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         return false;
     }, [currentCompany?.id, fetchSurveys, fetchSurveyResponses, showSuccess, showError, currentUser]);
 
+    const handleSaveTemplate = useCallback(async (templateData: Survey, editingTemplateId?: string) => {
+        if (!currentUser) {
+            showError('Usuário não identificado para salvar o modelo.');
+            logActivity('ERROR', `Tentativa de salvar modelo sem usuário logado.`, 'SURVEY_TEMPLATES', currentUser?.id, currentUser?.email, currentCompany?.id);
+            return;
+        }
+
+        try {
+            if (editingTemplateId) {
+                // Update existing template
+                const { error } = await supabase
+                    .from('survey_templates')
+                    .update({ title: templateData.title, questions: templateData.questions })
+                    .eq('id', editingTemplateId);
+                if (error) throw error;
+                showSuccess('Modelo atualizado com sucesso!');
+                logActivity('INFO', `Modelo '${templateData.title}' (ID: ${editingTemplateId}) atualizado com sucesso.`, 'SURVEY_TEMPLATES', currentUser.id, currentUser.email, currentCompany?.id);
+            } else {
+                // Create new template
+                const { error } = await supabase
+                    .from('survey_templates')
+                    .insert({ title: templateData.title, questions: templateData.questions });
+                if (error) throw error;
+                showSuccess('Modelo criado com sucesso!');
+                logActivity('INFO', `Novo modelo '${templateData.title}' criado com sucesso.`, 'SURVEY_TEMPLATES', currentUser.id, currentUser.email, currentCompany?.id);
+            }
+            fetchTemplates(); // Refresh templates list
+        } catch (err: any) {
+            console.error('Erro ao salvar modelo:', err.message);
+            showError('Erro ao salvar modelo: ' + err.message);
+            logActivity('ERROR', `Erro ao salvar modelo '${templateData.title}': ${err.message}`, 'SURVEY_TEMPLATES', currentUser.id, currentUser.email, currentCompany?.id);
+        }
+    }, [currentUser, currentCompany, fetchTemplates, showSuccess, showError]);
+
+    const handleDeleteTemplate = useCallback(async (templateId: string): Promise<boolean> => {
+        if (!currentUser) {
+            showError('Usuário não identificado para excluir o modelo.');
+            logActivity('ERROR', `Tentativa de excluir modelo sem usuário logado.`, 'SURVEY_TEMPLATES', currentUser?.id, currentUser?.email, currentCompany?.id);
+            return false;
+        }
+
+        try {
+            const { error } = await supabase
+                .from('survey_templates')
+                .delete()
+                .eq('id', templateId);
+
+            if (error) throw error;
+            showSuccess('Modelo excluído com sucesso!');
+            logActivity('INFO', `Modelo (ID: ${templateId}) excluído com sucesso.`, 'SURVEY_TEMPLATES', currentUser.id, currentUser.email, currentCompany?.id);
+            fetchTemplates(); // Refresh templates list
+            return true;
+        } catch (err: any) {
+            console.error('Erro ao excluir modelo:', err.message);
+            showError('Erro ao excluir modelo: ' + err.message);
+            logActivity('ERROR', `Erro ao excluir modelo (ID: ${templateId}): ${err.message}`, 'SURVEY_TEMPLATES', currentUser.id, currentUser.email, currentCompany?.id);
+            return false;
+        }
+    }, [currentUser, currentCompany, fetchTemplates, showSuccess, showError]);
+
     return {
         surveys,
         surveyResponses,
@@ -454,5 +516,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         handleSaveSurvey,
         handleDeleteSurvey,
         handleSaveResponse,
+        handleSaveTemplate,
+        handleDeleteTemplate,
     };
 };

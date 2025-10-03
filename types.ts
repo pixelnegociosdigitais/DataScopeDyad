@@ -171,6 +171,7 @@ export enum ModuleName {
     MANAGE_COMPANIES = 'manage_companies', // Para desenvolvedores gerenciarem empresas
     MANAGE_NOTICES = 'manage_notices', // Nova permissão: Gerenciar avisos
     ACCESS_CHAT = 'access_chat', // Nova permissão: Acessar o chat
+    MANAGE_SURVEY_TEMPLATES = 'manage_survey_templates', // Nova permissão: Gerenciar modelos de pesquisa
 }
 
 export interface ModulePermission {

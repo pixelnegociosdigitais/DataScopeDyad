@@ -40,7 +40,12 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
             const selectedTemplate = templates.find(t => t.id === templateId);
             if (selectedTemplate) {
                 setTitle(selectedTemplate.title);
-                setQuestions(selectedTemplate.questions.map(q => ({ ...q, id: `q${Date.now()}-${Math.random().toString(36).substring(7)}` })));
+                // Ensure new unique IDs for questions from template
+                setQuestions(selectedTemplate.questions.map((q, index) => ({ 
+                    ...q, 
+                    id: `q${Date.now()}-${Math.random().toString(36).substring(7)}-${index}`,
+                    position: index,
+                })));
             }
         } else {
             setTitle('');
@@ -53,6 +58,7 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
             id: `q${Date.now()}-${Math.random().toString(36).substring(7)}`,
             text: initialText,
             type: type,
+            position: questions.length,
             ...((type === QuestionType.MULTIPLE_CHOICE || type === QuestionType.CHECKBOX) && { options: [''] })
         };
         setQuestions([...questions, newQuestion]);
@@ -115,7 +121,7 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
             id: surveyToEdit?.id || '',
             title, 
             companyId: surveyToEdit?.companyId || '', // companyId será validado e preenchido no useSurveys
-            questions 
+            questions: questions.map((q, index) => ({ ...q, position: index })) // Ensure positions are set
         });
         showSuccess(isEditing ? 'Pesquisa atualizada com sucesso!' : 'Pesquisa criada com sucesso!');
         setShowConfirmationDialog(true);
@@ -234,21 +240,21 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
             <div className="bg-white p-4 rounded-lg shadow-md">
                 <span className="text-sm font-medium text-gray-600 mr-4">Adicionar Pergunta Rápida:</span>
                 <div className="flex flex-wrap gap-2 mt-2 mb-4 border-b pb-4">
-                    <button onClick={() => addQuestion(QuestionType.SHORT_TEXT, 'Nome Completo')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">Nome</button>
-                    <button onClick={() => addQuestion(QuestionType.PHONE, 'Telefone')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">Telefone</button>
-                    <button onClick={() => addQuestion(QuestionType.LONG_TEXT, 'Endereço Completo')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">Endereço</button>
-                    <button onClick={() => addQuestion(QuestionType.EMAIL, 'E-mail')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">E-mail</button>
+                    <button type="button" onClick={() => addQuestion(QuestionType.SHORT_TEXT, 'Nome Completo')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">Nome</button>
+                    <button type="button" onClick={() => addQuestion(QuestionType.PHONE, 'Telefone')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">Telefone</button>
+                    <button type="button" onClick={() => addQuestion(QuestionType.LONG_TEXT, 'Endereço Completo')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">Endereço</button>
+                    <button type="button" onClick={() => addQuestion(QuestionType.EMAIL, 'E-mail')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">E-mail</button>
                 </div>
 
                 <span className="text-sm font-medium text-gray-600 mr-4">Adicionar Outro Tipo de Pergunta:</span>
                 <div className="flex flex-wrap gap-2 mt-2">
-                    <button onClick={() => addQuestion(QuestionType.SHORT_TEXT)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Texto Curto</button>
-                    <button onClick={() => addQuestion(QuestionType.LONG_TEXT)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Texto Longo</button>
-                    <button onClick={() => addQuestion(QuestionType.EMAIL)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Email</button>
-                    <button onClick={() => addQuestion(QuestionType.PHONE)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Telefone</button>
-                    <button onClick={() => addQuestion(QuestionType.MULTIPLE_CHOICE)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Múltipla Escolha</button>
-                    <button onClick={() => addQuestion(QuestionType.CHECKBOX)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Caixas de Seleção</button>
-                    <button onClick={() => addQuestion(QuestionType.RATING)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Avaliação (1-10)</button>
+                    <button type="button" onClick={() => addQuestion(QuestionType.SHORT_TEXT)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Texto Curto</button>
+                    <button type="button" onClick={() => addQuestion(QuestionType.LONG_TEXT)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Texto Longo</button>
+                    <button type="button" onClick={() => addQuestion(QuestionType.EMAIL)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Email</button>
+                    <button type="button" onClick={() => addQuestion(QuestionType.PHONE)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Telefone</button>
+                    <button type="button" onClick={() => addQuestion(QuestionType.MULTIPLE_CHOICE)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Múltipla Escolha</button>
+                    <button type="button" onClick={() => addQuestion(QuestionType.CHECKBOX)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Caixas de Seleção</button>
+                    <button type="button" onClick={() => addQuestion(QuestionType.RATING)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">Avaliação (1-10)</button>
                 </div>
             </div>
 
