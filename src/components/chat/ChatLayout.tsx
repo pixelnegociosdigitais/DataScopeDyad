@@ -6,7 +6,7 @@ import { supabase } from '../../integrations/supabase/client';
 import { showError, showSuccess } from '../../utils/toast';
 
 // Helper interface for raw profile data from Supabase join
-interface RawProfileFromJoin {
+interface ProfileDataFromJoin {
     id: string | null;
     full_name: string | null;
     avatar_url: string | null;
@@ -76,9 +76,14 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
                 is_group_chat: fetchedChat.is_group_chat,
                 last_message_at: fetchedChat.last_message_at,
                 unread_count: 0, // New chat starts with 0 unread
-                participants: fetchedChat.participants.map((p: any) => {
-                    const rawProfileDataArray = p.profiles as RawProfileFromJoin[] | null;
-                    const profileData = rawProfileDataArray && rawProfileDataArray.length > 0 ? rawProfileDataArray[0] : null;
+                participants: fetchedChat.participants.map((p: {
+                    chat_id: string;
+                    user_id: string;
+                    joined_at: string;
+                    unread_count: number;
+                    profiles: ProfileDataFromJoin[] | null; // Explicitly type profiles here
+                }) => {
+                    const profileData = p.profiles && p.profiles.length > 0 ? p.profiles[0] : null;
 
                     return {
                         chat_id: p.chat_id,
@@ -86,7 +91,7 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
                         joined_at: p.joined_at,
                         unread_count: p.unread_count,
                         profiles: profileData && profileData.id ? {
-                            id: profileData.id as string, // Explicitly assert as string
+                            id: profileData.id,
                             fullName: profileData.full_name || '',
                             role: profileData.role || UserRole.USER, // Provide a default role if null
                             email: profileData.email || '',
