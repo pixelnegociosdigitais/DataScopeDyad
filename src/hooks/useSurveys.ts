@@ -189,116 +189,107 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
     }, [currentCompany?.id, currentUser?.role, fetchSurveys]);
 
     const handleSaveSurvey = useCallback(async (surveyData: Survey, editingSurveyId?: string) => {
-        if (!currentUser) {
-            showError('Usuário não identificado para salvar a pesquisa.');
-            console.error('useSurveys: handleSaveSurvey - Usuário ausente.');
-            logActivity('ERROR', `Tentativa de salvar pesquisa sem usuário identificado.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
-            return;
-        }
-
-        // Determine the company_id for the survey.
-        // It MUST be present because the DB column is NOT NULL.
-        const surveyCompanyId = currentUser.company_id;
-
-        if (!surveyCompanyId) {
-            showError('Você precisa estar vinculado a uma empresa para criar ou editar pesquisas.');
-            console.error('useSurveys: handleSaveSurvey - company_id ausente para o usuário.');
-            logActivity('ERROR', `Tentativa de salvar pesquisa sem company_id para o usuário.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
-            return;
-        }
-
-        if (editingSurveyId) {
-            console.log('useSurveys: handleSaveSurvey - Atualizando pesquisa existente:', editingSurveyId);
-            const { error: surveyUpdateError } = await supabase
-                .from('surveys')
-                .update({ title: surveyData.title, company_id: surveyCompanyId }) // Ensure company_id is updated if needed
-                .eq('id', editingSurveyId);
-
-            if (surveyUpdateError) {
-                showError('Erro ao atualizar a pesquisa: ' + surveyUpdateError.message);
-                console.error('useSurveys: handleSaveSurvey - Erro ao atualizar pesquisa:', surveyUpdateError);
-                logActivity('ERROR', `Erro ao atualizar pesquisa '${surveyData.title}' (ID: ${editingSurveyId}): ${surveyUpdateError.message}`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany?.id);
+        try {
+            if (!currentUser) {
+                showError('Usuário não identificado para salvar a pesquisa.');
+                console.error('useSurveys: handleSaveSurvey - Usuário ausente.');
+                logActivity('ERROR', `Tentativa de salvar pesquisa sem usuário identificado.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
                 return;
             }
 
-            const { error: deleteQuestionsError } = await supabase
-                .from('questions')
-                .delete()
-                .eq('survey_id', editingSurveyId);
+            // Determine the company_id for the survey.
+            // It MUST be present because the DB column is NOT NULL.
+            const surveyCompanyId = currentUser.company_id;
 
-            if (deleteQuestionsError) {
-                showError('Erro ao remover perguntas antigas: ' + deleteQuestionsError.message);
-                console.error('useSurveys: handleSaveSurvey - Erro ao remover perguntas antigas:', deleteQuestionsError);
-                logActivity('ERROR', `Erro ao remover perguntas antigas da pesquisa '${surveyData.title}' (ID: ${editingSurveyId}): ${deleteQuestionsError.message}`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany?.id);
+            if (!surveyCompanyId) {
+                showError('Você precisa estar vinculado a uma empresa para criar ou editar pesquisas.');
+                console.error('useSurveys: handleSaveSurvey - company_id ausente para o usuário.');
+                logActivity('ERROR', `Tentativa de salvar pesquisa sem company_id para o usuário.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
                 return;
             }
 
-            const questionsToInsert = surveyData.questions.map((q, index) => ({
-                survey_id: editingSurveyId,
-                text: q.text,
-                type: q.type,
-                options: q.options || null,
-                position: index,
-            }));
-            console.log('useSurveys: handleSaveSurvey - Inserindo novas/atualizadas perguntas:', questionsToInsert);
+            if (editingSurveyId) {
+                console.log('useSurveys: handleSaveSurvey - Atualizando pesquisa existente:', editingSurveyId);
+                const { error: surveyUpdateError } = await supabase
+                    .from('surveys')
+                    .update({ title: surveyData.title, company_id: surveyCompanyId }) // Ensure company_id is updated if needed
+                    .eq('id', editingSurveyId);
 
-            const { error: insertQuestionsError } = await supabase
-                .from('questions')
-                .insert(questionsToInsert);
+                if (surveyUpdateError) {
+                    throw surveyUpdateError; // Throw to be caught by the outer try-catch
+                }
 
-            if (insertQuestionsError) {
-                showError('Erro ao inserir novas perguntas: ' + insertQuestionsError.message);
-                console.error('useSurveys: handleSaveSurvey - Erro ao inserir novas perguntas:', insertQuestionsError);
-                logActivity('ERROR', `Erro ao inserir novas perguntas para a pesquisa '${surveyData.title}' (ID: ${editingSurveyId}): ${insertQuestionsError.message}`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany?.id);
-                return;
-            }
+                const { error: deleteQuestionsError } = await supabase
+                    .from('questions')
+                    .delete()
+                    .eq('survey_id', editingSurveyId);
 
-            showSuccess('Pesquisa atualizada com sucesso!');
-            logActivity('INFO', `Pesquisa '${surveyData.title}' (ID: ${editingSurveyId}) atualizada com sucesso.`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany?.id);
+                if (deleteQuestionsError) {
+                    throw deleteQuestionsError; // Throw to be caught by the outer try-catch
+                }
 
-        } else { // Creating new survey
-            console.log('useSurveys: handleSaveSurvey - Criando nova pesquisa.');
-            console.log('useSurveys: handleSaveSurvey - Inserting with company_id:', surveyCompanyId, 'and created_by:', currentUser.id);
-            const { data: newSurvey, error: surveyInsertError } = await supabase
-                .from('surveys')
-                .insert({
-                    title: surveyData.title,
-                    company_id: surveyCompanyId, // Use the determined company_id
-                    created_by: currentUser.id,
-                })
-                .select()
-                .single();
-
-            if (surveyInsertError) {
-                showError('Erro ao criar a pesquisa: ' + surveyInsertError.message);
-                console.error('useSurveys: handleSaveSurvey - Erro ao criar pesquisa:', surveyInsertError);
-                logActivity('ERROR', `Erro ao criar nova pesquisa '${surveyData.title}': ${surveyInsertError.message}`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany?.id);
-                return;
-            }
-
-            if (newSurvey) {
                 const questionsToInsert = surveyData.questions.map((q, index) => ({
-                    survey_id: newSurvey.id,
+                    survey_id: editingSurveyId,
                     text: q.text,
                     type: q.type,
                     options: q.options || null,
                     position: index,
                 }));
-                console.log('useSurveys: handleSaveSurvey - Inserindo perguntas para nova pesquisa:', questionsToInsert);
+                console.log('useSurveys: handleSaveSurvey - Inserindo novas/atualizadas perguntas:', questionsToInsert);
 
-                const { error: questionsInsertError } = await supabase
+                const { error: insertQuestionsError } = await supabase
                     .from('questions')
                     .insert(questionsToInsert);
 
-                if (questionsInsertError) {
-                    showError('Erro ao inserir perguntas da pesquisa: ' + questionsInsertError.message);
-                    console.error('useSurveys: handleSaveSurvey - Erro ao inserir perguntas:', questionsInsertError);
-                    logActivity('ERROR', `Erro ao inserir perguntas para a nova pesquisa '${surveyData.title}' (ID: ${newSurvey.id}): ${questionsInsertError.message}`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany?.id);
-                    return;
+                if (insertQuestionsError) {
+                    throw insertQuestionsError; // Throw to be caught by the outer try-catch
                 }
-                showSuccess('Pesquisa criada com sucesso!');
-                logActivity('INFO', `Nova pesquisa '${surveyData.title}' (ID: ${newSurvey.id}) criada com sucesso.`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany?.id);
+
+                showSuccess('Pesquisa atualizada com sucesso!');
+                logActivity('INFO', `Pesquisa '${surveyData.title}' (ID: ${editingSurveyId}) atualizada com sucesso.`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany?.id);
+
+            } else { // Creating new survey
+                console.log('useSurveys: handleSaveSurvey - Criando nova pesquisa.');
+                console.log('useSurveys: handleSaveSurvey - Inserting with company_id:', surveyCompanyId, 'and created_by:', currentUser.id);
+                const { data: newSurvey, error: surveyInsertError } = await supabase
+                    .from('surveys')
+                    .insert({
+                        title: surveyData.title,
+                        company_id: surveyCompanyId, // Use the determined company_id
+                        created_by: currentUser.id,
+                    })
+                    .select()
+                    .single();
+
+                if (surveyInsertError) {
+                    throw surveyInsertError; // Throw to be caught by the outer try-catch
+                }
+
+                if (newSurvey) {
+                    const questionsToInsert = surveyData.questions.map((q, index) => ({
+                        survey_id: newSurvey.id,
+                        text: q.text,
+                        type: q.type,
+                        options: q.options || null,
+                        position: index,
+                    }));
+                    console.log('useSurveys: handleSaveSurvey - Inserindo perguntas para nova pesquisa:', questionsToInsert);
+
+                    const { error: questionsInsertError } = await supabase
+                        .from('questions')
+                        .insert(questionsToInsert);
+
+                    if (questionsInsertError) {
+                        throw questionsInsertError; // Throw to be caught by the outer try-catch
+                    }
+                    showSuccess('Pesquisa criada com sucesso!');
+                    logActivity('INFO', `Nova pesquisa '${surveyData.title}' (ID: ${newSurvey.id}) criada com sucesso.`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany?.id);
+                }
             }
+        } catch (err: any) {
+            console.error('useSurveys: handleSaveSurvey - Erro inesperado durante o salvamento da pesquisa:', err);
+            showError('Erro ao salvar a pesquisa: ' + err.message);
+            logActivity('ERROR', `Erro inesperado ao salvar pesquisa '${surveyData.title}': ${err.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
         }
     }, [currentUser, currentCompany?.id, showSuccess, showError]);
 
