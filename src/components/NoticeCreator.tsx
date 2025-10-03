@@ -3,7 +3,7 @@ import { ArrowLeftIcon } from '../../components/icons/ArrowLeftIcon';
 import { BellIcon } from '../../components/icons/BellIcon';
 import { UserRole, ModuleName } from '../../types';
 import { useAuth } from '../hooks/useAuth';
-import { showError, showSuccess } from '../utils/toast';
+import { showError } from '../utils/toast'; // Removido showSuccess
 
 interface NoticeCreatorProps {
     onBack: () => void;
