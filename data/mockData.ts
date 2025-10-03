@@ -1,9 +1,9 @@
 import { User, Company, Survey, SurveyResponse, UserRole, QuestionType } from '../types';
 
 export const MOCK_COMPANIES: Company[] = [
-    { id: 'c1', name: 'Inova S.A.' },
-    { id: 'c2', name: 'DadosCorp' },
-    { id: 'c3', name: 'Soluções Ltda' },
+    { id: 'c1', name: 'Inova S.A.', administrators: [] },
+    { id: 'c2', name: 'DadosCorp', administrators: [] },
+    { id: 'c3', name: 'Soluções Ltda', administrators: [] },
 ];
 
 export const MOCK_USERS: User[] = [
