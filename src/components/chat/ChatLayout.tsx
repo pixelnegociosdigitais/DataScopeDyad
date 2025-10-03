@@ -92,8 +92,9 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
 
                     let userProfile: User | undefined = undefined;
                     if (profileData && profileData.id) {
+                        const profileId: string = profileData.id; // Explicitly type as string
                         userProfile = {
-                            id: profileData.id,
+                            id: profileId, // Use the explicitly typed variable
                             fullName: profileData.full_name || '',
                             role: profileData.role || UserRole.USER,
                             email: profileData.email || '',
