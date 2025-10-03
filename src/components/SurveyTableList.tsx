@@ -151,7 +151,7 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                                                         className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-50"
                                                         title="Compartilhar Pesquisa"
                                                     >
-                                                        <LinkIcon className="h-5 w-5" />
+                                                        <ShareIcon className="h-5 w-5" /> {/* Added ShareIcon here */}
                                                     </button>
                                                     <button
                                                         onClick={() => onDownloadReport(survey)}
