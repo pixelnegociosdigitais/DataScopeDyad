@@ -24,11 +24,12 @@ interface RawChatParticipantData {
 interface ChatListProps {
     currentUser: User;
     onSelectChat: (chat: Chat | null) => void;
-    onCreateChat: () => void;
+    onCreateChat: (companyId: string) => void; // Atualizado para aceitar companyId
     selectedChatId: string | null;
+    currentCompanyId: string; // Adicionado currentCompanyId
 }
 
-const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreateChat, selectedChatId }) => {
+const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreateChat, selectedChatId, currentCompanyId }) => {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
     const [showDeleteChatConfirm, setShowDeleteChatConfirm] = useState(false); // Estado para o diálogo de confirmação
@@ -52,7 +53,8 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                         created_at
                     )
                 `)
-                .eq('user_id', currentUser.id);
+                .eq('user_id', currentUser.id)
+                .eq('chats.company_id', currentCompanyId); // Filtrar por company_id
 
             if (participantsError) throw participantsError;
 
@@ -147,7 +149,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
         } finally {
             setLoading(false);
         }
-    }, [currentUser.id]);
+    }, [currentUser.id, currentCompanyId]); // Adicionado currentCompanyId como dependência
 
     useEffect(() => {
         fetchChats();
@@ -218,7 +220,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <h2 className="text-xl font-bold text-text-main">Chats</h2>
                 <button
-                    onClick={onCreateChat}
+                    onClick={() => onCreateChat(currentCompanyId)}
                     className="p-2 rounded-full bg-primary text-white hover:bg-primary-dark transition-colors"
                     title="Iniciar Novo Chat"
                 >
