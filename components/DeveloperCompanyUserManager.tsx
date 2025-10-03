@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
-import { PencilIcon } from './icons/PencilIcon';
 import { TrashIcon } from './icons/TrashIcon';
 import { CreateIcon } from './icons/CreateIcon';
 import { Company, User, UserRole, View } from '../types';
