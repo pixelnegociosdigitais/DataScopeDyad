@@ -3,14 +3,13 @@ import { User, Company, UserRole, View, ModuleName } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { showSuccess, showError } from '@/src/utils/toast';
 import { logActivity } from '@/src/utils/logger';
-// import { AuthApiError } from '@supabase/supabase-js'; // Removido pois não é usado diretamente aqui
 import { useAuthSession } from '@/src/context/AuthSessionContext';
 
 interface UseAuthReturn {
     currentUser: User | null;
     currentCompany: Company | null;
     loadingAuth: boolean;
-    handleCreateCompany: (companyData: { name: string }) => Promise<void>; // Updated type
+    handleCreateCompany: (companyData: { name: string }) => Promise<void>;
     handleUpdateProfile: (updatedUser: User) => Promise<void>;
     handleUpdateCompany: (updatedCompany: Company) => Promise<void>;
     fetchUserData: (userId: string, userEmail: string) => Promise<void>;
@@ -36,6 +35,7 @@ const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
     [ModuleName.MANAGE_COMPANIES]: false,
     [ModuleName.MANAGE_NOTICES]: false,
     [ModuleName.ACCESS_CHAT]: false,
+    [ModuleName.MANAGE_SURVEY_TEMPLATES]: false, // Added missing property
 };
 
 const DEVELOPER_EMAIL = 'santananegociosdigitais@gmail.com';

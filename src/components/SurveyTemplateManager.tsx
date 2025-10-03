@@ -1,20 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ArrowLeftIcon } from '../../components/icons/ArrowLeftIcon';
 import { TemplateIcon } from '../../components/icons/TemplateIcon';
 import { CreateIcon } from '../../components/icons/CreateIcon';
 import { PencilIcon } from '../../components/icons/PencilIcon';
 import { TrashIcon } from '../../components/icons/TrashIcon';
-import { Survey, Question, QuestionType, User, ModuleName } from '../../types';
-import { supabase } from '../integrations/supabase/client';
-import { showError, showSuccess } from '../utils/toast';
+import { Survey, Question, QuestionType, ModuleName } from '../../types';
+import { showError } from '../utils/toast';
 import ConfirmationDialog from './ConfirmationDialog';
-import { useAuth } from '../hooks/useAuth';
-import { logActivity } from '../utils/logger';
 
 interface SurveyTemplateManagerProps {
     onBack: () => void;
     templates: Survey[];
-    currentUser: User;
     modulePermissions: Record<ModuleName, boolean>;
     onSaveTemplate: (templateData: Survey, editingTemplateId?: string) => Promise<void>;
     onDeleteTemplate: (templateId: string) => Promise<boolean>;
@@ -33,7 +29,6 @@ const ALL_QUESTION_TYPES = [
 const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
     onBack,
     templates,
-    currentUser,
     modulePermissions,
     onSaveTemplate,
     onDeleteTemplate,
