@@ -21,15 +21,6 @@ interface RawChatParticipantData {
     }> | null; // Supabase pode retornar um array de objetos ou null para 'profiles'
 }
 
-// Helper interface for raw profile data from Supabase join (same as in ChatLayout)
-interface RawProfileFromJoin {
-    id: string | null;
-    full_name: string | null;
-    avatar_url: string | null;
-    role: UserRole | null;
-    email: string | null;
-}
-
 interface ChatListProps {
     currentUser: User;
     onSelectChat: (chat: Chat | null) => void;
