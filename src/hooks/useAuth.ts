@@ -10,7 +10,7 @@ interface UseAuthReturn {
     currentUser: User | null;
     currentCompany: Company | null;
     loadingAuth: boolean;
-    handleCreateCompany: (companyData: Omit<Company, 'id' | 'created_at'>) => Promise<void>;
+    handleCreateCompany: (companyData: { name: string }) => Promise<void>; // Updated type
     handleUpdateProfile: (updatedUser: User) => Promise<void>;
     handleUpdateCompany: (updatedCompany: Company) => Promise<void>;
     fetchUserData: (userId: string, userEmail: string) => Promise<void>;
@@ -172,7 +172,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         console.log('useAuth: _fetchUserData concluído. loadingAuth = false.');
     }, [_fetchModulePermissions]); // Removed currentUser and currentCompany from dependencies
 
-    const _handleCreateCompany = useCallback(async (companyData: Omit<Company, 'id' | 'created_at'>) => {
+    const _handleCreateCompany = useCallback(async (companyData: { name: string }) => { // Updated signature
         if (!currentUser) {
             showError('Erro: Dados do usuário não disponíveis para criar a empresa.');
             console.error('handleCreateCompany: currentUser é nulo ou indefinido.');
@@ -185,8 +185,10 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         console.log('useAuth: _handleCreateCompany - Criando empresa:', companyData.name, 'para userId:', userId);
 
         const companyToInsert = {
-            ...companyData,
+            name: companyData.name, // Only take name from input
             created_by: userId,
+            // status will default to 'active' in DB
+            // administrators is a joined property, not inserted here
         };
 
         const { data: newCompanyDataArray, error: companyError } = await supabase
@@ -288,7 +290,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             .update({
                 name: updatedCompany.name,
                 cnpj: updatedCompany.cnpj,
-                phone: updatedCompany.phone,
+                phone: updatedUpdatedCompany.phone,
                 address_street: updatedCompany.address_street,
                 address_neighborhood: updatedCompany.address_neighborhood,
                 address_complement: updatedCompany.address_complement,

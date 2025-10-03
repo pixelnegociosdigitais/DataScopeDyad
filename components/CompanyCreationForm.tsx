@@ -7,7 +7,7 @@ import ConfirmationDialog from '../src/components/ConfirmationDialog';
 
 interface CompanyCreationFormProps {
     user: User;
-    onCreateCompany: (companyData: { name: string }) => void;
+    onCreateCompany: (companyData: { name: string }) => Promise<void>; // Updated type
     onBack: () => void;
 }
 
@@ -15,10 +15,10 @@ const CompanyCreationForm: React.FC<CompanyCreationFormProps> = ({ user, onCreat
     const [companyName, setCompanyName] = useState('');
     const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => { // Made handleSubmit async
         e.preventDefault();
         if (companyName.trim()) {
-            onCreateCompany({ name: companyName });
+            await onCreateCompany({ name: companyName }); // Await the async function
             showSuccess('Empresa criada e vinculada com sucesso!');
             setShowConfirmationDialog(true);
         } else {
