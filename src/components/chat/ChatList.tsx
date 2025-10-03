@@ -8,13 +8,12 @@ import ConfirmationDialog from '../ConfirmationDialog'; // Importar Confirmation
 
 interface ChatListProps {
     currentUser: User;
-    currentCompanyId: string;
     onSelectChat: (chat: Chat | null) => void;
     onCreateChat: () => void;
     selectedChatId: string | null;
 }
 
-const ChatList: React.FC<ChatListProps> = ({ currentUser, currentCompanyId, onSelectChat, onCreateChat, selectedChatId }) => {
+const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreateChat, selectedChatId }) => {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
     const [showDeleteChatConfirm, setShowDeleteChatConfirm] = useState(false); // Estado para o diálogo de confirmação
