@@ -126,6 +126,8 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
         }
     }, [currentUser]);
 
+    const currentSelectedChatId = selectedChat?.id || null;
+
     return (
         <div className="h-full flex flex-col">
             {selectedChat ? (
@@ -135,7 +137,7 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
                     currentUser={currentUser} 
                     onSelectChat={handleSelectChat}
                     onCreateChat={handleCreateChat} // Passar a função implementada
-                    selectedChatId={selectedChat?.id || null}
+                    selectedChatId={currentSelectedChatId}
                     currentCompanyId={currentCompanyId} // Passar currentCompanyId
                 />
             )}
