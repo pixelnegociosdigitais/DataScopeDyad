@@ -183,21 +183,12 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
                                     </BarChart>
                                 ) : (
                                     <PieChart>
-                                        <Pie
-                                            activeIndex={activeIndex}
-                                            activeShape={renderActiveShape}
+                                        <InteractivePie
                                             data={q.data as ChartDataItem[]}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            fill="#8884d8" // This fill is for the default segments, activeShape will override
-                                            dataKey="value"
-                                            onMouseEnter={onPieEnter}
-                                            // Adicionando o cast 'as any' aqui
-                                        >{(q.data as ChartDataItem[]).map((_entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}</Pie>
+                                            activeIndex={activeIndex}
+                                            onPieEnter={onPieEnter}
+                                            renderActiveShape={renderActiveShape}
+                                        />
                                         <Tooltip />
                                         <Legend 
                                             formatter={(_legendValue: string | number, legendEntry: any) => {
