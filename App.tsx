@@ -232,7 +232,7 @@ const App: React.FC = () => {
             return;
         }
         try {
-            (window as any).handleDownloadReport(survey, dashboardRef.current); // Call the global function
+            await generatePdfReport(survey, dashboardRef.current); // Directly use the imported function
             showSuccess('Relatório PDF gerado com sucesso!');
         } catch (error: any) {
             console.error('Erro ao gerar relatório PDF:', error.message);
