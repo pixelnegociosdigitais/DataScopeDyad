@@ -11,7 +11,7 @@ import ConfirmationDialog from './ConfirmationDialog';
 interface SurveyTemplateManagerProps {
     onBack: () => void;
     templates: Survey[];
-    currentUser: User;
+    currentUser: User; // Still needed for type definition, but not destructured if not used
     modulePermissions: Record<ModuleName, boolean>;
     onSaveTemplate: (templateData: Survey, editingTemplateId?: string) => Promise<void>;
     onDeleteTemplate: (templateId: string) => Promise<boolean>;
@@ -30,7 +30,7 @@ const ALL_QUESTION_TYPES = [
 const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
     onBack,
     templates,
-    currentUser,
+    // currentUser, // Removed from destructuring as it's not used
     modulePermissions,
     onSaveTemplate,
     onDeleteTemplate,
