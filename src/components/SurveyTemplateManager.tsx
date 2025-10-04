@@ -12,8 +12,8 @@ import { useAuth } from '../hooks/useAuth'; // Import useAuth
 interface SurveyTemplateManagerProps {
     onBack: () => void;
     templates: Survey[];
-    currentUser: User; // Added currentUser prop
-    modulePermissions: Record<ModuleName, boolean>;
+    // currentUser: User; // Removed
+    // modulePermissions: Record<ModuleName, boolean>; // Removed
     onSaveTemplate: (templateData: Survey, editingTemplateId?: string) => Promise<void>;
     onDeleteTemplate: (templateId: string) => Promise<boolean>;
 }
@@ -31,8 +31,8 @@ const ALL_QUESTION_TYPES = [
 const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
     onBack,
     templates,
-    currentUser,
-    modulePermissions,
+    // currentUser, // Removed
+    // modulePermissions, // Removed
     onSaveTemplate,
     onDeleteTemplate,
 }) => {

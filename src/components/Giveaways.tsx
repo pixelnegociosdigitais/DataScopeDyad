@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { User, Company, Survey, Prize, GiveawayWinner, ModuleName } from '../types';
-import { supabase } from '../src/integrations/supabase/client';
-import { GiftIcon } from './icons/GiftIcon';
-import { showError, showSuccess } from '../src/utils/toast';
-import WinnerDisplayPopup from '../src/components/WinnerDisplayPopup';
-import CountdownPopup from '../src/components/CountdownPopup';
-import PrizeManager from '../src/components/giveaways/PrizeManager';
-import SurveySelector from '../src/components/giveaways/SurveySelector';
-import ParticipantList from '../src/components/giveaways/ParticipantList';
-import DrawSetup from '../src/components/giveaways/DrawSetup';
-import PastWinnersHistory from '../src/components/giveaways/PastWinnersHistory';
-import { logActivity } from '../src/utils/logger';
-import { useAuth } from '../src/hooks/useAuth';
+import { User, Company, Survey, Prize, GiveawayWinner, ModuleName } from '../../types';
+import { supabase } from '../integrations/supabase/client';
+import { GiftIcon } from '../../components/icons/GiftIcon';
+import { showError, showSuccess } from '../utils/toast';
+import WinnerDisplayPopup from '../components/WinnerDisplayPopup';
+import CountdownPopup from '../components/CountdownPopup';
+import PrizeManager from './giveaways/PrizeManager';
+import SurveySelector from './giveaways/SurveySelector';
+import ParticipantList from './giveaways/ParticipantList';
+import DrawSetup from './giveaways/DrawSetup';
+import PastWinnersHistory from './giveaways/PastWinnersHistory';
+import { logActivity } from '../utils/logger';
+import { useAuth } from '../hooks/useAuth';
 
 interface GiveawayParticipant {
     id: string;

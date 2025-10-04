@@ -91,7 +91,7 @@ const ParticipantList: React.FC<ParticipantListProps> = ({ selectedSurveyId, onP
         } catch (err: any) {
             const errorMessage = 'Não foi possível carregar os participantes: ' + err.message;
             setError(errorMessage);
-            logActivity('ERROR', `Sorteio: ${errorMessage} para surveyId: ${selectedSurveyId}`, 'GIVEAWAYS', undefined, undefined, undefined, err);
+            logActivity('ERROR', `Sorteio: ${errorMessage} para surveyId: ${selectedSurveyId}`, 'GIVEAWAYS');
         } finally {
             setLoading(false);
         }
