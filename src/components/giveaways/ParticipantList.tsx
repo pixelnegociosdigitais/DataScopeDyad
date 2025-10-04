@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { QuestionType } from '../../../types';
 import { GiftIcon } from '../../../components/icons/GiftIcon';
+import { logActivity } from '../../utils/logger'; // Importar logActivity
 
 interface GiveawayParticipant {
     id: string;
@@ -28,12 +29,30 @@ const ParticipantList: React.FC<ParticipantListProps> = ({ selectedSurveyId, onP
             const { data: questionsData, error: questionsError } = await supabase.from('questions').select('id, text, type').eq('survey_id', selectedSurveyId);
             if (questionsError) throw questionsError;
 
-            const nameQuestionIds = questionsData.filter(q => q.text === 'Nome Completo' && q.type === QuestionType.SHORT_TEXT).map(q => q.id);
-            const emailQuestionIds = questionsData.filter(q => q.text === 'E-mail' && q.type === QuestionType.EMAIL).map(q => q.id);
-            const phoneQuestionIds = questionsData.filter(q => q.text === 'Telefone' && q.type === QuestionType.PHONE).map(q => q.id);
+            // Lógica mais flexível para encontrar as perguntas de nome, email e telefone
+            const nameQuestionCandidates = questionsData.filter(q => 
+                q.type === QuestionType.SHORT_TEXT && q.text.toLowerCase().includes('nome')
+            );
+            const emailQuestionCandidates = questionsData.filter(q => 
+                q.type === QuestionType.EMAIL && q.text.toLowerCase().includes('e-mail')
+            );
+            const phoneQuestionCandidates = questionsData.filter(q => 
+                q.type === QuestionType.PHONE && q.text.toLowerCase().includes('telefone')
+            );
 
-            if (nameQuestionIds.length === 0) {
-                setError('A pesquisa selecionada não possui uma pergunta de "Nome Completo" (Texto Curto).');
+            // Priorizar correspondências exatas se existirem, caso contrário, usar o primeiro candidato
+            const nameQuestion = nameQuestionCandidates.find(q => q.text === 'Nome Completo') || nameQuestionCandidates[0];
+            const emailQuestion = emailQuestionCandidates.find(q => q.text === 'E-mail') || emailQuestionCandidates[0];
+            const phoneQuestion = phoneQuestionCandidates.find(q => q.text === 'Telefone') || phoneQuestionCandidates[0];
+
+            const finalNameQuestionIds = nameQuestion ? [nameQuestion.id] : [];
+            const finalEmailQuestionIds = emailQuestion ? [emailQuestion.id] : [];
+            const finalPhoneQuestionIds = phoneQuestion ? [phoneQuestion.id] : [];
+
+            if (finalNameQuestionIds.length === 0) {
+                const errorMessage = 'A pesquisa selecionada não possui uma pergunta de nome (ex: "Nome Completo" do tipo Texto Curto).';
+                setError(errorMessage);
+                logActivity('WARN', `Sorteio: ${errorMessage} para surveyId: ${selectedSurveyId}`, 'GIVEAWAYS');
                 setParticipants([]);
                 onParticipantsLoad([]);
                 setLoading(false);
@@ -49,9 +68,9 @@ const ParticipantList: React.FC<ParticipantListProps> = ({ selectedSurveyId, onP
                 if (!responsesMap.has(responseId)) responsesMap.set(responseId, {});
                 const currentResponse = responsesMap.get(responseId)!;
                 response.answers.forEach((answer: any) => {
-                    if (nameQuestionIds.includes(answer.question_id)) currentResponse.name = String(answer.value).trim();
-                    if (emailQuestionIds.includes(answer.question_id)) currentResponse.email = String(answer.value).trim();
-                    if (phoneQuestionIds.includes(answer.question_id)) currentResponse.phone = String(answer.value).trim();
+                    if (finalNameQuestionIds.includes(answer.question_id)) currentResponse.name = String(answer.value).trim();
+                    if (finalEmailQuestionIds.includes(answer.question_id)) currentResponse.email = String(answer.value).trim();
+                    if (finalPhoneQuestionIds.includes(answer.question_id)) currentResponse.phone = String(answer.value).trim();
                 });
             });
 
@@ -70,7 +89,9 @@ const ParticipantList: React.FC<ParticipantListProps> = ({ selectedSurveyId, onP
             onParticipantsLoad(loadedParticipants);
 
         } catch (err: any) {
-            setError('Não foi possível carregar os participantes: ' + err.message);
+            const errorMessage = 'Não foi possível carregar os participantes: ' + err.message;
+            setError(errorMessage);
+            logActivity('ERROR', `Sorteio: ${errorMessage} para surveyId: ${selectedSurveyId}`, 'GIVEAWAYS', undefined, undefined, undefined, err);
         } finally {
             setLoading(false);
         }
