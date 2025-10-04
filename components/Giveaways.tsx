@@ -26,6 +26,21 @@ interface GiveawaysProps {
 }
 
 const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) => {
+    // Call useAuth unconditionally at the top
+    const { modulePermissions } = useAuth(() => {});
+
+    // Conditional return BEFORE any other hooks
+    if (!currentCompany) {
+        console.log('Giveaways: currentCompany é nulo, exibindo mensagem para criar/vincular empresa.');
+        return (
+            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
+                <GiftIcon className="h-12 w-12 text-primary mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-text-main mb-4">Sorteios da Empresa</h2>
+                <p className="text-text-light mb-6">Crie ou vincule-se a uma empresa para gerenciar e realizar sorteios.</p>
+            </div>
+        );
+    }
+
     const [participants, setParticipants] = useState<GiveawayParticipant[]>([]);
     const [prizes, setPrizes] = useState<Prize[]>([]);
     const [selectedPrizesForDraw, setSelectedPrizesForDraw] = useState<Prize[]>([]);
@@ -35,8 +50,6 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     const [isDrawing, setIsDrawing] = useState(false);
     const [countdown, setCountdown] = useState(0);
     const [progress, setProgress] = useState(0);
-
-    const { modulePermissions } = useAuth(() => {});
 
     const canPerformGiveaways = modulePermissions[ModuleName.PERFORM_GIVEAWAYS];
     const canViewGiveawayData = modulePermissions[ModuleName.VIEW_GIVEAWAY_DATA];
@@ -99,7 +112,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                     companyId: s.company_id,
                     created_by: s.created_by,
                     created_at: s.created_at,
-                    questions: s.questions || [], // Garante que questions seja um array
+                    questions: s.questions || [],
                 }));
                 setAvailableSurveys(fetchedSurveys);
                 if (fetchedSurveys.length > 0 && !selectedSurveyId) {
@@ -192,18 +205,6 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             return newSelection.sort((a, b) => (a.rank || Infinity) - (b.rank || Infinity));
         });
     };
-
-    // Conditional rendering moved after all hooks
-    if (!currentCompany) {
-        console.log('Giveaways: currentCompany é nulo, exibindo mensagem para criar/vincular empresa.');
-        return (
-            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
-                <GiftIcon className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-text-main mb-4">Sorteios da Empresa</h2>
-                <p className="text-text-light mb-6">Crie ou vincule-se a uma empresa para gerenciar e realizar sorteios.</p>
-            </div>
-        );
-    }
 
     return (
         <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">

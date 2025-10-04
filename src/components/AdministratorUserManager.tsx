@@ -35,6 +35,9 @@ interface AdministratorUserManagerProps {
 }
 
 const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onBack, currentUser, currentCompany, setCurrentView }) => {
+    // Call useAuth unconditionally at the top
+    const { handleResetUserPassword, handleCreateUserForCompany, handleUpdateUserPermissions, handleAdminUpdateUserProfile, handleDeleteUser } = useAuth(setCurrentView);
+
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -52,8 +55,6 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
     const [showEditUserModal, setShowEditUserModal] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
-
-    const { handleResetUserPassword, handleCreateUserForCompany, handleUpdateUserPermissions, handleAdminUpdateUserProfile, handleDeleteUser } = useAuth(setCurrentView);
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -178,11 +179,11 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
         setDialogTitle('Confirmar Exclusão de Usuário');
         setDialogMessage(`Tem certeza que deseja excluir o usuário "${user.fullName}" (${user.email})? Esta ação é irreversível.`);
         setDialogConfirmAction(() => async () => {
-            if (userToDelete) { // Garante que userToDelete não é nulo
+            if (userToDelete) {
                 await handleDeleteUser(userToDelete.id, userToDelete.email);
                 setShowConfirmationDialog(false);
                 fetchUsers();
-                setUserToDelete(null); // Limpa o estado após a ação
+                setUserToDelete(null);
             }
         });
         setShowConfirmationDialog(true);
@@ -194,6 +195,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
         fetchUsers();
     };
 
+    // Conditional rendering moved after all hooks
     if (loading) {
         return <div className="text-center py-8 text-text-light">Carregando gerenciamento de usuários...</div>;
     }
@@ -420,7 +422,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                     cancelText="Cancelar"
                     onCancel={() => {
                         setShowConfirmationDialog(false);
-                        setUserToDelete(null); // Limpa o estado ao cancelar
+                        setUserToDelete(null);
                     }}
                 />
             )}

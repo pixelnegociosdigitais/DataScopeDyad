@@ -19,6 +19,9 @@ interface DeveloperCompanyUserManagerProps {
 }
 
 const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = ({ onBack, setCurrentView }) => {
+    // Call useAuth unconditionally at the top
+    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany, currentUser, handleAdminUpdateUserProfile } = useAuth(setCurrentView);
+
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -37,7 +40,10 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     const [showEditAdminModal, setShowEditAdminModal] = useState(false);
     const [editingAdmin, setEditingAdmin] = useState<User | null>(null);
 
-    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany, currentUser, handleAdminUpdateUserProfile } = useAuth(setCurrentView);
+    // Conditional return BEFORE any other hooks
+    if (loading) {
+        return <div className="text-center py-8 text-text-light">Carregando gerenciamento de empresas...</div>;
+    }
 
     const fetchCompanies = useCallback(async () => {
         setLoading(true);
@@ -65,7 +71,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             setCompanies([]);
             logActivity('ERROR', `Erro ao buscar empresas: ${error.message}`, 'COMPANIES', currentUser?.id, currentUser?.email);
         } else {
-            const companiesWithAdmins = data.map((company: any) => ({ // Explicitly type company
+            const companiesWithAdmins = data.map((company: any) => ({
                 ...company,
                 administrators: company.profiles
                     .filter((p: any) => p.role === UserRole.ADMIN)
@@ -180,12 +186,12 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         setCompanies(prevCompanies => 
             prevCompanies.map(company => ({
                 ...company,
-                administrators: company.administrators?.map((admin: User) => // Explicitly type admin as User
+                administrators: company.administrators?.map((admin: User) =>
                     admin.id === updatedUser.id ? updatedUser : admin
-                ) || [], // Ensure it's an array even if undefined
+                ) || [],
             }))
         );
-        fetchCompanies(); // Re-fetch para garantir que todos os dados estejam atualizados
+        fetchCompanies();
     };
 
     const confirmDeleteCompany = (company: Company) => {
@@ -208,14 +214,14 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                 .select('id')
                 .eq('company_id', companyToDelete.id);
             if (surveysError) throw surveysError;
-            const surveyIds = surveysData.map((s: { id: string }) => s.id); // Explicitly type s
+            const surveyIds = surveysData.map((s: { id: string }) => s.id);
 
             const { data: responsesData, error: responsesError } = await supabase
                 .from('survey_responses')
                 .select('id')
                 .in('survey_id', surveyIds);
             if (responsesError) throw responsesError;
-            const responseIds = responsesData.map((r: { id: string }) => r.id); // Explicitly type r
+            const responseIds = responsesData.map((r: { id: string }) => r.id);
 
             const { error: deleteWinnersError } = await supabase.from('giveaway_winners').delete().in('survey_id', surveyIds);
             if (deleteWinnersError) throw deleteWinnersError;
@@ -262,12 +268,6 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         }
     };
 
-
-    // Conditional rendering moved after all hooks
-    if (loading) {
-        return <div className="text-center py-8 text-text-light">Carregando gerenciamento de empresas...</div>;
-    }
-
     return (
         <div className="max-w-5xl mx-auto bg-white p-8 rounded-lg shadow-md">
             <div className="flex items-center gap-4 mb-6">
@@ -308,7 +308,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                 <td className="py-3 px-4 text-sm text-gray-800 font-medium">{company.name}</td>
                                 <td className="py-3 px-4 text-sm text-gray-700">
                                     {company.administrators && company.administrators.length > 0 ? (
-                                        company.administrators.map((admin: User) => ( // Explicitly type admin as User
+                                        company.administrators.map((admin: User) => (
                                             <div 
                                                 key={admin.id} 
                                                 className="cursor-pointer hover:text-primary hover:underline"
@@ -343,7 +343,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                             className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
                                             aria-label="Editar empresa"
                                         >
-                                            <BuildingIcon className="h-5 w-5" /> {/* Ícone para editar a empresa */}
+                                            <BuildingIcon className="h-5 w-5" />
                                         </button>
                                         {company.administrators && company.administrators.length > 0 && (
                                             <button
@@ -351,7 +351,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                                 className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
                                                 aria-label="Editar administrador"
                                             >
-                                                <UserIcon className="h-5 w-5" /> {/* Ícone para editar o administrador */}
+                                                <UserIcon className="h-5 w-5" />
                                             </button>
                                         )}
                                         <button

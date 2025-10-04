@@ -7,11 +7,12 @@ import { TrashIcon } from '../../components/icons/TrashIcon';
 import { Survey, Question, QuestionType, ModuleName, User } from '../../types';
 import { showError } from '../utils/toast';
 import ConfirmationDialog from './ConfirmationDialog';
+import { useAuth } from '../hooks/useAuth'; // Import useAuth
 
 interface SurveyTemplateManagerProps {
     onBack: () => void;
     templates: Survey[];
-    currentUser: User; // Still needed for type definition, but not destructured if not used
+    currentUser: User;
     modulePermissions: Record<ModuleName, boolean>;
     onSaveTemplate: (templateData: Survey, editingTemplateId?: string) => Promise<void>;
     onDeleteTemplate: (templateId: string) => Promise<boolean>;
@@ -30,19 +31,32 @@ const ALL_QUESTION_TYPES = [
 const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
     onBack,
     templates,
-    // currentUser, // Removed from destructuring as it's not used
+    currentUser,
     modulePermissions,
     onSaveTemplate,
     onDeleteTemplate,
 }) => {
+    // Call useAuth unconditionally at the top
+    const { modulePermissions: authModulePermissions } = useAuth(() => {});
+    const canManageTemplates = authModulePermissions[ModuleName.MANAGE_SURVEY_TEMPLATES];
+
+    // Conditional return BEFORE any other hooks
+    if (!canManageTemplates) {
+        return (
+            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
+                <TemplateIcon className="h-12 w-12 text-primary mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-text-main mb-4">Gerenciar Modelos de Pesquisa</h2>
+                <p className="text-text-light mb-6">Você não tem permissão para gerenciar modelos de pesquisa.</p>
+            </div>
+        );
+    }
+
     const [showTemplateForm, setShowTemplateForm] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<Survey | null>(null);
     const [templateFormTitle, setTemplateFormTitle] = useState('');
     const [templateFormQuestions, setTemplateFormQuestions] = useState<Question[]>([]);
     const [showDeleteTemplateDialog, setShowDeleteTemplateDialog] = useState(false);
     const [templateToDelete, setTemplateToDelete] = useState<Survey | null>(null);
-
-    const canManageTemplates = modulePermissions[ModuleName.MANAGE_SURVEY_TEMPLATES];
 
     const handleOpenTemplateForm = useCallback((template: Survey | null = null) => {
         if (!canManageTemplates) {
@@ -185,17 +199,6 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                 );
         }
     }, [updateQuestionText]);
-
-    // Conditional return AFTER all hooks
-    if (!canManageTemplates) {
-        return (
-            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
-                <TemplateIcon className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-text-main mb-4">Gerenciar Modelos de Pesquisa</h2>
-                <p className="text-text-light mb-6">Você não tem permissão para gerenciar modelos de pesquisa.</p>
-            </div>
-        );
-    }
 
     return (
         <div className="max-w-4xl mx-auto">
