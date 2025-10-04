@@ -390,8 +390,6 @@ const App: React.FC = () => {
                     <SurveyTemplateManager
                         onBack={handleBack}
                         templates={templates}
-                        currentUser={currentUser}
-                        modulePermissions={modulePermissions}
                         onSaveTemplate={handleSaveTemplate}
                         onDeleteTemplate={handleDeleteTemplate}
                     />

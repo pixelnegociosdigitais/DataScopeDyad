@@ -4,7 +4,7 @@ import { TemplateIcon } from '../../components/icons/TemplateIcon';
 import { CreateIcon } from '../../components/icons/CreateIcon';
 import { PencilIcon } from '../../components/icons/PencilIcon';
 import { TrashIcon } from '../../components/icons/TrashIcon';
-import { Survey, Question, QuestionType, ModuleName, User } from '../../types';
+import { Survey, Question, QuestionType, ModuleName } from '../../types';
 import { showError } from '../utils/toast';
 import ConfirmationDialog from './ConfirmationDialog';
 import { useAuth } from '../hooks/useAuth'; // Import useAuth
@@ -12,8 +12,6 @@ import { useAuth } from '../hooks/useAuth'; // Import useAuth
 interface SurveyTemplateManagerProps {
     onBack: () => void;
     templates: Survey[];
-    // currentUser: User; // Removed
-    // modulePermissions: Record<ModuleName, boolean>; // Removed
     onSaveTemplate: (templateData: Survey, editingTemplateId?: string) => Promise<void>;
     onDeleteTemplate: (templateId: string) => Promise<boolean>;
 }
@@ -31,12 +29,9 @@ const ALL_QUESTION_TYPES = [
 const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
     onBack,
     templates,
-    // currentUser, // Removed
-    // modulePermissions, // Removed
     onSaveTemplate,
     onDeleteTemplate,
 }) => {
-    // All hook calls must be at the top level, unconditionally.
     const { modulePermissions: authModulePermissions } = useAuth(() => {});
     const canManageTemplates = authModulePermissions[ModuleName.MANAGE_SURVEY_TEMPLATES];
 
@@ -189,7 +184,6 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
         }
     }, [updateQuestionText]);
 
-    // Conditional rendering comes after all hooks
     if (!canManageTemplates) {
         return (
             <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
