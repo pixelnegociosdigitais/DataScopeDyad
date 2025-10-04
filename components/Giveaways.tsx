@@ -10,7 +10,7 @@ import SurveySelector from '../src/components/giveaways/SurveySelector';
 import ParticipantList from '../src/components/giveaways/ParticipantList';
 import DrawSetup from '../src/components/giveaways/DrawSetup';
 import PastWinnersHistory from '../src/components/giveaways/PastWinnersHistory';
-import { logActivity } from '../src/utils/logger';
+import { logActivity } => '../src/utils/logger';
 import { useAuth } from '../src/hooks/useAuth';
 
 interface GiveawayParticipant {
@@ -236,7 +236,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setC
                     currentUser={currentUser} 
                     prizes={prizes} 
                     onPrizesUpdate={fetchPrizes} 
-                    canPerformGiveaways={canPerformGiveaways} // Passando a prop
+                    canPerformGiveaways={canPerformGiveaways}
                 />
             )}
             
@@ -272,7 +272,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setC
                     {canViewGiveawayData && (
                         <PastWinnersHistory 
                             selectedSurveyId={selectedSurveyId} 
-                            canViewGiveawayData={canViewGiveawayData} // Passando a prop
+                            canViewGiveawayData={canViewGiveawayData}
                         />
                     )}
                 </>
