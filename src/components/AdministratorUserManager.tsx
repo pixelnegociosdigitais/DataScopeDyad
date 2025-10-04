@@ -4,7 +4,7 @@ import { UserIcon } from '@/components/icons/UserIcon';
 import { PencilIcon } from '@/components/icons/PencilIcon';
 import { TrashIcon } from '@/components/icons/TrashIcon';
 import { CreateIcon } from '@/components/icons/CreateIcon';
-import { User, UserRole, Company, View, ModuleName } from '@/types';
+import { User, UserRole, Company, ModuleName } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { showError } from '@/src/utils/toast';
 import ConfirmationDialog from '@/src/components/ConfirmationDialog';
@@ -30,8 +30,6 @@ interface AdministratorUserManagerProps {
     onBack: () => void;
     currentUser: User;
     currentCompany: Company | null;
-    // setCurrentView: (view: View) => void; // Removed as it's not directly used here
-    // Functions passed from useAuth in App.tsx
     handleResetUserPassword: (userId: string, newPassword?: string) => Promise<void>;
     handleCreateUserForCompany: (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword: string) => Promise<void>;
     handleUpdateUserPermissions: (userId: string, permissions: Record<string, boolean>) => Promise<void>;
@@ -43,7 +41,6 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({
     onBack, 
     currentUser, 
     currentCompany, 
-    // setCurrentView, // Removed from destructuring
     handleResetUserPassword,
     handleCreateUserForCompany,
     handleUpdateUserPermissions,

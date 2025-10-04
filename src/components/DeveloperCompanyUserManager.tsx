@@ -4,7 +4,7 @@ import { BuildingIcon } from '../../components/icons/BuildingIcon';
 import { UserIcon } from '../../components/icons/UserIcon';
 import { TrashIcon } from '../../components/icons/TrashIcon';
 import { CreateIcon } from '../../components/icons/CreateIcon';
-import { Company, User, UserRole, View } from '@/types';
+import { Company, User, UserRole } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { showSuccess, showError } from '@/src/utils/toast';
 import ConfirmationDialog from './ConfirmationDialog';
@@ -14,8 +14,6 @@ import { logActivity } from '@/src/utils/logger';
 
 interface DeveloperCompanyUserManagerProps {
     onBack: () => void;
-    // setCurrentView: (view: View) => void; // Removed as it's not directly used here
-    // Functions passed from useAuth in App.tsx
     currentUser: User | null;
     handleToggleCompanyStatus: (companyId: string, newStatus: 'active' | 'inactive') => Promise<void>;
     handleResetUserPassword: (userId: string, newPassword?: string) => Promise<void>;
@@ -25,7 +23,6 @@ interface DeveloperCompanyUserManagerProps {
 
 const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = ({ 
     onBack, 
-    // setCurrentView, // Removed from destructuring
     currentUser,
     handleToggleCompanyStatus,
     handleResetUserPassword,

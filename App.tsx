@@ -56,7 +56,7 @@ const App: React.FC = () => {
         handleUpdateUserPermissions,
         handleAdminUpdateUserProfile,
         handleDeleteUser,
-        handleCreateNotice, // This is now used
+        handleCreateNotice,
     } = useAuth(setCurrentView);
 
     const {
@@ -353,7 +353,6 @@ const App: React.FC = () => {
                 return (
                     <DeveloperCompanyUserManager 
                         onBack={handleBack} 
-                        setCurrentView={setCurrentView} 
                         currentUser={currentUser}
                         handleToggleCompanyStatus={handleToggleCompanyStatus}
                         handleResetUserPassword={handleResetUserPassword}
@@ -367,7 +366,6 @@ const App: React.FC = () => {
                         onBack={handleBack} 
                         currentUser={currentUser} 
                         currentCompany={currentCompany} 
-                        setCurrentView={setCurrentView}
                         handleResetUserPassword={handleResetUserPassword}
                         handleCreateUserForCompany={handleCreateUserForCompany}
                         handleUpdateUserPermissions={handleUpdateUserPermissions}
@@ -378,7 +376,7 @@ const App: React.FC = () => {
             case View.LOGS_AND_AUDIT:
                 return <LogsAndAuditPanel onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
             case View.MANAGE_NOTICES:
-                return <NoticeCreator onBack={handleBack} handleCreateNotice={handleCreateNotice} />;
+                return <NoticeCreator onBack={handleBack} />;
             case View.CHAT:
                 if (!currentCompany?.id) {
                     return (
