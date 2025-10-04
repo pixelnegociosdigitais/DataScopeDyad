@@ -8,7 +8,6 @@ import { User, UserRole, Company, View, ModuleName } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { showError } from '@/src/utils/toast';
 import ConfirmationDialog from '@/src/components/ConfirmationDialog';
-import { useAuth } from '@/src/hooks/useAuth';
 import UserEditModal from '@/src/components/UserEditModal';
 
 // Mapeamento de tradução para os nomes dos módulos
@@ -32,12 +31,25 @@ interface AdministratorUserManagerProps {
     currentUser: User;
     currentCompany: Company | null;
     setCurrentView: (view: View) => void;
+    // Functions passed from useAuth in App.tsx
+    handleResetUserPassword: (userId: string, newPassword?: string) => Promise<void>;
+    handleCreateUserForCompany: (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword: string) => Promise<void>;
+    handleUpdateUserPermissions: (userId: string, permissions: Record<string, boolean>) => Promise<void>;
+    handleAdminUpdateUserProfile: (userId: string, updatedFields: Partial<User>) => Promise<void>;
+    handleDeleteUser: (userId: string, userEmail: string) => Promise<void>;
 }
 
-const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onBack, currentUser, currentCompany, setCurrentView }) => {
-    // All hook calls must be at the top level, unconditionally.
-    const { handleResetUserPassword, handleCreateUserForCompany, handleUpdateUserPermissions, handleAdminUpdateUserProfile, handleDeleteUser } = useAuth(setCurrentView);
-
+const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ 
+    onBack, 
+    currentUser, 
+    currentCompany, 
+    setCurrentView,
+    handleResetUserPassword,
+    handleCreateUserForCompany,
+    handleUpdateUserPermissions,
+    handleAdminUpdateUserProfile,
+    handleDeleteUser,
+}) => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -195,7 +207,6 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
         fetchUsers();
     };
 
-    // Conditional rendering comes after all hooks
     if (loading) {
         return <div className="text-center py-8 text-text-light">Carregando gerenciamento de usuários...</div>;
     }

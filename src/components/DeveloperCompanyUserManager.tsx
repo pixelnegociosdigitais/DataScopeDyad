@@ -9,19 +9,29 @@ import { supabase } from '@/src/integrations/supabase/client';
 import { showSuccess, showError } from '@/src/utils/toast';
 import ConfirmationDialog from './ConfirmationDialog';
 import CompanyEditModal from './CompanyEditModal';
-import { useAuth } from '@/src/hooks/useAuth';
-import { logActivity } from '@/src/utils/logger';
 import UserEditModal from './UserEditModal';
+import { logActivity } from '@/src/utils/logger';
 
 interface DeveloperCompanyUserManagerProps {
     onBack: () => void;
     setCurrentView: (view: View) => void;
+    // Functions passed from useAuth in App.tsx
+    currentUser: User | null;
+    handleToggleCompanyStatus: (companyId: string, newStatus: 'active' | 'inactive') => Promise<void>;
+    handleResetUserPassword: (userId: string, newPassword?: string) => Promise<void>;
+    handleCreateUserForCompany: (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword: string) => Promise<void>;
+    handleAdminUpdateUserProfile: (userId: string, updatedFields: Partial<User>) => Promise<void>;
 }
 
-const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = ({ onBack, setCurrentView }) => {
-    // All hook calls must be at the top level, unconditionally.
-    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany, currentUser, handleAdminUpdateUserProfile } = useAuth(setCurrentView);
-
+const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = ({ 
+    onBack, 
+    setCurrentView,
+    currentUser,
+    handleToggleCompanyStatus,
+    handleResetUserPassword,
+    handleCreateUserForCompany,
+    handleAdminUpdateUserProfile,
+}) => {
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -263,7 +273,6 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         }
     };
 
-    // Conditional rendering comes after all hooks
     if (loading) {
         return <div className="text-center py-8 text-text-light">Carregando gerenciamento de empresas...</div>;
     }

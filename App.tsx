@@ -13,7 +13,7 @@ import CompanyCreationForm from './components/CompanyCreationForm';
 import Giveaways from './components/Giveaways';
 import SettingsPanel from './components/SettingsPanel';
 import ModulePermissionsManager from './components/ModulePermissionsManager';
-import DeveloperCompanyUserManager from './components/DeveloperCompanyUserManager';
+import DeveloperCompanyUserManager from './src/components/DeveloperCompanyUserManager';
 import AdministratorUserManager from './src/components/AdministratorUserManager';
 import LogsAndAuditPanel from './components/LogsAndAuditPanel';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
@@ -50,6 +50,13 @@ const App: React.FC = () => {
         handleUpdateProfile,
         handleUpdateCompany,
         modulePermissions,
+        handleToggleCompanyStatus,
+        handleResetUserPassword,
+        handleCreateUserForCompany,
+        handleUpdateUserPermissions,
+        handleAdminUpdateUserProfile,
+        handleDeleteUser,
+        handleCreateNotice,
     } = useAuth(setCurrentView);
 
     const {
@@ -81,9 +88,6 @@ const App: React.FC = () => {
             console.log('App: Current Company:', currentCompany);
             console.log('App: Module Permissions:', modulePermissions);
             
-            // The useSurveys hook already handles setting/clearing surveys based on these conditions.
-            // No need for explicit setSurveys([]) or fetchSurveys() calls here.
-
             if (currentView === View.COMPANY_SETTINGS) {
                 if (currentCompany && !modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS]) {
                     showError('Você não tem permissão para configurar a empresa.');
@@ -157,8 +161,6 @@ const App: React.FC = () => {
     const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey, isEditing: boolean) => {
         console.log('App: handleSaveSurveyWrapper called. currentUser:', currentUser, 'currentCompany:', currentCompany);
         
-        // All users, including developers, must have a company_id to create a survey
-        // because the 'company_id' column in 'surveys' table is NOT NULL.
         if (!currentUser?.company_id) {
             showError('Você precisa estar vinculado a uma empresa para criar ou editar pesquisas.');
             return;
@@ -173,20 +175,18 @@ const App: React.FC = () => {
             return;
         }
         
-        // Pass the companyId from currentUser to handleSaveSurvey
         const surveyToSave: Survey = {
             ...surveyData,
-            companyId: currentUser.company_id // Ensure companyId is always set from currentUser
+            companyId: currentUser.company_id
         };
 
         await handleSaveSurvey(surveyToSave, isEditing ? surveyData.id : undefined);
         setEditingSurvey(null);
         setCurrentView(View.SURVEY_LIST);
-        // Re-fetch surveys based on current user's context
         if (currentUser?.role === UserRole.DEVELOPER) {
             console.log('App: Calling fetchSurveys after save for DEVELOPER.');
-            fetchSurveys(undefined); // Developers fetch all surveys
-        } else if (currentUser?.company_id) { // Use currentUser.company_id here
+            fetchSurveys(undefined);
+        } else if (currentUser?.company_id) {
             console.log('App: Calling fetchSurveys after save for companyId:', currentUser.company_id);
             fetchSurveys(currentUser.company_id);
         } else {
@@ -232,7 +232,7 @@ const App: React.FC = () => {
             return;
         }
         try {
-            await generatePdfReport(survey, dashboardRef.current); // Directly use the imported function
+            await generatePdfReport(survey, dashboardRef.current);
             showSuccess('Relatório PDF gerado com sucesso!');
         } catch (error: any) {
             console.error('Erro ao gerar relatório PDF:', error.message);
@@ -350,9 +350,31 @@ const App: React.FC = () => {
             case View.MODULE_PERMISSIONS_MANAGER:
                 return <ModulePermissionsManager onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
             case View.DEVELOPER_COMPANY_USER_MANAGER:
-                return <DeveloperCompanyUserManager onBack={handleBack} setCurrentView={setCurrentView} />;
+                return (
+                    <DeveloperCompanyUserManager 
+                        onBack={handleBack} 
+                        setCurrentView={setCurrentView} 
+                        currentUser={currentUser}
+                        handleToggleCompanyStatus={handleToggleCompanyStatus}
+                        handleResetUserPassword={handleResetUserPassword}
+                        handleCreateUserForCompany={handleCreateUserForCompany}
+                        handleAdminUpdateUserProfile={handleAdminUpdateUserProfile}
+                    />
+                );
             case View.ADMIN_USER_MANAGER:
-                return <AdministratorUserManager onBack={handleBack} currentUser={currentUser} currentCompany={currentCompany} setCurrentView={setCurrentView} />;
+                return (
+                    <AdministratorUserManager 
+                        onBack={handleBack} 
+                        currentUser={currentUser} 
+                        currentCompany={currentCompany} 
+                        setCurrentView={setCurrentView}
+                        handleResetUserPassword={handleResetUserPassword}
+                        handleCreateUserForCompany={handleCreateUserForCompany}
+                        handleUpdateUserPermissions={handleUpdateUserPermissions}
+                        handleAdminUpdateUserProfile={handleAdminUpdateUserProfile}
+                        handleDeleteUser={handleDeleteUser}
+                    />
+                );
             case View.LOGS_AND_AUDIT:
                 return <LogsAndAuditPanel onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
             case View.MANAGE_NOTICES:
