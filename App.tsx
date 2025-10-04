@@ -80,7 +80,6 @@ const App: React.FC = () => {
             console.log('App: Current User:', currentUser);
             console.log('App: Current Company:', currentCompany);
             console.log('App: Module Permissions:', modulePermissions);
-            console.log('App: Surveys state:', surveys);
             
             // The useSurveys hook already handles setting/clearing surveys based on these conditions.
             // No need for explicit setSurveys([]) or fetchSurveys() calls here.
@@ -94,7 +93,7 @@ const App: React.FC = () => {
         } else if (!loadingAuth && !loadingSession && !session) {
             // User is not logged in. The useSurveys hook will handle clearing its internal state.
         }
-    }, [currentView, currentCompany, modulePermissions, loadingAuth, loadingSession, session, currentUser, setCurrentView, surveys]);
+    }, [currentView, currentCompany, modulePermissions, loadingAuth, loadingSession, session, currentUser, setCurrentView]);
 
     const handleSelectSurveyForDashboard = useCallback(async (survey: Survey) => {
         if (!modulePermissions[ModuleName.VIEW_DASHBOARD]) {
@@ -193,7 +192,7 @@ const App: React.FC = () => {
         } else {
             console.warn('App: currentUser.company_id is null and not a developer, not refetching surveys after save.');
         }
-    }, [handleSaveSurvey, modulePermissions, fetchSurveys, currentUser]);
+    }, [handleSaveSurvey, modulePermissions, fetchSurveys, currentUser, currentCompany]);
 
     const handleSaveResponseWrapper = useCallback(async (answers: any[]) => {
         console.log('App: handleSaveResponseWrapper called with answers:', answers);
@@ -233,7 +232,7 @@ const App: React.FC = () => {
             return;
         }
         try {
-            await generatePdfReport(survey, dashboardRef.current);
+            (window as any).handleDownloadReport(survey, dashboardRef.current); // Call the global function
             showSuccess('Relatório PDF gerado com sucesso!');
         } catch (error: any) {
             console.error('Erro ao gerar relatório PDF:', error.message);

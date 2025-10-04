@@ -183,6 +183,9 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             .channel('public:surveys')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'surveys' }, payload => {
                 console.log('useSurveys: Real-time event received for surveys:', payload);
+                if (payload.eventType === 'INSERT') {
+                    console.log('useSurveys: INSERT event payload.new:', payload.new);
+                }
                 // Re-fetch surveys to update the list
                 fetchSurveys(currentCompanyId);
             })
@@ -213,6 +216,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                 logActivity('ERROR', `Tentativa de salvar pesquisa sem company_id para o usuário.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
                 return;
             }
+
+            console.log('useSurveys: handleSaveSurvey - Attempting to insert/update survey with title:', surveyData.title, 'company_id:', surveyCompanyId, 'created_by:', currentUser.id);
 
             if (editingSurveyId) {
                 console.log('useSurveys: handleSaveSurvey - Atualizando pesquisa existente:', editingSurveyId);
@@ -268,8 +273,11 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     .single();
 
                 if (surveyInsertError) {
+                    console.error('useSurveys: handleSaveSurvey - Erro ao inserir nova pesquisa:', surveyInsertError);
                     throw surveyInsertError; // Throw to be caught by the outer try-catch
                 }
+                console.log('useSurveys: handleSaveSurvey - Nova pesquisa inserida (data):', newSurvey);
+
 
                 if (newSurvey) {
                     const questionsToInsert = surveyData.questions.map((q, index) => ({
@@ -286,6 +294,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                         .insert(questionsToInsert);
 
                     if (questionsInsertError) {
+                        console.error('useSurveys: handleSaveSurvey - Erro ao inserir perguntas para nova pesquisa:', questionsInsertError);
                         throw questionsInsertError; // Throw to be caught by the outer try-catch
                     }
                     showSuccess('Pesquisa criada com sucesso!');
