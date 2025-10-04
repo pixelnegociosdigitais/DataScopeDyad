@@ -343,7 +343,7 @@ const App: React.FC = () => {
                 }
                 return <CompanySettings company={currentCompany} onUpdate={handleUpdateCompany} onBack={handleBack} />;
             case View.GIVEAWAYS:
-                return <Giveaways currentUser={currentUser} currentCompany={currentCompany} />;
+                return <Giveaways currentUser={currentUser} currentCompany={currentCompany} setCurrentView={setCurrentView} />;
             case View.SETTINGS_PANEL:
                 return <SettingsPanel onBack={() => setCurrentView(View.SURVEY_LIST)} setView={setCurrentView} />;
             case View.MODULE_PERMISSIONS_MANAGER:

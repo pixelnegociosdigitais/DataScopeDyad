@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { User, Company, Survey, Prize, GiveawayWinner, ModuleName } from '../types';
+import { User, Company, Survey, Prize, GiveawayWinner, ModuleName, View } from '../types';
 import { supabase } from '../src/integrations/supabase/client';
 import { GiftIcon } from './icons/GiftIcon';
 import { showError, showSuccess } from '../src/utils/toast';
@@ -23,11 +23,12 @@ interface GiveawayParticipant {
 interface GiveawaysProps {
     currentUser: User;
     currentCompany: Company | null;
+    setCurrentView: (view: View) => void; // Adicionar setCurrentView às props
 }
 
-const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) => {
+const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setCurrentView }) => {
     // All hook calls must be at the top level, unconditionally.
-    const { modulePermissions } = useAuth(() => {});
+    const { modulePermissions } = useAuth(setCurrentView); // Passar setCurrentView para useAuth
 
     const [participants, setParticipants] = useState<GiveawayParticipant[]>([]);
     const [prizes, setPrizes] = useState<Prize[]>([]);
@@ -38,6 +39,8 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     const [isDrawing, setIsDrawing] = useState(false);
     const [countdown, setCountdown] = useState(0);
     const [progress, setProgress] = useState(0);
+    const [loadingPrizes, setLoadingPrizes] = useState(true); // Novo estado de carregamento
+    const [loadingAvailableSurveys, setLoadingAvailableSurveys] = useState(true); // Novo estado de carregamento
 
     const canPerformGiveaways = modulePermissions[ModuleName.PERFORM_GIVEAWAYS];
     const canViewGiveawayData = modulePermissions[ModuleName.VIEW_GIVEAWAY_DATA];
@@ -49,10 +52,12 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
 
 
     const fetchPrizes = useCallback(async () => {
+        setLoadingPrizes(true); // Definir carregando como verdadeiro
         console.log('Giveaways: fetchPrizes - Iniciando busca de prêmios para companyId:', currentCompany?.id);
         if (!currentCompany?.id) {
             console.log('Giveaways: fetchPrizes - currentCompany.id é nulo, pulando busca de prêmios.');
             setPrizes([]);
+            setLoadingPrizes(false); // Definir carregando como falso
             return;
         }
         const { data, error } = await supabase.from('prizes').select('*').eq('company_id', currentCompany.id).order('rank', { ascending: true, nullsFirst: true }).order('name', { ascending: true });
@@ -66,15 +71,18 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             setPrizes(data || []);
             logActivity('INFO', `Prêmios carregados para a empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
         }
+        setLoadingPrizes(false); // Definir carregando como falso
     }, [currentCompany?.id, currentUser]);
 
     useEffect(() => {
         const loadSurveys = async () => {
+            setLoadingAvailableSurveys(true); // Definir carregando como verdadeiro
             console.log('Giveaways: loadSurveys - Iniciando busca de pesquisas para companyId:', currentCompany?.id);
             if (!currentCompany?.id) {
                 console.log('Giveaways: loadSurveys - currentCompany.id é nulo, pulando busca de pesquisas.');
                 setAvailableSurveys([]);
                 setSelectedSurveyId(null);
+                setLoadingAvailableSurveys(false); // Definir carregando como falso
                 return;
             }
             // Ajuste na consulta para incluir todas as propriedades da interface Survey
@@ -112,6 +120,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 }
                 logActivity('INFO', `Pesquisas carregadas para seleção de sorteio na empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
             }
+            setLoadingAvailableSurveys(false); // Definir carregando como falso
         };
         loadSurveys();
         fetchPrizes();
@@ -206,6 +215,17 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         );
     }
 
+    // Exibir estado de carregamento se as pesquisas ou prêmios ainda estiverem carregando
+    if (loadingAvailableSurveys || loadingPrizes) {
+        return (
+            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
+                <GiftIcon className="h-12 w-12 text-primary mx-auto mb-4 animate-bounce" />
+                <h2 className="text-2xl font-bold text-text-main mb-4">Carregando Sorteios...</h2>
+                <p className="text-text-light mb-6">Por favor, aguarde enquanto carregamos os dados.</p>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
             <div className="flex items-center gap-4 mb-6">
@@ -219,7 +239,15 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             )}
             
             {(canPerformGiveaways || canViewGiveawayData) && (
-                <SurveySelector availableSurveys={availableSurveys} selectedSurveyId={selectedSurveyId} onSurveyChange={setSelectedSurveyId} />
+                <>
+                    {availableSurveys.length === 0 ? (
+                        <div className="mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                            <p className="text-text-light">Nenhuma pesquisa disponível para sorteio. Crie uma pesquisa primeiro.</p>
+                        </div>
+                    ) : (
+                        <SurveySelector availableSurveys={availableSurveys} selectedSurveyId={selectedSurveyId} onSurveyChange={setSelectedSurveyId} />
+                    )}
+                </>
             )}
 
             {selectedSurveyId && (canPerformGiveaways || canViewGiveawayData) && (
