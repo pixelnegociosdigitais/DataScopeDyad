@@ -2,9 +2,10 @@ import React from 'react';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
 import { BellIcon } from './icons/BellIcon';
-import { TemplateIcon } from './icons/TemplateIcon'; // Importar o TemplateIcon
-import { View, ModuleName } from '../types';
-import { useAuth } from '../src/hooks/useAuth'; // Importar useAuth para permissões
+import { TemplateIcon } from './icons/TemplateIcon';
+import { BuildingIcon } from './icons/BuildingIcon'; // Importar BuildingIcon
+import { View, ModuleName, UserRole } from '../types';
+import { useAuth } from '../src/hooks/useAuth';
 
 interface SettingsPanelProps {
     onBack: () => void;
@@ -12,7 +13,7 @@ interface SettingsPanelProps {
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
-    const { modulePermissions } = useAuth(setView); // Usar useAuth para acessar as permissões
+    const { modulePermissions, currentUser } = useAuth(setView); // Usar useAuth para acessar as permissões e o usuário
 
     const handleManagePermissions = () => {
         setView(View.MODULE_PERMISSIONS_MANAGER);
@@ -30,6 +31,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
         setView(View.SURVEY_TEMPLATES);
     };
 
+    const handleManageCompanies = () => {
+        setView(View.DEVELOPER_COMPANY_USER_MANAGER);
+    };
+
     return (
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
             <div className="flex items-center gap-4 mb-6">
@@ -45,6 +50,21 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
             </p>
 
             <div className="space-y-6">
+                {currentUser?.role === UserRole.DEVELOPER && (
+                    <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                        <h3 className="text-lg font-semibold text-text-main mb-2">Gerenciamento de Empresas e Administradores</h3>
+                        <p className="text-text-light text-sm">
+                            Crie novas empresas, vincule administradores e gerencie o status de todas as empresas.
+                        </p>
+                        <button 
+                            onClick={handleManageCompanies}
+                            className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                        >
+                            <BuildingIcon className="h-4 w-4 inline-block mr-2" /> Gerenciar Empresas
+                        </button>
+                    </div>
+                )}
+
                 <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
                     <h3 className="text-lg font-semibold text-text-main mb-2">Gerenciamento de Módulos</h3>
                     <p className="text-text-light text-sm">
