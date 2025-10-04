@@ -55,18 +55,24 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
             view: View.ADMIN_USER_MANAGER,
             permission: currentUserRole === UserRole.ADMIN,
         },
-        // Gerenciamento de Empresas para Desenvolvedores - MOVIDO PARA PAINEL DE CONFIGURAÇÕES
-        // {
-        //     label: 'Gerenciar Empresas',
-        //     icon: BuildingIcon,
-        //     view: View.DEVELOPER_COMPANY_USER_MANAGER,
-        //     permission: currentUserRole === UserRole.DEVELOPER,
-        // },
+        // Gerenciamento de Empresas para Desenvolvedores
+        {
+            label: 'Gerenciar Empresas',
+            icon: BuildingIcon,
+            view: View.DEVELOPER_COMPANY_USER_MANAGER,
+            permission: currentUserRole === UserRole.DEVELOPER,
+        },
         {
             label: 'Gerenciar Avisos',
             icon: BellIcon,
             view: View.MANAGE_NOTICES,
             permission: modulePermissions[ModuleName.MANAGE_NOTICES],
+        },
+        {
+            label: 'Gerenciar Modelos',
+            icon: TemplateIcon,
+            view: View.SURVEY_TEMPLATES,
+            permission: modulePermissions[ModuleName.MANAGE_SURVEY_TEMPLATES],
         },
         {
             label: 'Configurações',
