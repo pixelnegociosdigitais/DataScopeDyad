@@ -10,7 +10,7 @@ import SurveySelector from '../src/components/giveaways/SurveySelector';
 import ParticipantList from '../src/components/giveaways/ParticipantList';
 import DrawSetup from '../src/components/giveaways/DrawSetup';
 import PastWinnersHistory from '../src/components/giveaways/PastWinnersHistory';
-import { logActivity } => '../src/utils/logger';
+import { logActivity } from '../src/utils/logger';
 import { useAuth } from '../src/hooks/useAuth';
 
 interface GiveawayParticipant {
