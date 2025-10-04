@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { QuestionType } from '../../../types';
 import { GiftIcon } from '../../../components/icons/GiftIcon';
-import { logActivity } from '../../utils/logger'; // Importar logActivity
+import { logActivity } from '../../utils/logger';
 
 interface GiveawayParticipant {
-    id: string;
+    id: string; // Agora será o ID da resposta da pesquisa
     name: string;
     email?: string;
     phone?: string;
@@ -29,27 +29,23 @@ const ParticipantList: React.FC<ParticipantListProps> = ({ selectedSurveyId, onP
             const { data: questionsData, error: questionsError } = await supabase.from('questions').select('id, text, type').eq('survey_id', selectedSurveyId);
             if (questionsError) throw questionsError;
 
-            // Lógica mais flexível para encontrar as perguntas de nome, email e telefone
-            const nameQuestionCandidates = questionsData.filter(q => 
-                q.type === QuestionType.SHORT_TEXT && q.text.toLowerCase().includes('nome')
-            );
-            const emailQuestionCandidates = questionsData.filter(q => 
-                q.type === QuestionType.EMAIL && q.text.toLowerCase().includes('e-mail')
-            );
-            const phoneQuestionCandidates = questionsData.filter(q => 
-                q.type === QuestionType.PHONE && q.text.toLowerCase().includes('telefone')
-            );
+            // Mapeamento para encontrar as perguntas de nome, email e telefone de forma mais robusta
+            const nameQuestionId = questionsData.find(q => 
+                q.type === QuestionType.SHORT_TEXT && 
+                (q.text.toLowerCase().includes('nome completo') || q.text.toLowerCase().includes('nome'))
+            )?.id;
+            
+            const emailQuestionId = questionsData.find(q => 
+                q.type === QuestionType.EMAIL && 
+                (q.text.toLowerCase().includes('e-mail') || q.text.toLowerCase().includes('email'))
+            )?.id;
+            
+            const phoneQuestionId = questionsData.find(q => 
+                q.type === QuestionType.PHONE && 
+                (q.text.toLowerCase().includes('telefone') || q.text.toLowerCase().includes('celular'))
+            )?.id;
 
-            // Priorizar correspondências exatas se existirem, caso contrário, usar o primeiro candidato
-            const nameQuestion = nameQuestionCandidates.find(q => q.text === 'Nome Completo') || nameQuestionCandidates[0];
-            const emailQuestion = emailQuestionCandidates.find(q => q.text === 'E-mail') || emailQuestionCandidates[0];
-            const phoneQuestion = phoneQuestionCandidates.find(q => q.text === 'Telefone') || phoneQuestionCandidates[0];
-
-            const finalNameQuestionIds = nameQuestion ? [nameQuestion.id] : [];
-            const finalEmailQuestionIds = emailQuestion ? [emailQuestion.id] : [];
-            const finalPhoneQuestionIds = phoneQuestion ? [phoneQuestion.id] : [];
-
-            if (finalNameQuestionIds.length === 0) {
+            if (!nameQuestionId) {
                 const errorMessage = 'A pesquisa selecionada não possui uma pergunta de nome (ex: "Nome Completo" do tipo Texto Curto).';
                 setError(errorMessage);
                 logActivity('WARN', `Sorteio: ${errorMessage} para surveyId: ${selectedSurveyId}`, 'GIVEAWAYS');
@@ -62,29 +58,27 @@ const ParticipantList: React.FC<ParticipantListProps> = ({ selectedSurveyId, onP
             const { data: responsesData, error: responsesError } = await supabase.from('survey_responses').select(`id, answers (question_id, value)`).eq('survey_id', selectedSurveyId);
             if (responsesError) throw responsesError;
 
-            const responsesMap = new Map<string, { name?: string; email?: string; phone?: string }>();
+            const loadedParticipants: GiveawayParticipant[] = [];
             responsesData.forEach(response => {
-                const responseId = response.id;
-                if (!responsesMap.has(responseId)) responsesMap.set(responseId, {});
-                const currentResponse = responsesMap.get(responseId)!;
+                const participant: GiveawayParticipant = { id: response.id, name: '' }; // ID agora é o ID da resposta
+                
                 response.answers.forEach((answer: any) => {
-                    if (finalNameQuestionIds.includes(answer.question_id)) currentResponse.name = String(answer.value).trim();
-                    if (finalEmailQuestionIds.includes(answer.question_id)) currentResponse.email = String(answer.value).trim();
-                    if (finalPhoneQuestionIds.includes(answer.question_id)) currentResponse.phone = String(answer.value).trim();
-                });
-            });
-
-            const uniqueParticipants = new Map<string, GiveawayParticipant>();
-            responsesMap.forEach((details, id) => {
-                if (details.name) {
-                    const normalizedName = details.name.toLowerCase();
-                    if (!uniqueParticipants.has(normalizedName)) {
-                        uniqueParticipants.set(normalizedName, { id, name: details.name, email: details.email, phone: details.phone });
+                    if (answer.question_id === nameQuestionId) {
+                        participant.name = String(answer.value).trim();
                     }
+                    if (answer.question_id === emailQuestionId) {
+                        participant.email = String(answer.value).trim();
+                    }
+                    if (answer.question_id === phoneQuestionId) {
+                        participant.phone = String(answer.value).trim();
+                    }
+                });
+
+                if (participant.name) { // Apenas adiciona se tiver um nome
+                    loadedParticipants.push(participant);
                 }
             });
             
-            const loadedParticipants = Array.from(uniqueParticipants.values());
             setParticipants(loadedParticipants);
             onParticipantsLoad(loadedParticipants);
 

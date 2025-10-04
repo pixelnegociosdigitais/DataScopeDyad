@@ -41,9 +41,8 @@ serve(async (req) => {
       email_confirm: true,
       user_metadata: { 
         full_name: fullName.trim(), 
-        company_id: companyId.trim() 
-        // Removendo 'role' daqui, pois o trigger handle_new_user_with_company
-        // e a atualização subsequente do perfil já cuidam disso.
+        company_id: companyId.trim(),
+        role: role.trim() // Passar o role para o trigger
       }
     })
 
@@ -62,20 +61,8 @@ serve(async (req) => {
         throw new Error("Criação do usuário falhou, nenhum usuário retornado.")
     }
 
-    // Atualiza o perfil com o role e company_id corretos após a criação do usuário
-    const { error: profileUpdateError } = await adminClient
-      .from('profiles')
-      .update({ 
-        role: role.trim(), 
-        company_id: companyId.trim(), 
-        full_name: fullName.trim() 
-      })
-      .eq('id', user.id)
-
-    if (profileUpdateError) {
-        console.error('Profile update error in create-user:', profileUpdateError);
-        throw profileUpdateError
-    }
+    // A atualização do perfil com o role e company_id corretos agora é tratada pelo trigger handle_new_user_with_company
+    // Não é mais necessário fazer um update explícito aqui.
 
     return new Response(JSON.stringify({ user }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
