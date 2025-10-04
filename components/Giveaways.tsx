@@ -10,8 +10,8 @@ import SurveySelector from '../src/components/giveaways/SurveySelector';
 import ParticipantList from '../src/components/giveaways/ParticipantList';
 import DrawSetup from '../src/components/giveaways/DrawSetup';
 import PastWinnersHistory from '../src/components/giveaways/PastWinnersHistory';
-import { logActivity } from '../src/utils/logger'; // Importar o utilitário de log
-import { useAuth } from '../src/hooks/useAuth'; // Importar useAuth para acessar modulePermissions
+import { logActivity } from '../src/utils/logger';
+import { useAuth } from '../src/hooks/useAuth';
 
 interface GiveawayParticipant {
     id: string;
@@ -36,24 +36,32 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     const [countdown, setCountdown] = useState(0);
     const [progress, setProgress] = useState(0);
 
-    const { modulePermissions } = useAuth(() => {}); // Obter as permissões do módulo
+    const { modulePermissions } = useAuth(() => {});
 
     const canPerformGiveaways = modulePermissions[ModuleName.PERFORM_GIVEAWAYS];
     const canViewGiveawayData = modulePermissions[ModuleName.VIEW_GIVEAWAY_DATA];
 
     const animationDuration = 3000;
 
+    console.log('Giveaways: Componente renderizado. currentCompany.id:', currentCompany?.id);
+    console.log('Giveaways: Permissões - canPerformGiveaways:', canPerformGiveaways, 'canViewGiveawayData:', canViewGiveawayData);
+
+
     const fetchPrizes = useCallback(async () => {
+        console.log('Giveaways: fetchPrizes - Iniciando busca de prêmios para companyId:', currentCompany?.id);
         if (!currentCompany?.id) {
+            console.log('Giveaways: fetchPrizes - currentCompany.id é nulo, pulando busca de prêmios.');
             setPrizes([]);
             return;
         }
         const { data, error } = await supabase.from('prizes').select('*').eq('company_id', currentCompany.id).order('rank', { ascending: true, nullsFirst: true }).order('name', { ascending: true });
         if (error) {
+            console.error('Giveaways: fetchPrizes - Erro ao buscar prêmios:', error);
             showError('Não foi possível carregar a lista de prêmios.');
             logActivity('ERROR', `Erro ao carregar prêmios para a empresa ${currentCompany.id}: ${error.message}`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
             setPrizes([]);
         } else {
+            console.log('Giveaways: fetchPrizes - Prêmios carregados:', data);
             setPrizes(data || []);
             logActivity('INFO', `Prêmios carregados para a empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
         }
@@ -61,7 +69,9 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
 
     useEffect(() => {
         const loadSurveys = async () => {
+            console.log('Giveaways: loadSurveys - Iniciando busca de pesquisas para companyId:', currentCompany?.id);
             if (!currentCompany?.id) {
+                console.log('Giveaways: loadSurveys - currentCompany.id é nulo, pulando busca de pesquisas.');
                 setAvailableSurveys([]);
                 setSelectedSurveyId(null);
                 return;
@@ -77,10 +87,12 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             `).eq('company_id', currentCompany.id).order('title', { ascending: true });
             
             if (error) {
+                console.error('Giveaways: loadSurveys - Erro ao buscar pesquisas:', error);
                 showError('Não foi possível carregar a lista de pesquisas.');
                 logActivity('ERROR', `Erro ao carregar pesquisas para a empresa ${currentCompany.id}: ${error.message}`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
                 setAvailableSurveys([]);
             } else {
+                console.log('Giveaways: loadSurveys - Pesquisas carregadas:', data);
                 const fetchedSurveys: Survey[] = (data || []).map((s: any) => ({
                     id: s.id,
                     title: s.title,
@@ -91,8 +103,10 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 }));
                 setAvailableSurveys(fetchedSurveys);
                 if (fetchedSurveys.length > 0 && !selectedSurveyId) {
+                    console.log('Giveaways: loadSurveys - Definindo selectedSurveyId para:', fetchedSurveys[0].id);
                     setSelectedSurveyId(fetchedSurveys[0].id);
                 } else if (fetchedSurveys.length === 0) {
+                    console.log('Giveaways: loadSurveys - Nenhuma pesquisa encontrada, definindo selectedSurveyId como null.');
                     setSelectedSurveyId(null);
                 }
                 logActivity('INFO', `Pesquisas carregadas para seleção de sorteio na empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
@@ -180,6 +194,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     };
 
     if (!currentCompany) {
+        console.log('Giveaways: currentCompany é nulo, exibindo mensagem para criar/vincular empresa.');
         return (
             <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
                 <GiftIcon className="h-12 w-12 text-primary mx-auto mb-4" />
