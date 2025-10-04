@@ -193,7 +193,8 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             if (!currentUser) {
                 showError('Usuário não identificado para salvar a pesquisa.');
                 console.error('useSurveys: handleSaveSurvey - Usuário ausente.');
-                logActivity('ERROR', `Tentativa de salvar pesquisa sem usuário identificado.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
+                // Fix: Explicitly pass undefined for userId and userEmail when currentUser is null
+                logActivity('ERROR', `Tentativa de salvar pesquisa sem usuário identificado.`, 'SURVEYS', undefined, undefined, currentCompany?.id);
                 return;
             }
 
