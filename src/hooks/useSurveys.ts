@@ -98,7 +98,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
         setLoadingSurveys(false);
         console.log('useSurveys: fetchSurveys - Nenhuma pesquisa encontrada ou erro para companyId:', companyId, 'loadingSurveys = false.');
         return [];
-    }, [currentUser, currentCompany]);
+    }, [currentUser?.id, currentUser?.role, currentUser?.email, currentCompany?.id]); // Refined dependencies
 
     const fetchSurveyResponses = useCallback(async (surveyId: string) => {
         console.log('useSurveys: fetchSurveyResponses - Iniciando busca de respostas para surveyId:', surveyId);
@@ -141,7 +141,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             logActivity('INFO', `Nenhuma resposta encontrada para a pesquisa ${surveyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             setSurveyResponses([]);
         }
-    }, []);
+    }, [currentUser?.id, currentUser?.email, currentCompany?.id]);
 
     const fetchTemplates = useCallback(async () => {
         console.log('useSurveys: fetchTemplates - Iniciando busca de templates.');
@@ -167,7 +167,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             logActivity('INFO', `Templates de pesquisa carregados.`, 'SURVEY_TEMPLATES', currentUser?.id, currentUser?.email, currentCompany?.id);
             console.log('useSurveys: fetchTemplates - Templates processados e definidos:', fetchedTemplates);
         }
-    }, [currentUser, currentCompany]);
+    }, [currentUser?.id, currentUser?.email, currentCompany?.id]);
 
     useEffect(() => {
         fetchTemplates();
