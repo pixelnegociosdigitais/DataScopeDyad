@@ -12,7 +12,7 @@ import { useAuth } from '../hooks/useAuth'; // Import useAuth
 interface SurveyTemplateManagerProps {
     onBack: () => void;
     templates: Survey[];
-    currentUser: User;
+    currentUser: User; // Added currentUser prop
     modulePermissions: Record<ModuleName, boolean>;
     onSaveTemplate: (templateData: Survey, editingTemplateId?: string) => Promise<void>;
     onDeleteTemplate: (templateId: string) => Promise<boolean>;
@@ -36,20 +36,9 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
     onSaveTemplate,
     onDeleteTemplate,
 }) => {
-    // Call useAuth unconditionally at the top
+    // All hook calls must be at the top level, unconditionally.
     const { modulePermissions: authModulePermissions } = useAuth(() => {});
     const canManageTemplates = authModulePermissions[ModuleName.MANAGE_SURVEY_TEMPLATES];
-
-    // Conditional return BEFORE any other hooks
-    if (!canManageTemplates) {
-        return (
-            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
-                <TemplateIcon className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-text-main mb-4">Gerenciar Modelos de Pesquisa</h2>
-                <p className="text-text-light mb-6">Você não tem permissão para gerenciar modelos de pesquisa.</p>
-            </div>
-        );
-    }
 
     const [showTemplateForm, setShowTemplateForm] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<Survey | null>(null);
@@ -199,6 +188,17 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                 );
         }
     }, [updateQuestionText]);
+
+    // Conditional rendering comes after all hooks
+    if (!canManageTemplates) {
+        return (
+            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
+                <TemplateIcon className="h-12 w-12 text-primary mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-text-main mb-4">Gerenciar Modelos de Pesquisa</h2>
+                <p className="text-text-light mb-6">Você não tem permissão para gerenciar modelos de pesquisa.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-4xl mx-auto">

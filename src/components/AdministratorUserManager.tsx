@@ -35,7 +35,7 @@ interface AdministratorUserManagerProps {
 }
 
 const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onBack, currentUser, currentCompany, setCurrentView }) => {
-    // Call useAuth unconditionally at the top
+    // All hook calls must be at the top level, unconditionally.
     const { handleResetUserPassword, handleCreateUserForCompany, handleUpdateUserPermissions, handleAdminUpdateUserProfile, handleDeleteUser } = useAuth(setCurrentView);
 
     const [users, setUsers] = useState<User[]>([]);
@@ -195,7 +195,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
         fetchUsers();
     };
 
-    // Conditional rendering moved after all hooks
+    // Conditional rendering comes after all hooks
     if (loading) {
         return <div className="text-center py-8 text-text-light">Carregando gerenciamento de usuários...</div>;
     }

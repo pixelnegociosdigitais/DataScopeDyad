@@ -26,20 +26,8 @@ interface GiveawaysProps {
 }
 
 const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) => {
-    // Call useAuth unconditionally at the top
+    // All hook calls must be at the top level, unconditionally.
     const { modulePermissions } = useAuth(() => {});
-
-    // Conditional return BEFORE any other hooks
-    if (!currentCompany) {
-        console.log('Giveaways: currentCompany é nulo, exibindo mensagem para criar/vincular empresa.');
-        return (
-            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
-                <GiftIcon className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-text-main mb-4">Sorteios da Empresa</h2>
-                <p className="text-text-light mb-6">Crie ou vincule-se a uma empresa para gerenciar e realizar sorteios.</p>
-            </div>
-        );
-    }
 
     const [participants, setParticipants] = useState<GiveawayParticipant[]>([]);
     const [prizes, setPrizes] = useState<Prize[]>([]);
@@ -205,6 +193,18 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             return newSelection.sort((a, b) => (a.rank || Infinity) - (b.rank || Infinity));
         });
     };
+
+    // Conditional rendering comes after all hooks
+    if (!currentCompany) {
+        console.log('Giveaways: currentCompany é nulo, exibindo mensagem para criar/vincular empresa.');
+        return (
+            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
+                <GiftIcon className="h-12 w-12 text-primary mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-text-main mb-4">Sorteios da Empresa</h2>
+                <p className="text-text-light mb-6">Crie ou vincule-se a uma empresa para gerenciar e realizar sorteios.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">

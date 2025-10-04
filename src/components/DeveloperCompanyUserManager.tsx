@@ -19,7 +19,7 @@ interface DeveloperCompanyUserManagerProps {
 }
 
 const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = ({ onBack, setCurrentView }) => {
-    // Call useAuth unconditionally at the top
+    // All hook calls must be at the top level, unconditionally.
     const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany, currentUser, handleAdminUpdateUserProfile } = useAuth(setCurrentView);
 
     const [companies, setCompanies] = useState<Company[]>([]);
@@ -39,11 +39,6 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
     const [showEditAdminModal, setShowEditAdminModal] = useState(false);
     const [editingAdmin, setEditingAdmin] = useState<User | null>(null);
-
-    // Conditional return BEFORE any other hooks
-    if (loading) {
-        return <div className="text-center py-8 text-text-light">Carregando gerenciamento de empresas...</div>;
-    }
 
     const fetchCompanies = useCallback(async () => {
         setLoading(true);
@@ -267,6 +262,11 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             logActivity('ERROR', `Erro ao excluir empresa '${companyToDelete.name}' (ID: ${companyToDelete.id}): ${err.message}`, 'COMPANIES', currentUser?.id, currentUser?.email, companyToDelete.id);
         }
     };
+
+    // Conditional rendering comes after all hooks
+    if (loading) {
+        return <div className="text-center py-8 text-text-light">Carregando gerenciamento de empresas...</div>;
+    }
 
     return (
         <div className="max-w-5xl mx-auto bg-white p-8 rounded-lg shadow-md">
