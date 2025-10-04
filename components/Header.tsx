@@ -3,7 +3,8 @@ import { User, Company, View, ModuleName, Notice } from '../types';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
-import NotificationBell from '../src/components/NotificationBell'; // Importar NotificationBell
+import { MenuIcon } from './icons/MenuIcon'; // Importar MenuIcon
+import NotificationBell from '../src/components/NotificationBell';
 
 interface HeaderProps {
     user: User;
@@ -11,47 +12,57 @@ interface HeaderProps {
     onLogout: () => void;
     setView: (view: View) => void;
     modulePermissions: Record<ModuleName, boolean>;
-    onNoticeClick: (notice: Notice) => void; // Adicionar prop para lidar com o clique no aviso
+    onNoticeClick: (notice: Notice) => void;
+    onToggleSidebar: () => void; // Nova prop para alternar a barra lateral
+    isSidebarExpanded: boolean; // Nova prop para o estado da barra lateral
 }
 
-const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modulePermissions, onNoticeClick }) => {
+const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modulePermissions, onNoticeClick, onToggleSidebar, isSidebarExpanded }) => {
     const canManageCompany = modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS] && company !== null;
 
     const handleCompanyClick = () => {
-        // Agora, ambos os casos (sem empresa ou com empresa e permissão) levam para COMPANY_SETTINGS
-        // A lógica de qual formulário (criação ou edição) será exibido é tratada em App.tsx
         setView(View.COMPANY_SETTINGS);
     };
 
     return (
-        <header className="bg-white shadow-sm p-4 flex justify-end items-center w-full">
-            <div className="flex items-center gap-6">
-                <NotificationBell onNoticeClick={onNoticeClick} /> {/* Adicionar o NotificationBell aqui */}
+        <header className="bg-white shadow-sm p-4 flex justify-between items-center w-full">
+            <div className="flex items-center">
+                {/* Botão de alternância da barra lateral, visível apenas em telas pequenas */}
+                <button
+                    onClick={onToggleSidebar}
+                    className="p-2 rounded-full hover:bg-gray-100 transition-colors md:hidden"
+                    aria-label={isSidebarExpanded ? "Recolher menu" : "Expandir menu"}
+                >
+                    <MenuIcon className="h-6 w-6 text-gray-600" />
+                </button>
+                {/* Título ou logo para telas pequenas, se necessário */}
+                <h1 className="text-xl font-bold text-gray-800 ml-4 md:hidden">DataScope</h1>
+            </div>
+
+            <div className="flex items-center gap-4 md:gap-6 flex-wrap justify-end"> {/* Ajustar gap e adicionar flex-wrap para mobile */}
+                <NotificationBell onNoticeClick={onNoticeClick} />
                 {company === null ? (
-                    // Caso 1: Nenhuma empresa associada, vai para COMPANY_SETTINGS (para criar)
                     <button
                         onClick={handleCompanyClick}
                         className="flex items-center gap-2 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"
                         aria-label="Configurar empresa"
                     >
                         <BuildingIcon className="h-5 w-5" />
-                        <span>Nenhuma Empresa</span>
+                        <span className="hidden md:inline">Nenhuma Empresa</span> {/* Ocultar texto em mobile */}
                     </button>
                 ) : canManageCompany ? (
-                    // Caso 2: Empresa associada e usuário tem permissão, vai para COMPANY_SETTINGS (para editar)
                     <button
                         onClick={handleCompanyClick}
                         className="flex items-center gap-2 text-sm text-text-light hover:bg-gray-100 p-2 rounded-lg transition-colors"
                         aria-label="Configurações da empresa"
                     >
                         <BuildingIcon className="h-5 w-5" />
-                        <span>{company.name}</span>
+                        <span className="hidden md:inline">{company.name}</span> {/* Ocultar texto em mobile */}
                     </button>
                 ) : (
-                    // Caso 3: Empresa associada, mas sem permissão, exibe texto estático
                     <div className="flex items-center gap-2 text-sm text-text-light">
                         <BuildingIcon className="h-5 w-5" />
-                        <span>{company.name}</span>
+                        <span className="hidden md:inline">{company.name}</span> {/* Ocultar texto em mobile */}
                     </div>
                 )}
                 <button
@@ -65,7 +76,7 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modul
                         <UserIcon className="h-8 w-8 p-1 bg-gray-200 rounded-full text-gray-500" />
                     )}
                    
-                    <div className="text-left">
+                    <div className="text-left hidden md:block"> {/* Ocultar em mobile */}
                         <span className="font-semibold text-text-main block">{user.fullName}</span>
                         <span className="text-xs">{user.role}</span>
                     </div>
@@ -76,7 +87,7 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modul
                     aria-label="Sair da aplicação"
                 >
                     <LogoutIcon className="h-5 w-5" />
-                    <span>Sair</span>
+                    <span className="hidden md:inline">Sair</span> {/* Ocultar texto em mobile */}
                 </button>
             </div>
         </header>

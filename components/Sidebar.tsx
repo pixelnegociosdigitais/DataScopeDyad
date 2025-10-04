@@ -83,7 +83,8 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
     ];
 
     return (
-        <aside className={`fixed inset-y-0 left-0 ${isExpanded ? 'w-64' : 'w-20'} bg-gray-800 text-white p-4 flex flex-col shadow-lg z-30 transition-all duration-300 ease-in-out`}>
+        <aside className={`fixed inset-y-0 left-0 z-50 bg-gray-800 text-white p-4 flex flex-col shadow-lg transition-all duration-300 ease-in-out
+                 ${isExpanded ? 'w-full md:w-64' : 'w-0 md:w-20 -translate-x-full md:translate-x-0'}`}> {/* Ajustado para ocultar completamente em mobile quando recolhido */}
             <div className={`flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} gap-3 mb-8 px-2`}>
                 <LogoIcon className="h-8 w-8 text-primary" />
                 {isExpanded && <h1 className="text-xl font-bold text-white whitespace-nowrap">DataScope</h1>}
@@ -93,20 +94,25 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
                 {navItems.map(item => item.permission && (
                     <button
                         key={item.label}
-                        onClick={() => setView(item.view)}
+                        onClick={() => {
+                            setView(item.view);
+                            if (isExpanded && window.innerWidth < 768) { // Recolher sidebar em mobile após clique
+                                onToggle();
+                            }
+                        }}
                         className={`flex items-center w-full p-3 rounded-lg text-left transition-colors duration-200
                                     ${currentView === item.view || (item.view === View.SURVEY_LIST && (currentView === View.DASHBOARD || currentView === View.RESPOND_SURVEY || currentView === View.EDIT_SURVEY))
                                         ? 'bg-gray-700 text-primary-light relative before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary'
                                         : 'hover:bg-gray-700 text-gray-300'}
                                     ${isExpanded ? 'justify-start' : 'justify-center'}`}
                     >
-                        <item.icon className="h-6 w-6 mr-4" />
+                        <item.icon className="h-6 w-6 mr-4 flex-shrink-0" /> {/* Adicionado flex-shrink-0 */}
                         {isExpanded && <span className="text-base whitespace-nowrap">{item.label}</span>}
                     </button>
                 ))}
             </nav>
 
-            <div className={`mt-auto pt-4 border-t border-gray-700 ${isExpanded ? 'justify-end' : 'justify-center'} flex`}>
+            <div className={`mt-auto pt-4 border-t border-gray-700 ${isExpanded ? 'justify-end' : 'justify-center'} flex md:hidden`}> {/* Ocultar toggle em desktop */}
                 <button
                     onClick={onToggle}
                     className="p-2 rounded-full text-gray-300 hover:bg-gray-700 transition-colors"
