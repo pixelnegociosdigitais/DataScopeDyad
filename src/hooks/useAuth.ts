@@ -35,7 +35,7 @@ const DEFAULT_MODULE_PERMISSIONS: Record<ModuleName, boolean> = {
     [ModuleName.MANAGE_COMPANIES]: false,
     [ModuleName.MANAGE_NOTICES]: false,
     [ModuleName.ACCESS_CHAT]: false,
-    [ModuleName.MANAGE_SURVEY_TEMPLATES]: false, // Added missing property
+    [ModuleName.MANAGE_SURVEY_TEMPLATES]: false,
 };
 
 const DEVELOPER_EMAIL = 'santananegociosdigitais@gmail.com';
@@ -49,7 +49,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
     // --- Internal Helper Functions (useCallback for stability) ---
 
-    const _fetchModulePermissions = useCallback(async (userRole: UserRole, userSpecificPermissions: Record<string, boolean> = {}) => {
+    const _fetchModulePermissions = useCallback(async (userRole: UserRole, userSpecificPermissions: Record<string, boolean> = {}, companyIdForLog?: string, userIdForLog?: string, userEmailForLog?: string) => {
         console.log('useAuth: _fetchModulePermissions - Iniciando busca de permissões para o papel:', userRole, 'e aplicando overrides:', userSpecificPermissions);
         
         let combinedPermissions: Record<ModuleName, boolean> = { ...DEFAULT_MODULE_PERMISSIONS };
@@ -61,8 +61,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         if (error) {
             console.error('useAuth: Erro ao buscar permissões de módulo baseadas no papel:', error);
-            // Use session.user.id/email if currentUser is not stable here for logging
-            logActivity('ERROR', `Erro ao buscar permissões de módulo para o papel ${userRole}: ${error.message}`, 'AUTH', session?.user?.id, session?.user?.email, currentCompany?.id);
+            logActivity('ERROR', `Erro ao buscar permissões de módulo para o papel ${userRole}: ${error.message}`, 'AUTH', userIdForLog, userEmailForLog, companyIdForLog);
         } else {
             data.forEach(p => {
                 if (Object.values(ModuleName).includes(p.module_name as ModuleName)) {
@@ -85,8 +84,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         
         setModulePermissions(combinedPermissions);
         console.log('useAuth: Permissões de módulo combinadas e definidas:', combinedPermissions);
-        logActivity('INFO', `Permissões de módulo carregadas e combinadas para o papel ${userRole}.`, 'AUTH', session?.user?.id, session?.user?.email, currentCompany?.id);
-    }, [session?.user?.id, session?.user?.email, currentCompany?.id]); // Dependências para logActivity
+        logActivity('INFO', `Permissões de módulo carregadas e combinadas para o papel ${userRole}.`, 'AUTH', userIdForLog, userEmailForLog, companyIdForLog);
+    }, []); // Empty dependency array - this callback is now truly stable.
 
     const _fetchUserData = useCallback(async (userId: string, userEmail: string) => {
         setLoadingAuth(true);
@@ -152,27 +151,17 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
             setCurrentUser(user);
             
-            // Pass currentCompany?.id to _fetchModulePermissions for logging context
-            await _fetchModulePermissions(user.role, user.permissions);
-
             const company: Company | null = profileData.companies ? (profileData.companies as unknown as Company) : null;
             setCurrentCompany(company);
 
-            if (company) {
-                console.log('useAuth: Empresa encontrada:', profileData.companies);
-                console.log('useAuth: Company ID do perfil:', profileData.company_id);
-                logActivity('INFO', `Usuário ${user.fullName} logado e vinculado à empresa ${company.name}.`, 'AUTH', userId, userEmail, company.id);
-            } else {
-                console.log('useAuth: Nenhuma empresa associada ao perfil.');
-                console.log('useAuth: Company ID do perfil:', profileData.company_id);
-                logActivity('INFO', `Usuário ${user.fullName} logado, mas sem empresa vinculada.`, 'AUTH', userId, userEmail);
-            }
+            // Pass the company.id, userId, and userEmail directly to _fetchModulePermissions
+            await _fetchModulePermissions(user.role, user.permissions, company?.id, userId, userEmail);
         }
         setLoadingAuth(false);
         console.log('useAuth: _fetchUserData concluído. loadingAuth = false.');
-    }, [_fetchModulePermissions]); // Removed currentUser and currentCompany from dependencies
+    }, [_fetchModulePermissions]); // _fetchModulePermissions is still a dependency, but it's now stable.
 
-    const _handleCreateCompany = useCallback(async (companyData: { name: string }) => { // Updated signature
+    const _handleCreateCompany = useCallback(async (companyData: { name: string }) => {
         if (!currentUser) {
             showError('Erro: Dados do usuário não disponíveis para criar a empresa.');
             console.error('handleCreateCompany: currentUser é nulo ou indefinido.');
@@ -185,10 +174,8 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         console.log('useAuth: _handleCreateCompany - Criando empresa:', companyData.name, 'para userId:', userId);
 
         const companyToInsert = {
-            name: companyData.name, // Only take name from input
+            name: companyData.name,
             created_by: userId,
-            // status will default to 'active' in DB
-            // administrators is a joined property, not inserted here
         };
 
         const { data: newCompanyDataArray, error: companyError } = await supabase
@@ -231,7 +218,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
 
         setCurrentCompany(newCompany);
         setCurrentUser(prev => prev ? { ...prev, role: roleToAssign, company_id: newCompany.id } : null);
-        await _fetchModulePermissions(roleToAssign);
+        await _fetchModulePermissions(roleToAssign, {}, newCompany.id, userId, userEmail); // Pass companyId, userId, userEmail for logging
         showSuccess('Empresa criada e vinculada com sucesso!');
         setCurrentView(View.SURVEY_LIST);
         logActivity('INFO', `Empresa '${newCompany.name}' criada e vinculada ao usuário ${userEmail}.`, 'COMPANIES', userId, userEmail, newCompany.id);
@@ -253,7 +240,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         const { error } = await supabase
             .from('profiles')
             .update({
-                full_name: updatedUser.fullName, // Mapeado para 'full_name'
+                full_name: updatedUser.fullName,
                 phone: updatedUser.phone,
                 address: updatedUser.address,
                 avatar_url: updatedUser.profilePictureUrl,
@@ -269,7 +256,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         } else {
             setCurrentUser(updatedUser);
             if (currentUser?.role !== updatedUser.role) {
-                await _fetchModulePermissions(updatedUser.role, updatedUser.permissions);
+                await _fetchModulePermissions(updatedUser.role, updatedUser.permissions, currentCompany?.id, updatedUser.id, updatedUser.email);
             }
             showSuccess('Perfil atualizado com sucesso!');
             setCurrentView(View.SURVEY_LIST);
@@ -290,7 +277,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             .update({
                 name: updatedCompany.name,
                 cnpj: updatedCompany.cnpj,
-                phone: updatedCompany.phone, // Corrected typo here
+                phone: updatedCompany.phone,
                 address_street: updatedCompany.address_street,
                 address_neighborhood: updatedCompany.address_neighborhood,
                 address_complement: updatedCompany.address_complement,
@@ -368,7 +355,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
             return;
         }
 
-        if (!temporaryPassword.trim()) { // Validação robusta para senha vazia ou só com espaços
+        if (!temporaryPassword.trim()) {
             showError('A senha temporária não pode estar vazia.');
             logActivity('ERROR', `Tentativa de criar usuário para empresa ${companyId} com senha temporária vazia.`, 'AUTH', currentUser?.id, currentUser?.email, companyId);
             return;
@@ -377,7 +364,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         const { data, error } = await supabase.functions.invoke('create-user', {
             body: {
                 email,
-                password: temporaryPassword.trim(), // Garante que a senha seja enviada sem espaços em branco nas extremidades
+                password: temporaryPassword.trim(),
                 fullName: fullName,
                 role: role,         
                 companyId,
@@ -428,7 +415,6 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
 
         const fieldsToUpdate: Partial<User> = { ...updatedFields };
-        // Mapear fullName para full_name para o banco de dados
         if (fieldsToUpdate.fullName !== undefined) {
             (fieldsToUpdate as any).full_name = fieldsToUpdate.fullName;
             delete fieldsToUpdate.fullName;
@@ -491,7 +477,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
         }
 
         if (!message.trim()) {
-            showError('A mensagem do aviso não pode estar vazia.');
+            showError('A mensagem do aviso não pode ser vazia.');
             logActivity('WARN', `Tentativa de criar aviso vazio por ${currentUser.email}.`, 'NOTICES', currentUser.id, currentUser.email, companyId);
             return false;
         }
@@ -552,14 +538,14 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 _fetchUserData(session.user.id, session.user.email || '');
             } else {
                 console.log('useAuth: Nenhuma sessão ativa. Resetando estados.');
-                logActivity('INFO', 'Usuário deslogado.', 'AUTH', currentUser?.id, currentUser?.email, currentCompany?.id);
+                logActivity('INFO', 'Usuário deslogado.', 'AUTH', undefined, undefined, currentCompany?.id);
                 setCurrentUser(null);
                 setCurrentCompany(null);
                 setLoadingAuth(false);
                 setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
             }
         }
-    }, [session, loadingSession, _fetchUserData]); // Removed currentUser and currentCompany from dependencies
+    }, [session, loadingSession, _fetchUserData, currentCompany?.id]);
 
     // --- Return values ---
     return {
