@@ -23,12 +23,11 @@ interface GiveawayParticipant {
 interface GiveawaysProps {
     currentUser: User;
     currentCompany: Company | null;
-    setCurrentView: (view: View) => void; // Adicionar setCurrentView às props
+    setCurrentView: (view: View) => void;
 }
 
 const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setCurrentView }) => {
-    // All hook calls must be at the top level, unconditionally.
-    const { modulePermissions } = useAuth(setCurrentView); // Passar setCurrentView para useAuth
+    const { modulePermissions } = useAuth(setCurrentView);
 
     const [participants, setParticipants] = useState<GiveawayParticipant[]>([]);
     const [prizes, setPrizes] = useState<Prize[]>([]);
@@ -39,8 +38,8 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setC
     const [isDrawing, setIsDrawing] = useState(false);
     const [countdown, setCountdown] = useState(0);
     const [progress, setProgress] = useState(0);
-    const [loadingPrizes, setLoadingPrizes] = useState(true); // Novo estado de carregamento
-    const [loadingAvailableSurveys, setLoadingAvailableSurveys] = useState(true); // Novo estado de carregamento
+    const [loadingPrizes, setLoadingPrizes] = useState(true);
+    const [loadingAvailableSurveys, setLoadingAvailableSurveys] = useState(true);
 
     const canPerformGiveaways = modulePermissions[ModuleName.PERFORM_GIVEAWAYS];
     const canViewGiveawayData = modulePermissions[ModuleName.VIEW_GIVEAWAY_DATA];
@@ -52,12 +51,12 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setC
 
 
     const fetchPrizes = useCallback(async () => {
-        setLoadingPrizes(true); // Definir carregando como verdadeiro
+        setLoadingPrizes(true);
         console.log('Giveaways: fetchPrizes - Iniciando busca de prêmios para companyId:', currentCompany?.id);
         if (!currentCompany?.id) {
             console.log('Giveaways: fetchPrizes - currentCompany.id é nulo, pulando busca de prêmios.');
             setPrizes([]);
-            setLoadingPrizes(false); // Definir carregando como falso
+            setLoadingPrizes(false);
             return;
         }
         const { data, error } = await supabase.from('prizes').select('*').eq('company_id', currentCompany.id).order('rank', { ascending: true, nullsFirst: true }).order('name', { ascending: true });
@@ -71,21 +70,20 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setC
             setPrizes(data || []);
             logActivity('INFO', `Prêmios carregados para a empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
         }
-        setLoadingPrizes(false); // Definir carregando como falso
+        setLoadingPrizes(false);
     }, [currentCompany?.id, currentUser]);
 
     useEffect(() => {
         const loadSurveys = async () => {
-            setLoadingAvailableSurveys(true); // Definir carregando como verdadeiro
+            setLoadingAvailableSurveys(true);
             console.log('Giveaways: loadSurveys - Iniciando busca de pesquisas para companyId:', currentCompany?.id);
             if (!currentCompany?.id) {
                 console.log('Giveaways: loadSurveys - currentCompany.id é nulo, pulando busca de pesquisas.');
                 setAvailableSurveys([]);
                 setSelectedSurveyId(null);
-                setLoadingAvailableSurveys(false); // Definir carregando como falso
+                setLoadingAvailableSurveys(false);
                 return;
             }
-            // Ajuste na consulta para incluir todas as propriedades da interface Survey
             const { data, error } = await supabase.from('surveys').select(`
                 id, 
                 title, 
@@ -120,7 +118,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setC
                 }
                 logActivity('INFO', `Pesquisas carregadas para seleção de sorteio na empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
             }
-            setLoadingAvailableSurveys(false); // Definir carregando como falso
+            setLoadingAvailableSurveys(false);
         };
         loadSurveys();
         fetchPrizes();
@@ -203,7 +201,6 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setC
         });
     };
 
-    // Conditional rendering comes after all hooks
     if (!currentCompany) {
         console.log('Giveaways: currentCompany é nulo, exibindo mensagem para criar/vincular empresa.');
         return (
@@ -215,7 +212,6 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setC
         );
     }
 
-    // Exibir estado de carregamento se as pesquisas ou prêmios ainda estiverem carregando
     if (loadingAvailableSurveys || loadingPrizes) {
         return (
             <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
@@ -235,7 +231,13 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setC
             <p className="text-text-light mb-6">Realize sorteios entre os leads cadastrados nas pesquisas da sua empresa ({currentCompany.name}).</p>
 
             {canPerformGiveaways && (
-                <PrizeManager currentCompany={currentCompany} currentUser={currentUser} prizes={prizes} onPrizesUpdate={fetchPrizes} />
+                <PrizeManager 
+                    currentCompany={currentCompany} 
+                    currentUser={currentUser} 
+                    prizes={prizes} 
+                    onPrizesUpdate={fetchPrizes} 
+                    canPerformGiveaways={canPerformGiveaways} // Passando a prop
+                />
             )}
             
             {(canPerformGiveaways || canViewGiveawayData) && (
@@ -268,7 +270,10 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setC
                         </div>
                     )}
                     {canViewGiveawayData && (
-                        <PastWinnersHistory selectedSurveyId={selectedSurveyId} />
+                        <PastWinnersHistory 
+                            selectedSurveyId={selectedSurveyId} 
+                            canViewGiveawayData={canViewGiveawayData} // Passando a prop
+                        />
                     )}
                 </>
             )}

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Prize, Company, User, ModuleName } from '../../../types';
+import { Prize, Company, User } from '../../../types';
 import { supabase } from '../../integrations/supabase/client';
 import { showError, showSuccess } from '../../utils/toast';
 import { CreateIcon } from '../../../components/icons/CreateIcon';
@@ -7,16 +7,16 @@ import { PencilIcon } from '../../../components/icons/PencilIcon';
 import { TrashIcon } from '../../../components/icons/TrashIcon';
 import ConfirmationDialog from '../ConfirmationDialog';
 import { logActivity } from '../../utils/logger';
-import { useAuth } from '../../hooks/useAuth';
 
 interface PrizeManagerProps {
     currentCompany: Company;
     currentUser: User;
     prizes: Prize[];
     onPrizesUpdate: () => void;
+    canPerformGiveaways: boolean; // Adicionado prop de permissão
 }
 
-const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser, prizes, onPrizesUpdate }) => {
+const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser, prizes, onPrizesUpdate, canPerformGiveaways }) => {
     const [showPrizeModal, setShowPrizeModal] = useState(false);
     const [editingPrize, setEditingPrize] = useState<Prize | null>(null);
     const [prizeFormName, setPrizeFormName] = useState('');
@@ -25,14 +25,14 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
     const [showDeletePrizeDialog, setShowDeletePrizeDialog] = useState(false);
     const [prizeToDelete, setPrizeToDelete] = useState<Prize | null>(null);
 
-    const { modulePermissions } = useAuth(() => {});
-    const canPerformGiveaways = modulePermissions[ModuleName.PERFORM_GIVEAWAYS];
-
-    if (!canPerformGiveaways) {
-        return null;
-    }
+    // O componente PrizeManager agora é renderizado condicionalmente pelo pai,
+    // então não precisamos de um retorno null aqui.
 
     const handleOpenPrizeModal = (prize: Prize | null = null) => {
+        if (!canPerformGiveaways) {
+            showError('Você não tem permissão para gerenciar prêmios.');
+            return;
+        }
         setEditingPrize(prize);
         setPrizeFormName(prize?.name || '');
         setPrizeFormDescription(prize?.description || '');
@@ -49,6 +49,10 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
     };
 
     const handleSavePrize = async () => {
+        if (!canPerformGiveaways) {
+            showError('Você não tem permissão para gerenciar prêmios.');
+            return;
+        }
         if (!prizeFormName.trim()) {
             showError('O nome do prêmio não pode estar vazio.');
             logActivity('WARN', `Tentativa de salvar prêmio sem nome na empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
@@ -83,6 +87,10 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
     };
 
     const handleDeletePrizeConfirmed = useCallback(async () => {
+        if (!canPerformGiveaways) {
+            showError('Você não tem permissão para excluir prêmios.');
+            return;
+        }
         if (!prizeToDelete) return;
         try {
             const { error } = await supabase.from('prizes').delete().eq('id', prizeToDelete.id);
@@ -98,12 +106,16 @@ const PrizeManager: React.FC<PrizeManagerProps> = ({ currentCompany, currentUser
             setShowDeletePrizeDialog(false);
             setPrizeToDelete(null);
         }
-    }, [prizeToDelete, onPrizesUpdate, currentUser, currentCompany]);
+    }, [prizeToDelete, onPrizesUpdate, currentUser, currentCompany, canPerformGiveaways]);
 
     const confirmDeletePrize = useCallback((prize: Prize) => {
+        if (!canPerformGiveaways) {
+            showError('Você não tem permissão para excluir prêmios.');
+            return;
+        }
         setPrizeToDelete(prize);
         setShowDeletePrizeDialog(true);
-    }, []);
+    }, [canPerformGiveaways]);
 
     return (
         <div className="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">

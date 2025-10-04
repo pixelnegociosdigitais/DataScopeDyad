@@ -1,28 +1,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { showError } from '../../utils/toast';
-import { useAuth } from '../../hooks/useAuth'; // Importar useAuth para acessar modulePermissions
-import { ModuleName } from '../../../types'; // Importar ModuleName
 
 interface PastWinner {
     created_at: string;
     winner_name: string;
     winner_phone: string | null;
     rank: number;
-    prize_id: string; // Adicionado para depuração e clareza
-    prizes: { name: string } | null; // Alterado para um objeto único ou null
+    prize_id: string;
+    prizes: { name: string } | null;
 }
 
 interface PastWinnersHistoryProps {
     selectedSurveyId: string;
+    canViewGiveawayData: boolean; // Adicionado prop de permissão
 }
 
-const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyId }) => {
+const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyId, canViewGiveawayData }) => {
     const [pastWinners, setPastWinners] = useState<PastWinner[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const { modulePermissions } = useAuth(() => {}); // Obter as permissões do módulo
-    const canViewGiveawayData = modulePermissions[ModuleName.VIEW_GIVEAWAY_DATA];
+    // O componente PastWinnersHistory agora é renderizado condicionalmente pelo pai,
+    // então não precisamos de um retorno null aqui.
 
     const fetchPastWinners = useCallback(async () => {
         if (!canViewGiveawayData) {
@@ -41,7 +40,7 @@ const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyI
                 rank,
                 prize_id,
                 prizes!left(name)
-            `) // Usar left join para garantir que o winner seja retornado mesmo sem prêmio
+            `)
             .eq('survey_id', selectedSurveyId)
             .order('created_at', { ascending: false })
             .order('rank', { ascending: true });
@@ -50,7 +49,6 @@ const PastWinnersHistory: React.FC<PastWinnersHistoryProps> = ({ selectedSurveyI
             showError('Não foi possível carregar o histórico de sorteios.');
             setPastWinners([]);
         } else {
-            // Mapear explicitamente os dados para garantir que 'prizes' esteja no formato correto
             const mappedWinners: PastWinner[] = (data || []).map((item: any) => ({
                 created_at: item.created_at,
                 winner_name: item.winner_name,
