@@ -56,7 +56,6 @@ const App: React.FC = () => {
         handleUpdateUserPermissions,
         handleAdminUpdateUserProfile,
         handleDeleteUser,
-        handleCreateNotice,
     } = useAuth(setCurrentView);
 
     const {
