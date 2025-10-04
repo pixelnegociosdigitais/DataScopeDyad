@@ -545,7 +545,7 @@ export const useAuth = (setCurrentView: (view: View) => void): UseAuthReturn => 
                 setModulePermissions(DEFAULT_MODULE_PERMISSIONS);
             }
         }
-    }, [session, loadingSession, _fetchUserData, currentCompany?.id]);
+    }, [session, loadingSession, _fetchUserData]);
 
     // --- Return values ---
     return {
