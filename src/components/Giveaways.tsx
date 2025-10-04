@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { User, Company, Survey, Prize, GiveawayWinner, ModuleName } from '../../types';
+import { User, Company, Survey, Prize, GiveawayWinner, ModuleName, View } from '../../types';
 import { supabase } from '../integrations/supabase/client';
-import { GiftIcon } from '../../components/icons/GiftIcon';
-import { showError, showSuccess } from '../utils/toast';
-import WinnerDisplayPopup from '../components/WinnerDisplayPopup';
-import CountdownPopup from '../components/CountdownPopup';
-import PrizeManager from './giveaways/PrizeManager';
-import SurveySelector from './giveaways/SurveySelector';
-import ParticipantList from './giveaways/ParticipantList';
-import DrawSetup from './giveaways/DrawSetup';
-import PastWinnersHistory from './giveaways/PastWinnersHistory';
-import { logActivity } from '../utils/logger';
-import { useAuth } from '../hooks/useAuth';
+import { GiftIcon } from './icons/GiftIcon';
+import { showError, showSuccess } from '../src/utils/toast';
+import WinnerDisplayPopup from '../src/components/WinnerDisplayPopup';
+import CountdownPopup from '../src/components/CountdownPopup';
+import PrizeManager from '../src/components/giveaways/PrizeManager';
+import SurveySelector from '../src/components/giveaways/SurveySelector';
+import ParticipantList from '../src/components/giveaways/ParticipantList';
+import DrawSetup from '../src/components/giveaways/DrawSetup';
+import PastWinnersHistory from '../src/components/giveaways/PastWinnersHistory';
+import { logActivity } from '../src/utils/logger';
+import { useAuth } from '../src/hooks/useAuth';
 
 interface GiveawayParticipant {
     id: string;
@@ -23,11 +23,11 @@ interface GiveawayParticipant {
 interface GiveawaysProps {
     currentUser: User;
     currentCompany: Company | null;
+    setCurrentView: (view: View) => void;
 }
 
-const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) => {
-    // All hook calls must be at the top level, unconditionally.
-    const { modulePermissions } = useAuth(() => {});
+const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany, setCurrentView }) => {
+    const { modulePermissions } = useAuth(setCurrentView);
 
     const [participants, setParticipants] = useState<GiveawayParticipant[]>([]);
     const [prizes, setPrizes] = useState<Prize[]>([]);
@@ -38,6 +38,8 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
     const [isDrawing, setIsDrawing] = useState(false);
     const [countdown, setCountdown] = useState(0);
     const [progress, setProgress] = useState(0);
+    const [loadingPrizes, setLoadingPrizes] = useState(true);
+    const [loadingAvailableSurveys, setLoadingAvailableSurveys] = useState(true);
 
     const canPerformGiveaways = modulePermissions[ModuleName.PERFORM_GIVEAWAYS];
     const canViewGiveawayData = modulePermissions[ModuleName.VIEW_GIVEAWAY_DATA];
@@ -49,10 +51,12 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
 
 
     const fetchPrizes = useCallback(async () => {
+        setLoadingPrizes(true);
         console.log('Giveaways: fetchPrizes - Iniciando busca de prêmios para companyId:', currentCompany?.id);
         if (!currentCompany?.id) {
             console.log('Giveaways: fetchPrizes - currentCompany.id é nulo, pulando busca de prêmios.');
             setPrizes([]);
+            setLoadingPrizes(false);
             return;
         }
         const { data, error } = await supabase.from('prizes').select('*').eq('company_id', currentCompany.id).order('rank', { ascending: true, nullsFirst: true }).order('name', { ascending: true });
@@ -66,18 +70,20 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             setPrizes(data || []);
             logActivity('INFO', `Prêmios carregados para a empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
         }
+        setLoadingPrizes(false);
     }, [currentCompany?.id, currentUser]);
 
     useEffect(() => {
         const loadSurveys = async () => {
+            setLoadingAvailableSurveys(true);
             console.log('Giveaways: loadSurveys - Iniciando busca de pesquisas para companyId:', currentCompany?.id);
             if (!currentCompany?.id) {
                 console.log('Giveaways: loadSurveys - currentCompany.id é nulo, pulando busca de pesquisas.');
                 setAvailableSurveys([]);
                 setSelectedSurveyId(null);
+                setLoadingAvailableSurveys(false);
                 return;
             }
-            // Ajuste na consulta para incluir todas as propriedades da interface Survey
             const { data, error } = await supabase.from('surveys').select(`
                 id, 
                 title, 
@@ -112,6 +118,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 }
                 logActivity('INFO', `Pesquisas carregadas para seleção de sorteio na empresa ${currentCompany.id}.`, 'GIVEAWAYS', currentUser.id, currentUser.email, currentCompany.id);
             }
+            setLoadingAvailableSurveys(false);
         };
         loadSurveys();
         fetchPrizes();
@@ -194,7 +201,6 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         });
     };
 
-    // Conditional rendering comes after all hooks
     if (!currentCompany) {
         console.log('Giveaways: currentCompany é nulo, exibindo mensagem para criar/vincular empresa.');
         return (
@@ -202,6 +208,16 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                 <GiftIcon className="h-12 w-12 text-primary mx-auto mb-4" />
                 <h2 className="text-2xl font-bold text-text-main mb-4">Sorteios da Empresa</h2>
                 <p className="text-text-light mb-6">Crie ou vincule-se a uma empresa para gerenciar e realizar sorteios.</p>
+            </div>
+        );
+    }
+
+    if (loadingAvailableSurveys || loadingPrizes) {
+        return (
+            <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
+                <GiftIcon className="h-12 w-12 text-primary mx-auto mb-4 animate-bounce" />
+                <h2 className="text-2xl font-bold text-text-main mb-4">Carregando Sorteios...</h2>
+                <p className="text-text-light mb-6">Por favor, aguarde enquanto carregamos os dados.</p>
             </div>
         );
     }
@@ -215,11 +231,25 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
             <p className="text-text-light mb-6">Realize sorteios entre os leads cadastrados nas pesquisas da sua empresa ({currentCompany.name}).</p>
 
             {canPerformGiveaways && (
-                <PrizeManager currentCompany={currentCompany} currentUser={currentUser} prizes={prizes} onPrizesUpdate={fetchPrizes} />
+                <PrizeManager 
+                    currentCompany={currentCompany} 
+                    currentUser={currentUser} 
+                    prizes={prizes} 
+                    onPrizesUpdate={fetchPrizes} 
+                    canPerformGiveaways={canPerformGiveaways}
+                />
             )}
             
             {(canPerformGiveaways || canViewGiveawayData) && (
-                <SurveySelector availableSurveys={availableSurveys} selectedSurveyId={selectedSurveyId} onSurveyChange={setSelectedSurveyId} />
+                <>
+                    {availableSurveys.length === 0 ? (
+                        <div className="mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                            <p className="text-text-light">Nenhuma pesquisa disponível para sorteio. Crie uma pesquisa primeiro.</p>
+                        </div>
+                    ) : (
+                        <SurveySelector availableSurveys={availableSurveys} selectedSurveyId={selectedSurveyId} onSurveyChange={setSelectedSurveyId} />
+                    )}
+                </>
             )}
 
             {selectedSurveyId && (canPerformGiveaways || canViewGiveawayData) && (
@@ -240,7 +270,10 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
                         </div>
                     )}
                     {canViewGiveawayData && (
-                        <PastWinnersHistory selectedSurveyId={selectedSurveyId} />
+                        <PastWinnersHistory 
+                            selectedSurveyId={selectedSurveyId} 
+                            canViewGiveawayData={canViewGiveawayData}
+                        />
                     )}
                 </>
             )}
