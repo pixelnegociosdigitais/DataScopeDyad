@@ -1,8 +1,10 @@
 import React from 'react';
 import { ArrowLeftIcon } from './icons/ArrowLeftIcon';
 import { SettingsIcon } from './icons/SettingsIcon';
-import { BellIcon } from './icons/BellIcon'; // Importar o novo ícone
-import { View } from '../types';
+import { BellIcon } from './icons/BellIcon';
+import { TemplateIcon } from './icons/TemplateIcon'; // Importar o TemplateIcon
+import { View, ModuleName } from '../types';
+import { useAuth } from '../src/hooks/useAuth'; // Importar useAuth para permissões
 
 interface SettingsPanelProps {
     onBack: () => void;
@@ -10,6 +12,7 @@ interface SettingsPanelProps {
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
+    const { modulePermissions } = useAuth(setView); // Usar useAuth para acessar as permissões
 
     const handleManagePermissions = () => {
         setView(View.MODULE_PERMISSIONS_MANAGER);
@@ -21,6 +24,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
 
     const handleManageNotices = () => {
         setView(View.MANAGE_NOTICES);
+    };
+
+    const handleManageTemplates = () => {
+        setView(View.SURVEY_TEMPLATES);
     };
 
     return (
@@ -76,6 +83,21 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
                         <BellIcon className="h-4 w-4 inline-block mr-2" /> Gerenciar Avisos
                     </button>
                 </div>
+
+                {modulePermissions[ModuleName.MANAGE_SURVEY_TEMPLATES] && (
+                    <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                        <h3 className="text-lg font-semibold text-text-main mb-2">Gerenciamento de Modelos de Pesquisa</h3>
+                        <p className="text-text-light text-sm">
+                            Crie e edite modelos de pesquisa que estarão disponíveis para os administradores.
+                        </p>
+                        <button 
+                            onClick={handleManageTemplates}
+                            className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                        >
+                            <TemplateIcon className="h-4 w-4 inline-block mr-2" /> Gerenciar Modelos
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
