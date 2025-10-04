@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, Company, Survey, Prize, GiveawayWinner, ModuleName, View } from '../../types';
 import { supabase } from '../integrations/supabase/client';
-import { GiftIcon } from './icons/GiftIcon';
-import { showError, showSuccess } from '../src/utils/toast';
-import WinnerDisplayPopup from '../src/components/WinnerDisplayPopup';
-import CountdownPopup from '../src/components/CountdownPopup';
-import PrizeManager from '../src/components/giveaways/PrizeManager';
-import SurveySelector from '../src/components/giveaways/SurveySelector';
-import ParticipantList from '../src/components/giveaways/ParticipantList';
-import DrawSetup from '../src/components/giveaways/DrawSetup';
-import PastWinnersHistory from '../src/components/giveaways/PastWinnersHistory';
-import { logActivity } from '../src/utils/logger';
-import { useAuth } from '../src/hooks/useAuth';
+import { GiftIcon } from '../../components/icons/GiftIcon'; // Corrected path
+import { showError, showSuccess } from '../utils/toast'; // Corrected path
+import WinnerDisplayPopup from '../components/WinnerDisplayPopup'; // Corrected path
+import CountdownPopup from '../components/CountdownPopup'; // Corrected path
+import PrizeManager from '../components/giveaways/PrizeManager'; // Corrected path
+import SurveySelector from '../components/giveaways/SurveySelector'; // Corrected path
+import ParticipantList from '../components/giveaways/ParticipantList'; // Corrected path
+import DrawSetup from '../components/giveaways/DrawSetup'; // Corrected path
+import PastWinnersHistory from '../components/giveaways/PastWinnersHistory'; // Corrected path
+import { logActivity } from '../utils/logger'; // Corrected path
+import { useAuth } from '../hooks/useAuth'; // Corrected path
 
 interface GiveawayParticipant {
     id: string;
