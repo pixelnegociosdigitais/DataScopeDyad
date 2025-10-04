@@ -193,6 +193,7 @@ const Giveaways: React.FC<GiveawaysProps> = ({ currentUser, currentCompany }) =>
         });
     };
 
+    // Conditional rendering moved after all hooks
     if (!currentCompany) {
         console.log('Giveaways: currentCompany é nulo, exibindo mensagem para criar/vincular empresa.');
         return (

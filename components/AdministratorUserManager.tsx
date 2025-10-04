@@ -24,7 +24,7 @@ const moduleNameTranslations: Record<ModuleName, string> = {
     [ModuleName.MANAGE_COMPANIES]: 'Gerenciar Empresas',
     [ModuleName.MANAGE_NOTICES]: 'Gerenciar Avisos',
     [ModuleName.ACCESS_CHAT]: 'Acessar Chat',
-    [ModuleName.MANAGE_SURVEY_TEMPLATES]: 'Gerenciar Modelos de Pesquisa', // Added missing property
+    [ModuleName.MANAGE_SURVEY_TEMPLATES]: 'Gerenciar Modelos de Pesquisa',
 };
 
 interface AdministratorUserManagerProps {
@@ -194,6 +194,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
         fetchUsers();
     };
 
+    // Conditional rendering moved after all hooks
     if (loading) {
         return <div className="text-center py-8 text-text-light">Carregando gerenciamento de usuários...</div>;
     }

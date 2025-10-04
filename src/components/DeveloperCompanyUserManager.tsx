@@ -263,6 +263,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     };
 
 
+    // Conditional rendering moved after all hooks
     if (loading) {
         return <div className="text-center py-8 text-text-light">Carregando gerenciamento de empresas...</div>;
     }
