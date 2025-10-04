@@ -11,7 +11,7 @@ import ConfirmationDialog from './ConfirmationDialog';
 interface SurveyTemplateManagerProps {
     onBack: () => void;
     templates: Survey[];
-    currentUser: User; // Added currentUser prop
+    currentUser: User;
     modulePermissions: Record<ModuleName, boolean>;
     onSaveTemplate: (templateData: Survey, editingTemplateId?: string) => Promise<void>;
     onDeleteTemplate: (templateId: string) => Promise<boolean>;
@@ -30,7 +30,7 @@ const ALL_QUESTION_TYPES = [
 const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
     onBack,
     templates,
-    // currentUser, // Removed currentUser from destructuring as it's not used
+    currentUser,
     modulePermissions,
     onSaveTemplate,
     onDeleteTemplate,
@@ -44,7 +44,7 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
 
     const canManageTemplates = modulePermissions[ModuleName.MANAGE_SURVEY_TEMPLATES];
 
-    const handleOpenTemplateForm = (template: Survey | null = null) => {
+    const handleOpenTemplateForm = useCallback((template: Survey | null = null) => {
         if (!canManageTemplates) {
             showError('Você não tem permissão para criar ou editar modelos de pesquisa.');
             return;
@@ -53,31 +53,31 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
         setTemplateFormTitle(template?.title || '');
         setTemplateFormQuestions(template?.questions || []);
         setShowTemplateForm(true);
-    };
+    }, [canManageTemplates]);
 
-    const handleCloseTemplateForm = () => {
+    const handleCloseTemplateForm = useCallback(() => {
         setShowTemplateForm(false);
         setEditingTemplate(null);
         setTemplateFormTitle('');
         setTemplateFormQuestions([]);
-    };
+    }, []);
 
-    const handleSaveTemplateForm = async () => {
+    const handleSaveTemplateForm = useCallback(async () => {
         if (!templateFormTitle.trim() || templateFormQuestions.length === 0 || templateFormQuestions.some(q => !q.text.trim())) {
             showError('Por favor, forneça um título e garanta que todas as perguntas tenham texto.');
             return;
         }
 
         const templateData: Survey = {
-            id: editingTemplate?.id || '', // ID será preenchido se for edição
+            id: editingTemplate?.id || '',
             title: templateFormTitle,
             questions: templateFormQuestions,
-            companyId: '', // Templates não estão vinculados a uma empresa específica
+            companyId: '',
         };
 
         await onSaveTemplate(templateData, editingTemplate?.id);
         handleCloseTemplateForm();
-    };
+    }, [templateFormTitle, templateFormQuestions, editingTemplate, onSaveTemplate, handleCloseTemplateForm]);
 
     const confirmDeleteTemplate = useCallback((template: Survey) => {
         if (!canManageTemplates) {
@@ -96,7 +96,7 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
         setTemplateToDelete(null);
     }, [templateToDelete, onDeleteTemplate]);
 
-    const addQuestion = (type: QuestionType, initialText: string = '') => {
+    const addQuestion = useCallback((type: QuestionType, initialText: string = '') => {
         const newQuestion: Question = {
             id: `q${Date.now()}-${Math.random().toString(36).substring(7)}`,
             text: initialText,
@@ -104,58 +104,64 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
             position: templateFormQuestions.length,
             ...((type === QuestionType.MULTIPLE_CHOICE || type === QuestionType.CHECKBOX) && { options: [''] })
         };
-        setTemplateFormQuestions([...templateFormQuestions, newQuestion]);
-    };
+        setTemplateFormQuestions(prev => [...prev, newQuestion]);
+    }, [templateFormQuestions]);
 
-    const updateQuestionText = (index: number, text: string) => {
-        const newQuestions = [...templateFormQuestions];
-        newQuestions[index].text = text;
-        setTemplateFormQuestions(newQuestions);
-    };
+    const updateQuestionText = useCallback((index: number, text: string) => {
+        setTemplateFormQuestions(prev => prev.map((q, i) => i === index ? { ...q, text } : q));
+    }, []);
 
-    const updateOptionText = (qIndex: number, oIndex: number, text: string) => {
-        const newQuestions = [...templateFormQuestions];
-        if (newQuestions[qIndex].options) {
-            newQuestions[qIndex].options![oIndex] = text;
-            setTemplateFormQuestions(newQuestions);
-        }
-    };
+    const updateOptionText = useCallback((qIndex: number, oIndex: number, text: string) => {
+        setTemplateFormQuestions(prev => prev.map((q, i) => {
+            if (i === qIndex && q.options) {
+                const newOptions = [...q.options];
+                newOptions[oIndex] = text;
+                return { ...q, options: newOptions };
+            }
+            return q;
+        }));
+    }, []);
 
-    const addOption = (qIndex: number) => {
-        const newQuestions = [...templateFormQuestions];
-        if (newQuestions[qIndex].options) {
-            newQuestions[qIndex].options!.push('');
-            setTemplateFormQuestions(newQuestions);
-        }
-    };
+    const addOption = useCallback((qIndex: number) => {
+        setTemplateFormQuestions(prev => prev.map((q, i) => {
+            if (i === qIndex && q.options) {
+                return { ...q, options: [...q.options, ''] };
+            }
+            return q;
+        }));
+    }, []);
 
-    const removeOption = (qIndex: number, oIndex: number) => {
-        const newQuestions = [...templateFormQuestions];
-        if (newQuestions[qIndex].options && newQuestions[qIndex].options!.length > 1) {
-            newQuestions[qIndex].options!.splice(oIndex, 1);
-            setTemplateFormQuestions(newQuestions);
-        }
-    };
+    const removeOption = useCallback((qIndex: number, oIndex: number) => {
+        setTemplateFormQuestions(prev => prev.map((q, i) => {
+            if (i === qIndex && q.options && q.options.length > 1) {
+                const newOptions = [...q.options];
+                newOptions.splice(oIndex, 1);
+                return { ...q, options: newOptions };
+            }
+            return q;
+        }));
+    }, []);
 
-    const removeQuestion = (index: number) => {
-        const newQuestions = [...templateFormQuestions];
-        newQuestions.splice(index, 1);
-        setTemplateFormQuestions(newQuestions);
-    };
+    const removeQuestion = useCallback((index: number) => {
+        setTemplateFormQuestions(prev => prev.filter((_, i) => i !== index));
+    }, []);
 
-    const moveQuestion = (index: number, direction: 'up' | 'down') => {
-        if (direction === 'up' && index === 0) return;
-        if (direction === 'down' && index === templateFormQuestions.length - 1) return;
+    const moveQuestion = useCallback((index: number, direction: 'up' | 'down') => {
+        setTemplateFormQuestions(prev => {
+            if ((direction === 'up' && index === 0) || (direction === 'down' && index === prev.length - 1)) {
+                return prev;
+            }
 
-        const newQuestions = [...templateFormQuestions];
-        const targetIndex = direction === 'up' ? index - 1 : index + 1;
-        
-        [newQuestions[index], newQuestions[targetIndex]] = [newQuestions[targetIndex], newQuestions[index]];
-        
-        setTemplateFormQuestions(newQuestions);
-    };
+            const newQuestions = [...prev];
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+            
+            [newQuestions[index], newQuestions[targetIndex]] = [newQuestions[targetIndex], newQuestions[index]];
+            
+            return newQuestions;
+        });
+    }, []);
 
-    const renderQuestionInput = (q: Question, qIndex: number) => {
+    const renderQuestionInput = useCallback((q: Question, qIndex: number) => {
         switch (q.type) {
             case QuestionType.LONG_TEXT:
                 return (
@@ -178,8 +184,9 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                     />
                 );
         }
-    };
+    }, [updateQuestionText]);
 
+    // Conditional return AFTER all hooks
     if (!canManageTemplates) {
         return (
             <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md text-center">
@@ -288,11 +295,11 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                                 <div key={q.id} className="bg-gray-50 p-4 rounded-lg shadow-sm flex gap-4">
                                     <div className="flex flex-col items-center justify-center">
                                         <button onClick={() => moveQuestion(qIndex, 'up')} disabled={qIndex === 0} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed">
-                                            <ArrowLeftIcon className="h-4 w-4 rotate-90" /> {/* ArrowUpIcon */}
+                                            <ArrowLeftIcon className="h-4 w-4 rotate-90" />
                                         </button>
                                         <span className="font-bold text-lg text-primary">{qIndex + 1}</span>
                                         <button onClick={() => moveQuestion(qIndex, 'down')} disabled={qIndex === templateFormQuestions.length - 1} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed">
-                                            <ArrowLeftIcon className="h-4 w-4 -rotate-90" /> {/* ArrowDownIcon */}
+                                            <ArrowLeftIcon className="h-4 w-4 -rotate-90" />
                                         </button>
                                     </div>
                                     <div className="flex-1">
