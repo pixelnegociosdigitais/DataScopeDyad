@@ -175,17 +175,22 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
 
     useEffect(() => {
         console.log('useSurveys: useEffect - currentCompany.id mudou:', currentCompany?.id, 'currentUser.role:', currentUser?.role);
-        if (currentUser?.role === UserRole.DEVELOPER) {
-            console.log('useSurveys: User is DEVELOPER, fetching all surveys.');
-            fetchSurveys(undefined);
-        } else if (currentCompany?.id) {
-            console.log('useSurveys: currentCompany.id presente, buscando pesquisas.');
-            fetchSurveys(currentCompany.id);
-        } else {
-            console.log('useSurveys: currentCompany.id é nulo e não é desenvolvedor, limpando pesquisas.');
-            setSurveys([]);
-            setLoadingSurveys(false);
-        }
+        const currentCompanyId = currentUser?.role === UserRole.DEVELOPER ? undefined : currentCompany?.id;
+        fetchSurveys(currentCompanyId);
+
+        // Setup real-time subscription for surveys
+        const channel = supabase
+            .channel('public:surveys')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'surveys' }, payload => {
+                console.log('useSurveys: Real-time event received for surveys:', payload);
+                // Re-fetch surveys to update the list
+                fetchSurveys(currentCompanyId);
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [currentCompany?.id, currentUser?.role, fetchSurveys]);
 
     const handleSaveSurvey = useCallback(async (surveyData: Survey, editingSurveyId?: string) => {
