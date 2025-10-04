@@ -30,7 +30,7 @@ interface AdministratorUserManagerProps {
     onBack: () => void;
     currentUser: User;
     currentCompany: Company | null;
-    setCurrentView: (view: View) => void;
+    // setCurrentView: (view: View) => void; // Removed as it's not directly used here
     // Functions passed from useAuth in App.tsx
     handleResetUserPassword: (userId: string, newPassword?: string) => Promise<void>;
     handleCreateUserForCompany: (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword: string) => Promise<void>;
@@ -43,7 +43,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({
     onBack, 
     currentUser, 
     currentCompany, 
-    setCurrentView,
+    // setCurrentView, // Removed from destructuring
     handleResetUserPassword,
     handleCreateUserForCompany,
     handleUpdateUserPermissions,

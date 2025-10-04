@@ -14,7 +14,7 @@ import { logActivity } from '@/src/utils/logger';
 
 interface DeveloperCompanyUserManagerProps {
     onBack: () => void;
-    setCurrentView: (view: View) => void;
+    // setCurrentView: (view: View) => void; // Removed as it's not directly used here
     // Functions passed from useAuth in App.tsx
     currentUser: User | null;
     handleToggleCompanyStatus: (companyId: string, newStatus: 'active' | 'inactive') => Promise<void>;
@@ -25,7 +25,7 @@ interface DeveloperCompanyUserManagerProps {
 
 const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = ({ 
     onBack, 
-    setCurrentView,
+    // setCurrentView, // Removed from destructuring
     currentUser,
     handleToggleCompanyStatus,
     handleResetUserPassword,
