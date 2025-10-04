@@ -453,8 +453,8 @@ const App: React.FC = () => {
                     setView={setCurrentView}
                     modulePermissions={modulePermissions}
                     onNoticeClick={handleNoticeClick}
-                    onToggleSidebar={toggleSidebar} {/* Passar a função de toggle */}
-                    isSidebarExpanded={isSidebarExpanded} {/* Passar o estado */}
+                    onToggleSidebar={toggleSidebar}
+                    isSidebarExpanded={isSidebarExpanded}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-8"> {/* Ajustar padding para mobile */}
                     {renderContent()}
