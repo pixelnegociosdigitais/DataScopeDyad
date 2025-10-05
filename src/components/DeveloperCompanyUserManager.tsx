@@ -5,12 +5,12 @@ import { UserIcon } from '../../components/icons/UserIcon';
 import { TrashIcon } from '../../components/icons/TrashIcon';
 import { CreateIcon } from '../../components/icons/CreateIcon';
 import { Company, User, UserRole } from '@/types';
-import { supabase } from '@/src/integrations/supabase/client';
-import { showSuccess, showError } from '@/src/utils/toast';
+import { supabase } from '../integrations/supabase/client';
+import { showSuccess, showError } from '../utils/toast';
 import ConfirmationDialog from './ConfirmationDialog';
 import CompanyEditModal from './CompanyEditModal';
 import UserEditModal from './UserEditModal';
-import { logActivity } from '@/src/utils/logger';
+import { logActivity } from '../utils/logger';
 
 interface DeveloperCompanyUserManagerProps {
     onBack: () => void;
@@ -73,9 +73,8 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             setCompanies([]);
             logActivity('ERROR', `Erro ao buscar empresas: ${error.message}`, 'COMPANIES', currentUser?.id, currentUser?.email);
         } else {
-            const companiesWithAdmins = data.map((company: any) => ({
-                ...company,
-                administrators: company.profiles
+            const companiesWithAdmins = data.map((company: any) => {
+                let administrators = company.profiles
                     .filter((p: any) => p.role === UserRole.ADMIN)
                     .map((adminProfile: any) => ({
                         id: adminProfile.id,
@@ -88,8 +87,35 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                         permissions: adminProfile.permissions || {},
                         status: adminProfile.status || 'active',
                         company_id: adminProfile.company_id || undefined,
-                    }))
-            }));
+                    }));
+
+                // If no explicit administrators are found, check if the company creator is a developer
+                // and is associated with this company.
+                if (administrators.length === 0 && company.created_by) {
+                    const creatorProfile = company.profiles.find((p: any) => 
+                        p.id === company.created_by && p.role === UserRole.DEVELOPER && p.company_id === company.id
+                    );
+                    if (creatorProfile) {
+                        administrators.push({
+                            id: creatorProfile.id,
+                            fullName: creatorProfile.full_name || '',
+                            role: creatorProfile.role as UserRole,
+                            email: creatorProfile.email || '',
+                            phone: creatorProfile.phone || undefined,
+                            address: creatorProfile.address || undefined,
+                            profilePictureUrl: creatorProfile.avatar_url || undefined,
+                            permissions: creatorProfile.permissions || {},
+                            status: creatorProfile.status || 'active',
+                            company_id: creatorProfile.company_id || undefined,
+                        });
+                    }
+                }
+
+                return {
+                    ...company,
+                    administrators: administrators
+                };
+            });
             setCompanies(companiesWithAdmins as Company[]);
             logActivity('INFO', 'Empresas carregadas com sucesso.', 'COMPANIES', currentUser?.id, currentUser?.email);
         }
