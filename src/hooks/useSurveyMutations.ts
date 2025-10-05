@@ -7,7 +7,7 @@ import { logActivity } from '@/src/utils/logger';
 interface UseSurveyMutationsProps {
     currentUser: User | null;
     currentCompany: Company | null;
-    fetchSurveys: (companyId: string | undefined) => Promise<Survey[]>;
+    fetchSurveys: (companyId: string | undefined, user: User | null, company: Company | null) => Promise<Survey[]>;
     fetchSurveyResponses: (surveyId: string) => Promise<void>;
 }
 
@@ -122,14 +122,14 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
                 }
             }
             const currentCompanyIdForRefetch = currentUser?.role === UserRole.DEVELOPER ? undefined : currentCompany?.id;
-            await fetchSurveys(currentCompanyIdForRefetch);
+            await fetchSurveys(currentCompanyIdForRefetch, currentUser, currentCompany);
 
         } catch (err: any) {
             console.error('useSurveyMutations: handleSaveSurvey - Erro inesperado durante o salvamento da pesquisa:', err);
             showError('Erro ao salvar a pesquisa: ' + err.message);
             logActivity('ERROR', `Erro inesperado ao salvar pesquisa '${surveyData.title}': ${err.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
         }
-    }, [currentUser, currentCompany?.id, showSuccess, showError, fetchSurveys]);
+    }, [currentUser, currentCompany, showSuccess, showError, fetchSurveys]);
 
     const handleDeleteSurvey = useCallback(async (surveyId: string): Promise<boolean> => {
         console.log('useSurveyMutations: handleDeleteSurvey - Excluindo pesquisa ID:', surveyId);
@@ -146,7 +146,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
         } else {
             showSuccess('Pesquisa excluída com sucesso!');
             const currentCompanyIdForRefetch = currentUser?.role === UserRole.DEVELOPER ? undefined : currentCompany?.id;
-            await fetchSurveys(currentCompanyIdForRefetch); // Re-fetch surveys to update the list
+            await fetchSurveys(currentCompanyIdForRefetch, currentUser, currentCompany); // Re-fetch surveys to update the list
             logActivity('INFO', `Pesquisa (ID: ${surveyId}) excluída com sucesso.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
             console.log('useSurveyMutations: handleDeleteSurvey - Pesquisa excluída com sucesso.');
             return true;
@@ -226,7 +226,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
             
             if (currentCompany?.id) {
                 console.log('useSurveyMutations: handleSaveResponse - Chamando fetchSurveys e fetchSurveyResponses para atualizar contagens e dados do painel.');
-                fetchSurveys(currentCompany.id); // Recarregar a lista de pesquisas para atualizar a contagem de respostas
+                fetchSurveys(currentCompany.id, currentUser, currentCompany); // Recarregar a lista de pesquisas para atualizar a contagem de respostas
                 fetchSurveyResponses(selectedSurvey.id); // Recarregar as respostas para o dashboard, se aplicável
             }
             showSuccess('Resposta enviada com sucesso!');
@@ -238,7 +238,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
         logActivity('ERROR', `newResponse foi nulo após a inserção da resposta principal para pesquisa '${selectedSurvey.title}'.`, 'SURVEY_RESPONSES', currentUser.id, currentUser.email, currentCompany?.id);
         console.log('useSurveyMutations: handleSaveResponse - Retornando FALSE - newResponse nulo.');
         return false;
-    }, [currentCompany?.id, fetchSurveys, fetchSurveyResponses, showSuccess, showError, currentUser]);
+    }, [currentCompany, fetchSurveys, fetchSurveyResponses, showSuccess, showError, currentUser]);
 
     return {
         handleSaveSurvey,

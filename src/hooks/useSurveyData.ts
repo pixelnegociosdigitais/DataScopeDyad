@@ -12,22 +12,20 @@ interface UseSurveyDataReturn {
     surveys: Survey[];
     surveyResponses: SurveyResponse[];
     loadingSurveys: boolean;
-    fetchSurveys: (companyId: string | undefined) => Promise<Survey[]>;
+    fetchSurveys: (companyId: string | undefined, user: User | null, company: Company | null) => Promise<Survey[]>;
     fetchSurveyResponses: (surveyId: string) => Promise<void>;
 }
 
-export const useSurveyData = ({ currentUser, currentCompany }: UseSurveyDataProps): UseSurveyDataReturn => {
+export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: hookCurrentCompany }: UseSurveyDataProps): UseSurveyDataReturn => {
     const [surveys, setSurveys] = useState<Survey[]>([]);
     const [surveyResponses, setSurveyResponses] = useState<SurveyResponse[]>([]);
     const [loadingSurveys, setLoadingSurveys] = useState(true);
 
-    const fetchSurveys = useCallback(async (companyId: string | undefined): Promise<Survey[]> => {
+    const fetchSurveys = useCallback(async (companyId: string | undefined, user: User | null, company: Company | null): Promise<Survey[]> => {
         setLoadingSurveys(true);
         console.log('useSurveyData: fetchSurveys - Iniciando busca de pesquisas.');
-        console.log('useSurveyData: fetchSurveys - currentCompany.id (prop):', currentCompany?.id);
-        console.log('useSurveyData: fetchSurveys - currentUser.company_id (prop):', currentUser?.company_id);
         console.log('useSurveyData: fetchSurveys - companyId (argumento):', companyId);
-        console.log('useSurveyData: fetchSurveys - currentUser.role (prop):', currentUser?.role);
+        console.log('useSurveyData: fetchSurveys - user.role (argumento):', user?.role);
         
         let query = supabase
             .from('surveys')
@@ -50,10 +48,10 @@ export const useSurveyData = ({ currentUser, currentCompany }: UseSurveyDataProp
             `)
             .order('created_at', { ascending: false });
 
-        if (currentUser?.role !== UserRole.DEVELOPER && companyId) {
+        if (user?.role !== UserRole.DEVELOPER && companyId) {
             console.log('useSurveyData: fetchSurveys - Filtrando por company_id:', companyId);
             query = query.eq('company_id', companyId);
-        } else if (currentUser?.role === UserRole.DEVELOPER) {
+        } else if (user?.role === UserRole.DEVELOPER) {
             console.log('useSurveyData: fetchSurveys - Usuário atual é DEVELOPER, buscando todas as pesquisas (sem filtro de company_id).');
             // RLS policy for developers already allows all surveys, so no additional filter needed here.
         } else {
@@ -68,7 +66,7 @@ export const useSurveyData = ({ currentUser, currentCompany }: UseSurveyDataProp
 
         if (error) {
             console.error('useSurveyData: fetchSurveys - Erro ao buscar pesquisas:', error);
-            logActivity('ERROR', `Erro ao buscar pesquisas para a empresa ${companyId}: ${error.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
+            logActivity('ERROR', `Erro ao buscar pesquisas para a empresa ${companyId}: ${error.message}`, 'SURVEYS', user?.id, user?.email, company?.id);
             setSurveys([]);
             setLoadingSurveys(false);
             return [];
@@ -92,7 +90,7 @@ export const useSurveyData = ({ currentUser, currentCompany }: UseSurveyDataProp
                 createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
             }));
             console.log('useSurveyData: fetchSurveys - Pesquisas processadas:', fetchedSurveys);
-            logActivity('INFO', `Pesquisas carregadas para a empresa ${companyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, companyId);
+            logActivity('INFO', `Pesquisas carregadas para a empresa ${companyId}.`, 'SURVEYS', user?.id, user?.email, company?.id);
             setSurveys(fetchedSurveys);
             setLoadingSurveys(false);
             return fetchedSurveys;
@@ -100,7 +98,7 @@ export const useSurveyData = ({ currentUser, currentCompany }: UseSurveyDataProp
         setLoadingSurveys(false);
         console.log('useSurveyData: fetchSurveys - Nenhuma pesquisa encontrada ou erro, loadingSurveys = false.');
         return [];
-    }, [currentUser?.id, currentUser?.role, currentUser?.email, currentCompany?.id, currentCompany, currentUser]);
+    }, []);
 
     const fetchSurveyResponses = useCallback(async (surveyId: string) => {
         console.log('useSurveyData: fetchSurveyResponses - Iniciando busca de respostas para surveyId:', surveyId);
@@ -120,7 +118,7 @@ export const useSurveyData = ({ currentUser, currentCompany }: UseSurveyDataProp
 
         if (error) {
             console.error('useSurveyData: fetchSurveyResponses - Erro ao buscar respostas:', error);
-            logActivity('ERROR', `Erro ao buscar respostas para a pesquisa ${surveyId}: ${error.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
+            logActivity('ERROR', `Erro ao buscar respostas para a pesquisa ${surveyId}: ${error.message}`, 'SURVEYS', hookCurrentUser?.id, hookCurrentUser?.email, hookCurrentCompany?.id);
             setSurveyResponses([]);
             return;
         }
@@ -136,19 +134,20 @@ export const useSurveyData = ({ currentUser, currentCompany }: UseSurveyDataProp
                 })),
             }));
             console.log('useSurveyData: fetchSurveyResponses - Respostas processadas e definidas:', fetchedResponses);
-            logActivity('INFO', `Respostas carregadas para a pesquisa ${surveyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
+            logActivity('INFO', `Respostas carregadas para a pesquisa ${surveyId}.`, 'SURVEYS', hookCurrentUser?.id, hookCurrentUser?.email, hookCurrentCompany?.id);
             setSurveyResponses(fetchedResponses);
         } else {
             console.log('useSurveyData: fetchSurveyResponses - Nenhuma resposta recebida, definindo surveyResponses como array vazio.');
-            logActivity('INFO', `Nenhuma resposta encontrada para a pesquisa ${surveyId}.`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
+            logActivity('INFO', `Nenhuma resposta encontrada para a pesquisa ${surveyId}.`, 'SURVEYS', hookCurrentUser?.id, hookCurrentUser?.email, hookCurrentCompany?.id);
             setSurveyResponses([]);
         }
-    }, [currentUser?.id, currentUser?.email, currentCompany?.id]);
+    }, [hookCurrentUser?.id, hookCurrentUser?.email, hookCurrentCompany?.id]);
 
     useEffect(() => {
-        console.log('useSurveyData: useEffect - currentCompany.id mudou:', currentCompany?.id, 'currentUser.role:', currentUser?.role);
-        const currentCompanyIdForInitialFetch = currentUser?.role === UserRole.DEVELOPER ? undefined : currentCompany?.id;
-        fetchSurveys(currentCompanyIdForInitialFetch);
+        console.log('useSurveyData: useEffect triggered. hookCurrentCompany.id:', hookCurrentCompany?.id, 'hookCurrentUser.role:', hookCurrentUser?.role);
+        const currentCompanyIdForInitialFetch = hookCurrentUser?.role === UserRole.DEVELOPER ? undefined : hookCurrentCompany?.id;
+        console.log('useSurveyData: Calling fetchSurveys from useEffect with companyId:', currentCompanyIdForInitialFetch);
+        fetchSurveys(currentCompanyIdForInitialFetch, hookCurrentUser, hookCurrentCompany);
 
         // Setup real-time subscription for surveys
         const channel = supabase
@@ -159,16 +158,16 @@ export const useSurveyData = ({ currentUser, currentCompany }: UseSurveyDataProp
                     console.log('useSurveyData: INSERT event payload.new:', payload.new);
                 }
                 // Re-fetch surveys to update the list using the LATEST values of currentUser and currentCompany
-                const currentCompanyIdForRealtimeFetch = currentUser?.role === UserRole.DEVELOPER ? undefined : currentCompany?.id;
+                const currentCompanyIdForRealtimeFetch = hookCurrentUser?.role === UserRole.DEVELOPER ? undefined : hookCurrentCompany?.id;
                 console.log('useSurveyData: Real-time trigger - Chamando fetchSurveys com companyId:', currentCompanyIdForRealtimeFetch);
-                fetchSurveys(currentCompanyIdForRealtimeFetch);
+                fetchSurveys(currentCompanyIdForRealtimeFetch, hookCurrentUser, hookCurrentCompany);
             })
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [currentCompany?.id, currentUser?.role, fetchSurveys, currentUser]);
+    }, [hookCurrentCompany?.id, hookCurrentUser?.role, fetchSurveys, hookCurrentUser, hookCurrentCompany]);
 
     return {
         surveys,

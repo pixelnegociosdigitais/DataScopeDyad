@@ -8,7 +8,7 @@ interface UseSurveysReturn {
     surveyResponses: SurveyResponse[];
     templates: Survey[];
     loadingSurveys: boolean;
-    fetchSurveys: (companyId: string | undefined) => Promise<Survey[]>;
+    fetchSurveys: (companyId: string | undefined, user: User | null, company: Company | null) => Promise<Survey[]>;
     fetchSurveyResponses: (surveyId: string) => Promise<void>;
     handleSaveSurvey: (surveyData: Survey, editingSurveyId?: string) => Promise<void>;
     handleDeleteSurvey: (surveyId: string) => Promise<boolean>;
