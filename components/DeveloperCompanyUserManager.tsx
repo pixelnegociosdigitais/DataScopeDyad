@@ -40,12 +40,9 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany, currentUser, handleAdminUpdateUserProfile } = useAuth(setCurrentView);
 
     const extractNameFromFullName = (fullName: string): string => {
-        const emailPattern = /^(.*?)\s*\(([^)]+)\)$/;
-        const match = fullName.match(emailPattern);
-        if (match && match[1]) {
-            return match[1].trim();
-        }
-        return fullName;
+        // This regex removes any content within parentheses at the end of the string,
+        // including the parentheses themselves, and any leading whitespace.
+        return fullName.replace(/\s*\([^)]*\)$/, '').trim();
     };
 
     const fetchCompanies = useCallback(async () => {
@@ -79,7 +76,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                     .filter((p: any) => p.role === UserRole.ADMIN)
                     .map((adminProfile: any) => ({
                         id: adminProfile.id,
-                        fullName: extractNameFromFullName(adminProfile.full_name || ''), // Extrair apenas o nome
+                        fullName: extractNameFromFullName(adminProfile.full_name || ''),
                         role: adminProfile.role as UserRole,
                         email: adminProfile.email || '',
                         phone: adminProfile.phone || undefined,
@@ -99,7 +96,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                     if (creatorProfile) {
                         administrators.push({
                             id: creatorProfile.id,
-                            fullName: extractNameFromFullName(creatorProfile.full_name || ''), // Extrair apenas o nome
+                            fullName: extractNameFromFullName(creatorProfile.full_name || ''),
                             role: creatorProfile.role as UserRole,
                             email: creatorProfile.email || '',
                             phone: creatorProfile.phone || undefined,
