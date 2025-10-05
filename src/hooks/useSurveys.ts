@@ -208,7 +208,6 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
             if (!currentUser) {
                 showError('Usuário não identificado para salvar a pesquisa.');
                 console.error('useSurveys: handleSaveSurvey - Usuário ausente.');
-                // Fix: Explicitly pass undefined for userId and userEmail when currentUser is null
                 logActivity('ERROR', `Tentativa de salvar pesquisa sem usuário identificado.`, 'SURVEYS', undefined, undefined, currentCompany?.id);
                 return;
             }
@@ -310,12 +309,16 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
                     logActivity('INFO', `Nova pesquisa '${surveyData.title}' (ID: ${newSurvey.id}) criada com sucesso.`, 'SURVEYS', currentUser.id, currentUser.email, currentCompany?.id);
                 }
             }
+            // After successful save (insert or update), re-fetch surveys to ensure the list is up-to-date
+            const currentCompanyIdForRefetch = currentUser?.role === UserRole.DEVELOPER ? undefined : currentCompany?.id;
+            await fetchSurveys(currentCompanyIdForRefetch);
+
         } catch (err: any) {
             console.error('useSurveys: handleSaveSurvey - Erro inesperado durante o salvamento da pesquisa:', err);
             showError('Erro ao salvar a pesquisa: ' + err.message);
             logActivity('ERROR', `Erro inesperado ao salvar pesquisa '${surveyData.title}': ${err.message}`, 'SURVEYS', currentUser?.id, currentUser?.email, currentCompany?.id);
         }
-    }, [currentUser, currentCompany?.id, showSuccess, showError]);
+    }, [currentUser, currentCompany?.id, showSuccess, showError, fetchSurveys]);
 
     const handleDeleteSurvey = useCallback(async (surveyId: string): Promise<boolean> => {
         console.log('useSurveys: handleDeleteSurvey - Excluindo pesquisa ID:', surveyId);
