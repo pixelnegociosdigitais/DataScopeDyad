@@ -25,7 +25,7 @@ export const useSurveys = (currentCompany: Company | null, currentUser: User | n
     const { handleSaveSurvey, handleDeleteSurvey, handleSaveResponse } = useSurveyMutations({ currentUser, currentCompany, fetchSurveys, fetchSurveyResponses });
 
     // Use o hook useSurveyTemplates para gerenciar os modelos de pesquisa
-    const { templates, fetchTemplates, handleSaveTemplate, handleDeleteTemplate } = useSurveyTemplates({ currentUser, currentCompany });
+    const { templates, handleSaveTemplate, handleDeleteTemplate } = useSurveyTemplates({ currentUser, currentCompany });
 
     return {
         surveys,
