@@ -90,7 +90,8 @@ const App: React.FC = () => {
             if (currentView === View.COMPANY_SETTINGS) {
                 if (currentCompany && !modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS]) {
                     showError('Você não tem permissão para configurar a empresa.');
-                    setCurrentView(View.SURVEY_LIST);
+                    // Defer the state update to avoid a re-render loop during the current render cycle
+                    setTimeout(() => setCurrentView(View.SURVEY_LIST), 0);
                 }
             }
         } else if (!loadingAuth && !loadingSession && !session) {
