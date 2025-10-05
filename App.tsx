@@ -63,11 +63,11 @@ const App: React.FC = () => {
         surveyResponses,
         templates,
         loadingSurveys,
-        fetchSurveyResponses,
+        fetchSurveys,
         handleSaveSurvey,
         handleDeleteSurvey,
         handleSaveResponse,
-        fetchSurveys,
+        fetchSurveyResponses,
         handleSaveTemplate,
         handleDeleteTemplate,
     } = useSurveys(currentCompany, currentUser);
@@ -185,10 +185,10 @@ const App: React.FC = () => {
         setCurrentView(View.SURVEY_LIST);
         if (currentUser?.role === UserRole.DEVELOPER) {
             console.log('App: Calling fetchSurveys after save for DEVELOPER.');
-            fetchSurveys(undefined);
+            fetchSurveys(undefined, currentUser, currentCompany);
         } else if (currentUser?.company_id) {
             console.log('App: Calling fetchSurveys after save for companyId:', currentUser.company_id);
-            fetchSurveys(currentUser.company_id);
+            fetchSurveys(currentUser.company_id, currentUser, currentCompany);
         } else {
             console.warn('App: currentUser.company_id is null and not a developer, not refetching surveys after save.');
         }
