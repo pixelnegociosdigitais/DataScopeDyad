@@ -339,7 +339,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                                 className="cursor-pointer hover:text-primary hover:underline"
                                                 onClick={() => handleOpenEditAdminModal(admin)}
                                             >
-                                                {admin.fullName} {admin.email ? `(${admin.email})` : ''}
+                                                {admin.fullName}
                                             </div>
                                         ))
                                     ) : (
