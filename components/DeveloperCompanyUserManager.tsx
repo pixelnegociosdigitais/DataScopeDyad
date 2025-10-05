@@ -65,23 +65,49 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
             setCompanies([]);
             logActivity('ERROR', `Erro ao buscar empresas: ${error.message}`, 'COMPANIES', currentUser?.id, currentUser?.email);
         } else {
-            const companiesWithAdmins = data.map(company => ({
-                ...company,
-                administrators: company.profiles
+            const companiesWithAdmins = data.map((company: any) => {
+                let administrators = company.profiles
                     .filter((p: any) => p.role === UserRole.ADMIN)
                     .map((adminProfile: any) => ({
                         id: adminProfile.id,
                         fullName: adminProfile.full_name || '', // Mapeamento explícito aqui
                         role: adminProfile.role as UserRole,
-                        email: adminProfile.email || '',
+                        email: adminProfile.email || '', // This is where the email is mapped
                         phone: adminProfile.phone || undefined,
                         address: adminProfile.address || undefined,
                         profilePictureUrl: adminProfile.avatar_url || undefined,
                         permissions: adminProfile.permissions || {},
                         status: adminProfile.status || 'active',
                         company_id: adminProfile.company_id || undefined,
-                    }))
-            }));
+                    }));
+
+                // If no explicit administrators are found, check if the company creator is a developer
+                // and is associated with this company.
+                if (administrators.length === 0 && company.created_by) {
+                    const creatorProfile = company.profiles.find((p: any) => 
+                        p.id === company.created_by && p.role === UserRole.DEVELOPER && p.company_id === company.id
+                    );
+                    if (creatorProfile) {
+                        administrators.push({
+                            id: creatorProfile.id,
+                            fullName: creatorProfile.full_name || '',
+                            role: creatorProfile.role as UserRole,
+                            email: creatorProfile.email || '',
+                            phone: creatorProfile.phone || undefined,
+                            address: creatorProfile.address || undefined,
+                            profilePictureUrl: creatorProfile.avatar_url || undefined,
+                            permissions: creatorProfile.permissions || {},
+                            status: creatorProfile.status || 'active',
+                            company_id: creatorProfile.company_id || undefined,
+                        });
+                    }
+                }
+
+                return {
+                    ...company,
+                    administrators: administrators
+                };
+            });
             setCompanies(companiesWithAdmins as Company[]);
             logActivity('INFO', 'Empresas carregadas com sucesso.', 'COMPANIES', currentUser?.id, currentUser?.email);
         }
@@ -208,14 +234,14 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                 .select('id')
                 .eq('company_id', companyToDelete.id);
             if (surveysError) throw surveysError;
-            const surveyIds = surveysData.map(s => s.id);
+            const surveyIds = surveysData.map((s: { id: string }) => s.id);
 
             const { data: responsesData, error: responsesError } = await supabase
                 .from('survey_responses')
                 .select('id')
                 .in('survey_id', surveyIds);
             if (responsesError) throw responsesError;
-            const responseIds = responsesData.map(r => r.id);
+            const responseIds = responsesData.map((r: { id: string }) => r.id);
 
             const { error: deleteWinnersError } = await supabase.from('giveaway_winners').delete().in('survey_id', surveyIds);
             if (deleteWinnersError) throw deleteWinnersError;
@@ -313,7 +339,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                                 className="cursor-pointer hover:text-primary hover:underline"
                                                 onClick={() => handleOpenEditAdminModal(admin)}
                                             >
-                                                {admin.fullName} ({admin.email})
+                                                {admin.fullName} {admin.email ? `(${admin.email})` : ''}
                                             </div>
                                         ))
                                     ) : (
