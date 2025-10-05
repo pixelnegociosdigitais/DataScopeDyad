@@ -39,6 +39,15 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
 
     const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany, currentUser, handleAdminUpdateUserProfile } = useAuth(setCurrentView);
 
+    const extractNameFromFullName = (fullName: string): string => {
+        const emailPattern = /^(.*?)\s*\(([^)]+)\)$/;
+        const match = fullName.match(emailPattern);
+        if (match && match[1]) {
+            return match[1].trim();
+        }
+        return fullName;
+    };
+
     const fetchCompanies = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -70,9 +79,9 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                     .filter((p: any) => p.role === UserRole.ADMIN)
                     .map((adminProfile: any) => ({
                         id: adminProfile.id,
-                        fullName: adminProfile.full_name || '', // Mapeamento explícito aqui
+                        fullName: extractNameFromFullName(adminProfile.full_name || ''), // Extrair apenas o nome
                         role: adminProfile.role as UserRole,
-                        email: adminProfile.email || '', // This is where the email is mapped
+                        email: adminProfile.email || '',
                         phone: adminProfile.phone || undefined,
                         address: adminProfile.address || undefined,
                         profilePictureUrl: adminProfile.avatar_url || undefined,
@@ -90,7 +99,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                     if (creatorProfile) {
                         administrators.push({
                             id: creatorProfile.id,
-                            fullName: creatorProfile.full_name || '',
+                            fullName: extractNameFromFullName(creatorProfile.full_name || ''), // Extrair apenas o nome
                             role: creatorProfile.role as UserRole,
                             email: creatorProfile.email || '',
                             phone: creatorProfile.phone || undefined,
