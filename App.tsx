@@ -183,16 +183,9 @@ const App: React.FC = () => {
         await handleSaveSurvey(surveyToSave, isEditing ? surveyData.id : undefined);
         setEditingSurvey(null);
         setCurrentView(View.SURVEY_LIST);
-        if (currentUser?.role === UserRole.DEVELOPER) {
-            console.log('App: Calling fetchSurveys after save for DEVELOPER.');
-            fetchSurveys(undefined, currentUser, currentCompany);
-        } else if (currentUser?.company_id) {
-            console.log('App: Calling fetchSurveys after save for companyId:', currentUser.company_id);
-            fetchSurveys(currentUser.company_id, currentUser, currentCompany);
-        } else {
-            console.warn('App: currentUser.company_id is null and not a developer, not refetching surveys after save.');
-        }
-    }, [handleSaveSurvey, modulePermissions, fetchSurveys, currentUser, currentCompany]);
+        // A chamada a fetchSurveys já é feita dentro de useSurveyMutations.handleSaveSurvey
+        // e o useEffect em useSurveyData reagirá às mudanças em currentUser/currentCompany.
+    }, [handleSaveSurvey, modulePermissions, currentUser, currentCompany, setCurrentView, showError]);
 
     const handleSaveResponseWrapper = useCallback(async (answers: any[]) => {
         console.log('App: handleSaveResponseWrapper called with answers:', answers);
@@ -353,11 +346,7 @@ const App: React.FC = () => {
                 return (
                     <DeveloperCompanyUserManager 
                         onBack={handleBack} 
-                        currentUser={currentUser}
-                        handleToggleCompanyStatus={handleToggleCompanyStatus}
-                        handleResetUserPassword={handleResetUserPassword}
-                        handleCreateUserForCompany={handleCreateUserForCompany}
-                        handleAdminUpdateUserProfile={handleAdminUpdateUserProfile}
+                        setCurrentView={setCurrentView}
                     />
                 );
             case View.ADMIN_USER_MANAGER:

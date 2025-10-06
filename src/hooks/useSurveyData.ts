@@ -26,7 +26,16 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
         console.log('useSurveyData: fetchSurveys - Iniciando busca de pesquisas.');
         console.log('useSurveyData: fetchSurveys - companyId (argumento):', companyId);
         console.log('useSurveyData: fetchSurveys - user.role (argumento):', user?.role);
+        console.log('useSurveyData: fetchSurveys - user.company_id (argumento):', user?.company_id);
+        console.log('useSurveyData: fetchSurveys - company.id (argumento):', company?.id);
         
+        let effectiveCompanyId = companyId;
+        // Se não for desenvolvedor e companyId não foi fornecido, mas o usuário tem um company_id, use-o.
+        if (user?.role !== UserRole.DEVELOPER && !effectiveCompanyId && user?.company_id) {
+            effectiveCompanyId = user.company_id;
+            console.log('useSurveyData: fetchSurveys - Usando user.company_id como effectiveCompanyId:', effectiveCompanyId);
+        }
+
         let query = supabase
             .from('surveys')
             .select(`
@@ -48,15 +57,15 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
             `)
             .order('created_at', { ascending: false });
 
-        if (user?.role !== UserRole.DEVELOPER && companyId) {
-            console.log('useSurveyData: fetchSurveys - Filtrando por company_id:', companyId);
-            query = query.eq('company_id', companyId);
+        if (user?.role !== UserRole.DEVELOPER && effectiveCompanyId) { // Use effectiveCompanyId aqui
+            console.log('useSurveyData: fetchSurveys - Filtrando por effectiveCompanyId:', effectiveCompanyId);
+            query = query.eq('company_id', effectiveCompanyId);
         } else if (user?.role === UserRole.DEVELOPER) {
             console.log('useSurveyData: fetchSurveys - Usuário atual é DEVELOPER, buscando todas as pesquisas (sem filtro de company_id).');
             // RLS policy for developers already allows all surveys, so no additional filter needed here.
         } else {
-            // If not a developer and no companyId, return empty.
-            console.log('useSurveyData: fetchSurveys - Sem companyId e não é desenvolvedor, retornando array vazio.');
+            // Se não for desenvolvedor e não houver effectiveCompanyId, retorna vazio.
+            console.log('useSurveyData: fetchSurveys - Sem effectiveCompanyId e não é desenvolvedor, retornando array vazio.');
             setSurveys([]);
             setLoadingSurveys(false);
             return [];
@@ -66,7 +75,7 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
 
         if (error) {
             console.error('useSurveyData: fetchSurveys - Erro ao buscar pesquisas:', error);
-            logActivity('ERROR', `Erro ao buscar pesquisas para a empresa ${companyId}: ${error.message}`, 'SURVEYS', user?.id, user?.email, company?.id);
+            logActivity('ERROR', `Erro ao buscar pesquisas para a empresa ${effectiveCompanyId}: ${error.message}`, 'SURVEYS', user?.id, user?.email, company?.id);
             setSurveys([]);
             setLoadingSurveys(false);
             return [];
@@ -90,7 +99,7 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
                 createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
             }));
             console.log('useSurveyData: fetchSurveys - Pesquisas processadas:', fetchedSurveys);
-            logActivity('INFO', `Pesquisas carregadas para a empresa ${companyId}.`, 'SURVEYS', user?.id, user?.email, company?.id);
+            logActivity('INFO', `Pesquisas carregadas para a empresa ${effectiveCompanyId}.`, 'SURVEYS', user?.id, user?.email, company?.id);
             setSurveys(fetchedSurveys);
             setLoadingSurveys(false);
             return fetchedSurveys;
@@ -144,10 +153,21 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
     }, [hookCurrentUser?.id, hookCurrentUser?.email, hookCurrentCompany?.id]);
 
     useEffect(() => {
-        console.log('useSurveyData: useEffect triggered. hookCurrentCompany.id:', hookCurrentCompany?.id, 'hookCurrentUser.role:', hookCurrentUser?.role);
-        const currentCompanyIdForInitialFetch = hookCurrentUser?.role === UserRole.DEVELOPER ? undefined : hookCurrentCompany?.id;
-        console.log('useSurveyData: Calling fetchSurveys from useEffect with companyId:', currentCompanyIdForInitialFetch);
-        fetchSurveys(currentCompanyIdForInitialFetch, hookCurrentUser, hookCurrentCompany);
+        console.log('useSurveyData: useEffect triggered. hookCurrentCompany.id:', hookCurrentCompany?.id, 'hookCurrentUser.role:', hookCurrentUser?.role, 'hookCurrentUser.company_id:', hookCurrentUser?.company_id);
+        
+        let companyIdForInitialFetch: string | undefined;
+        if (hookCurrentUser?.role === UserRole.DEVELOPER) {
+            companyIdForInitialFetch = undefined; // Desenvolvedores veem todas as pesquisas
+        } else if (hookCurrentCompany?.id) {
+            companyIdForInitialFetch = hookCurrentCompany.id;
+        } else if (hookCurrentUser?.company_id) { // Fallback para company_id do usuário
+            companyIdForInitialFetch = hookCurrentUser.company_id;
+        } else {
+            companyIdForInitialFetch = undefined; // Nenhuma empresa associada
+        }
+
+        console.log('useSurveyData: Calling fetchSurveys from useEffect with companyId:', companyIdForInitialFetch);
+        fetchSurveys(companyIdForInitialFetch, hookCurrentUser, hookCurrentCompany);
 
         // Setup real-time subscription for surveys
         const channel = supabase
@@ -158,16 +178,25 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
                     console.log('useSurveyData: INSERT event payload.new:', payload.new);
                 }
                 // Re-fetch surveys to update the list using the LATEST values of currentUser and currentCompany
-                const currentCompanyIdForRealtimeFetch = hookCurrentUser?.role === UserRole.DEVELOPER ? undefined : hookCurrentCompany?.id;
-                console.log('useSurveyData: Real-time trigger - Chamando fetchSurveys com companyId:', currentCompanyIdForRealtimeFetch);
-                fetchSurveys(currentCompanyIdForRealtimeFetch, hookCurrentUser, hookCurrentCompany);
+                let companyIdForRealtimeFetch: string | undefined;
+                if (hookCurrentUser?.role === UserRole.DEVELOPER) {
+                    companyIdForRealtimeFetch = undefined;
+                } else if (hookCurrentCompany?.id) {
+                    companyIdForRealtimeFetch = hookCurrentCompany.id;
+                } else if (hookCurrentUser?.company_id) { // Fallback para company_id do usuário
+                    companyIdForRealtimeFetch = hookCurrentUser.company_id;
+                } else {
+                    companyIdForRealtimeFetch = undefined;
+                }
+                console.log('useSurveyData: Real-time trigger - Chamando fetchSurveys com companyId:', companyIdForRealtimeFetch);
+                fetchSurveys(companyIdForRealtimeFetch, hookCurrentUser, hookCurrentCompany);
             })
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [hookCurrentCompany?.id, hookCurrentUser?.role, fetchSurveys, hookCurrentUser, hookCurrentCompany]);
+    }, [hookCurrentCompany?.id, hookCurrentUser?.role, hookCurrentUser?.company_id, fetchSurveys, hookCurrentUser, hookCurrentCompany]);
 
     return {
         surveys,
