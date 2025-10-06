@@ -127,19 +127,21 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <div className="flex justify-end space-x-2">
                                                     <button
-                                                        onClick={() => onManageQuestions(survey)}
-                                                        className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-50"
-                                                        title="Gerenciar Perguntas"
-                                                    >
-                                                        <QuestionIcon className="h-5 w-5" />
-                                                    </button>
-                                                    <button
                                                         onClick={() => onViewResponses(survey)}
-                                                        className="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-50"
+                                                        className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-50"
                                                         title="Ver Respostas"
                                                     >
                                                         <EyeIcon className="h-5 w-5" />
                                                     </button>
+                                                    {canManageSurveys && (
+                                                        <button
+                                                            onClick={() => onManageQuestions(survey)}
+                                                            className="text-purple-600 hover:text-purple-900 p-2 rounded-full hover:bg-purple-50"
+                                                            title="Gerenciar Perguntas"
+                                                        >
+                                                            <QuestionIcon className="h-5 w-5" />
+                                                        </button>
+                                                    )}
                                                     <button
                                                         onClick={() => onManageGiveaway(survey)}
                                                         className="text-purple-600 hover:text-purple-900 p-2 rounded-full hover:bg-purple-50"
