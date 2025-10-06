@@ -36,33 +36,35 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
             console.log('useSurveyData: fetchSurveys - Usando user.company_id como effectiveCompanyId:', effectiveCompanyId);
         }
 
-        let query = supabase
-            .from('surveys')
-            .select(`
-                id,
-                title,
-                company_id,
-                created_by,
-                created_at,
-                questions (
-                    id,
-                    text,
-                    type,
-                    options,
-                    position
-                ),
-                survey_responses(*),
-                companies (name),
-                profiles (full_name)
-            `)
-            .order('created_at', { ascending: false });
+        let query;
 
-        if (user?.role !== UserRole.DEVELOPER && effectiveCompanyId) { // Use effectiveCompanyId aqui
+        if (user?.role !== UserRole.DEVELOPER && effectiveCompanyId) {
             console.log('useSurveyData: fetchSurveys - Filtrando por effectiveCompanyId:', effectiveCompanyId);
-            query = query.eq('company_id', effectiveCompanyId);
+            query = supabase
+                .from('surveys')
+                .select(`
+                    id,
+                    title,
+                    company_id,
+                    created_by,
+                    created_at,
+                    questions (
+                        id,
+                        text,
+                        type,
+                        options,
+                        position
+                    ),
+                    survey_responses(*),
+                    companies (name),
+                    profiles (full_name)
+                `)
+                .eq('company_id', effectiveCompanyId)
+                .order('created_at', { ascending: false });
         } else if (user?.role === UserRole.DEVELOPER) {
             console.log('useSurveyData: fetchSurveys - Usuário atual é DEVELOPER, buscando todas as pesquisas (sem filtro de company_id).');
-            // RLS policy for developers already allows all surveys, so no additional filter needed here.
+            // Para desenvolvedores, simplificamos a consulta para depuração
+            query = supabase.from('surveys').select(`id, title, company_id, created_by, created_at`).order('created_at', { ascending: false });
         } else {
             // Se não for desenvolvedor e não houver effectiveCompanyId, retorna vazio.
             console.log('useSurveyData: fetchSurveys - Sem effectiveCompanyId e não é desenvolvedor, retornando array vazio.');
@@ -80,27 +82,44 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
             setLoadingSurveys(false);
             return [];
         } else if (data) {
-            console.log('useSurveyData: fetchSurveys - Dados RAW recebidos do Supabase:', data);
-            const fetchedSurveys: Survey[] = (data as RawSurveyData[]).map((s) => ({
-                id: s.id,
-                title: s.title,
-                companyId: s.company_id,
-                created_by: s.created_by,
-                created_at: s.created_at,
-                questions: s.questions.map((q: any) => ({
-                    id: q.id,
-                    text: q.text,
-                    type: q.type,
-                    options: q.options || undefined,
-                    position: q.position || 0,
-                })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
-                responseCount: s.survey_responses ? s.survey_responses.length : 0,
-                companyName: s.companies && s.companies.length > 0 ? s.companies[0].name : 'N/A',
-                createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
-            }));
-            console.log('useSurveyData: fetchSurveys - Pesquisas processadas:', fetchedSurveys);
-            // Adicionando log para verificar o conteúdo de fetchedSurveys antes de setar o estado
-            console.log('useSurveyData: fetchSurveys - Conteúdo de fetchedSurveys antes de setar o estado:', fetchedSurveys);
+            console.log('useSurveyData: fetchSurveys - RAW data received from Supabase:', data);
+            
+            let fetchedSurveys: Survey[] = [];
+            if (user?.role === UserRole.DEVELOPER) {
+                // Mapeamento para a consulta simplificada do desenvolvedor
+                fetchedSurveys = (data as any[]).map((s: any) => ({
+                    id: s.id,
+                    title: s.title,
+                    companyId: s.company_id,
+                    created_by: s.created_by,
+                    created_at: s.created_at,
+                    questions: [], // Vazio para consulta simplificada
+                    responseCount: 0, // 0 para consulta simplificada
+                    companyName: 'N/A', // N/A para consulta simplificada
+                    createdByName: 'N/A' // N/A para consulta simplificada
+                }));
+            } else {
+                // Mapeamento original para usuários não-desenvolvedores
+                fetchedSurveys = (data as RawSurveyData[]).map((s) => ({
+                    id: s.id,
+                    title: s.title,
+                    companyId: s.company_id,
+                    created_by: s.created_by,
+                    created_at: s.created_at,
+                    questions: s.questions.map((q: any) => ({
+                        id: q.id,
+                        text: q.text,
+                        type: q.type,
+                        options: q.options || undefined,
+                        position: q.position || 0,
+                    })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
+                    responseCount: s.survey_responses ? s.survey_responses.length : 0,
+                    companyName: s.companies && s.companies.length > 0 ? s.companies[0].name : 'N/A',
+                    createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
+                }));
+            }
+
+            console.log('useSurveyData: fetchSurveys - Processed surveys:', fetchedSurveys);
             logActivity('INFO', `Pesquisas carregadas para a empresa ${effectiveCompanyId}.`, 'SURVEYS', user?.id, user?.email, company?.id);
             setSurveys(fetchedSurveys);
             setLoadingSurveys(false);
