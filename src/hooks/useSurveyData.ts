@@ -99,6 +99,8 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
                 createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
             }));
             console.log('useSurveyData: fetchSurveys - Pesquisas processadas:', fetchedSurveys);
+            // Adicionando log para verificar o conteúdo de fetchedSurveys antes de setar o estado
+            console.log('useSurveyData: fetchSurveys - Conteúdo de fetchedSurveys antes de setar o estado:', fetchedSurveys);
             logActivity('INFO', `Pesquisas carregadas para a empresa ${effectiveCompanyId}.`, 'SURVEYS', user?.id, user?.email, company?.id);
             setSurveys(fetchedSurveys);
             setLoadingSurveys(false);

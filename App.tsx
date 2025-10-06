@@ -292,6 +292,9 @@ const App: React.FC = () => {
             return <JoinCompanyPrompt user={currentUser} onLogout={() => supabase.auth.signOut()} />;
         }
 
+        // Adicionando log para verificar o conteúdo de 'surveys' antes de renderizar SurveyTableList
+        console.log('App: Conteúdo de `surveys` passado para SurveyTableList:', surveys);
+
         switch (currentView) {
             case View.SURVEY_LIST:
                 return (
