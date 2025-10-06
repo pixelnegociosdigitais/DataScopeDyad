@@ -50,14 +50,14 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
             `)
             .order('created_at', { ascending: false });
 
-        // Para usuários regulares, filtramos por company_id no lado do cliente.
-        // Para Desenvolvedores e Administradores, a filtragem é feita pela política RLS no banco de dados.
-        if (user?.role === UserRole.USER && companyId) {
-            console.log('useSurveyData: fetchSurveys - Filtrando por companyId para usuário regular:', companyId);
+        // Para usuários regulares E ADMINISTRADORES, filtramos por company_id no lado do cliente.
+        // Para Desenvolvedores, a filtragem é feita pela política RLS no banco de dados (que lhes dá acesso a tudo).
+        if ((user?.role === UserRole.USER || user?.role === UserRole.ADMIN) && companyId) {
+            console.log('useSurveyData: fetchSurveys - Filtrando por companyId para usuário regular ou administrador:', companyId);
             query = query.eq('company_id', companyId);
-        } else if (user?.role !== UserRole.DEVELOPER && user?.role !== UserRole.ADMIN && !companyId) {
-            // Se não for desenvolvedor/administrador e não houver companyId, retorna vazio.
-            console.log('useSurveyData: fetchSurveys - Sem companyId e não é desenvolvedor/administrador, retornando array vazio.');
+        } else if (user?.role !== UserRole.DEVELOPER && !companyId) {
+            // Se não for desenvolvedor e não houver companyId (e, portanto, não há empresa para filtrar), retorna vazio.
+            console.log('useSurveyData: fetchSurveys - Sem companyId e não é desenvolvedor, retornando array vazio.');
             setSurveys([]);
             setLoadingSurveys(false);
             return [];
@@ -150,8 +150,9 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
         console.log('useSurveyData: useEffect triggered. hookCurrentCompany.id:', hookCurrentCompany?.id, 'hookCurrentUser.role:', hookCurrentUser?.role, 'hookCurrentUser.company_id:', hookCurrentUser?.company_id);
         
         let companyIdForInitialFetch: string | undefined;
-        // Desenvolvedores e Administradores não filtram por company_id no cliente, confiando no RLS.
-        if (hookCurrentUser?.role === UserRole.DEVELOPER || hookCurrentUser?.role === UserRole.ADMIN) {
+        // Desenvolvedores não filtram por company_id no cliente, confiando no RLS.
+        // Administradores e Usuários filtram por company_id no cliente.
+        if (hookCurrentUser?.role === UserRole.DEVELOPER) {
             companyIdForInitialFetch = undefined; 
         } else if (hookCurrentCompany?.id) {
             companyIdForInitialFetch = hookCurrentCompany.id;
@@ -174,7 +175,7 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
                 }
                 // Re-fetch surveys to update the list using the LATEST values of currentUser and currentCompany
                 let companyIdForRealtimeFetch: string | undefined;
-                if (hookCurrentUser?.role === UserRole.DEVELOPER || hookCurrentUser?.role === UserRole.ADMIN) { // Added ADMIN here
+                if (hookCurrentUser?.role === UserRole.DEVELOPER) {
                     companyIdForRealtimeFetch = undefined;
                 } else if (hookCurrentCompany?.id) {
                     companyIdForRealtimeFetch = hookCurrentCompany.id;
