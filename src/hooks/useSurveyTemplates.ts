@@ -37,7 +37,7 @@ export const useSurveyTemplates = ({ currentUser, currentCompany }: UseSurveyTem
                 id: template.id,
                 title: template.title,
                 companyId: '', // Templates não têm companyId
-                questions: template.questions as any[], // Cast para any[] para corresponder a Question[]
+                questions: (template.questions || []) as Question[], // Lidar com null e fazer cast
             }));
             setTemplates(fetchedTemplates);
             logActivity('INFO', `Templates de pesquisa carregados.`, 'SURVEY_TEMPLATES', currentUser?.id, currentUser?.email, currentCompany?.id);

@@ -53,7 +53,7 @@ export interface Survey {
     id: string;
     title: string;
     companyId: string;
-    questions: Question[];
+    questions?: Question[] | null; // Tornada opcional e anulável
     responseCount?: number; // Adicionado para armazenar a contagem de respostas
     created_at?: string; // Adicionado para a data de criação
     created_by?: string; // Adicionado para o ID do criador
@@ -199,8 +199,8 @@ export interface RawSurveyData {
     company_id: string;
     created_by: string;
     created_at: string;
-    questions: Question[];
-    survey_responses: any[]; // Adjust if a more specific type is needed for responses
+    questions?: Question[] | null; // Tornada opcional e anulável
+    survey_responses?: any[] | null; // Tornada opcional e anulável
     companies: { name: string }[] | null; // Expecting an array of objects or null
     profiles: { full_name: string }[] | null; // Expecting an array of objects or null
 }

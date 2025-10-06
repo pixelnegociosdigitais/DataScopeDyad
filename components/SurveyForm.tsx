@@ -38,7 +38,7 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const formattedAnswers: Answer[] = survey.questions.map(q => {
+        const formattedAnswers: Answer[] = (survey.questions || []).map(q => { // Adicionado (survey.questions || [])
             let valueToSave = answers[q.id];
             if (q.type === QuestionType.CHECKBOX && valueToSave === undefined) {
                 valueToSave = [];
@@ -122,8 +122,8 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ survey, onSaveResponse, onBack 
                 </div>
             </div>
             <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md space-y-6">
-                {survey.questions.map((q, index) => (
-                    <div key={q.id}>
+                {(survey.questions || []).map((q, index) => (
+                    <div key={q.id} dyad-id="question-item">
                         <label className="block text-md font-medium text-gray-800">{index + 1}. {q.text}</label>
                         {renderQuestion(q)}
                     </div>

@@ -106,7 +106,7 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
                     companyId: s.company_id,
                     created_by: s.created_by,
                     created_at: s.created_at,
-                    questions: s.questions.map((q: any) => ({
+                    questions: (s.questions || []).map((q: any) => ({ // Adicionado (s.questions || [])
                         id: q.id,
                         text: q.text,
                         type: q.type,
@@ -128,7 +128,7 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
         setLoadingSurveys(false);
         console.log('useSurveyData: fetchSurveys - Nenhuma pesquisa encontrada ou erro, loadingSurveys = false.');
         return [];
-    }, []);
+    }, [setSurveys, setLoadingSurveys, logActivity]);
 
     const fetchSurveyResponses = useCallback(async (surveyId: string) => {
         console.log('useSurveyData: fetchSurveyResponses - Iniciando busca de respostas para surveyId:', surveyId);
