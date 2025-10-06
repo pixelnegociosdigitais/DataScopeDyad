@@ -29,25 +29,38 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
         console.log('useSurveyData: fetchSurveys - user.company_id (argumento):', user?.company_id);
         console.log('useSurveyData: fetchSurveys - company.id (argumento):', company?.id);
         
-        let query = supabase
-            .from('surveys')
-            .select(`
+        let selectString = `
+            id,
+            title,
+            company_id,
+            created_by,
+            created_at,
+            questions (
+                id,
+                text,
+                type,
+                options,
+                position
+            ),
+            survey_responses(*),
+            companies (name),
+            profiles (full_name)
+        `;
+
+        if (user?.role === UserRole.DEVELOPER) {
+            console.log('useSurveyData: fetchSurveys - Usuário é Desenvolvedor. Simplificando a consulta de seleção.');
+            selectString = `
                 id,
                 title,
                 company_id,
                 created_by,
-                created_at,
-                questions (
-                    id,
-                    text,
-                    type,
-                    options,
-                    position
-                ),
-                survey_responses(*),
-                companies (name),
-                profiles (full_name)
-            `)
+                created_at
+            `;
+        }
+
+        let query = supabase
+            .from('surveys')
+            .select(selectString)
             .order('created_at', { ascending: false });
 
         // Para usuários regulares E ADMINISTRADORES, filtramos por company_id no lado do cliente.
@@ -74,23 +87,41 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
         } else if (data) {
             console.log('useSurveyData: fetchSurveys - RAW data received from Supabase:', data);
             
-            const fetchedSurveys: Survey[] = (data as RawSurveyData[]).map((s) => ({
-                id: s.id,
-                title: s.title,
-                companyId: s.company_id,
-                created_by: s.created_by,
-                created_at: s.created_at,
-                questions: (s.questions || []).map((q: any) => ({
-                    id: q.id,
-                    text: q.text,
-                    type: q.type,
-                    options: q.options || undefined,
-                    position: q.position || 0,
-                })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
-                responseCount: s.survey_responses ? s.survey_responses.length : 0,
-                companyName: s.companies && s.companies.length > 0 ? s.companies[0].name : 'N/A',
-                createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
-            }));
+            const fetchedSurveys: Survey[] = (data as any[]).map((s) => { // Cast to any[] for flexible mapping
+                if (user?.role === UserRole.DEVELOPER) {
+                    // Simplified mapping for DEVELOPER role
+                    return {
+                        id: s.id,
+                        title: s.title,
+                        companyId: s.company_id,
+                        created_by: s.created_by,
+                        created_at: s.created_at,
+                        questions: [], // No questions in simplified query
+                        responseCount: 0, // No response count in simplified query
+                        companyName: 'N/A (Dev View)', // Placeholder
+                        createdByName: 'N/A (Dev View)' // Placeholder
+                    };
+                } else {
+                    // Original detailed mapping for other roles
+                    return {
+                        id: s.id,
+                        title: s.title,
+                        companyId: s.company_id,
+                        created_by: s.created_by,
+                        created_at: s.created_at,
+                        questions: (s.questions || []).map((q: any) => ({
+                            id: q.id,
+                            text: q.text,
+                            type: q.type,
+                            options: q.options || undefined,
+                            position: q.position || 0,
+                        })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
+                        responseCount: s.survey_responses ? s.survey_responses.length : 0,
+                        companyName: s.companies && s.companies.length > 0 ? s.companies[0].name : 'N/A',
+                        createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
+                    };
+                }
+            });
 
             console.log('useSurveyData: fetchSurveys - Processed surveys:', fetchedSurveys);
             logActivity('INFO', `Pesquisas carregadas para a empresa ${company?.id}.`, 'SURVEYS', user?.id, user?.email, company?.id);
