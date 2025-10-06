@@ -392,7 +392,28 @@ const App: React.FC = () => {
                                 </button>
                                 <h2 className="text-2xl font-bold text-text-main">Gerenciar Perguntas da Pesquisa: {selectedSurvey.title}</h2>
                             </div>
-                            <p className="text-text-light">Conteúdo para gerenciar perguntas...</p>
+                            <div className="space-y-4">
+                                {(selectedSurvey.questions || []).length === 0 ? (
+                                    <p className="text-text-light">Esta pesquisa ainda não possui perguntas.</p>
+                                ) : (
+                                    (selectedSurvey.questions || []).map((q, index) => (
+                                        <div key={q.id} className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                                            <p className="font-semibold text-text-main">{index + 1}. {q.text}</p>
+                                            <p className="text-sm text-text-light">Tipo: {q.type}</p>
+                                            {q.options && q.options.length > 0 && (
+                                                <div className="mt-2">
+                                                    <p className="text-xs font-medium text-gray-600">Opções:</p>
+                                                    <ul className="list-disc list-inside text-sm text-text-light">
+                                                        {q.options.map((opt, optIndex) => (
+                                                            <li key={optIndex}>{opt}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     );
                 }
