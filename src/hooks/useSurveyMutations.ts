@@ -48,6 +48,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
                     .eq('id', editingSurveyId);
 
                 if (surveyUpdateError) {
+                    console.error('useSurveyMutations: handleSaveSurvey - Erro ao atualizar pesquisa:', surveyUpdateError); // Log de erro
                     throw surveyUpdateError;
                 }
 
@@ -57,6 +58,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
                     .eq('survey_id', editingSurveyId);
 
                 if (deleteQuestionsError) {
+                    console.error('useSurveyMutations: handleSaveSurvey - Erro ao excluir perguntas antigas:', deleteQuestionsError); // Log de erro
                     throw deleteQuestionsError;
                 }
 
@@ -74,6 +76,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
                     .insert(questionsToInsert);
 
                 if (insertQuestionsError) {
+                    console.error('useSurveyMutations: handleSaveSurvey - Erro ao inserir novas perguntas:', insertQuestionsError); // Log de erro
                     throw insertQuestionsError;
                 }
 
@@ -82,19 +85,21 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
 
             } else {
                 console.log('useSurveyMutations: handleSaveSurvey - Criando nova pesquisa.');
-                console.log('useSurveyMutations: handleSaveSurvey - Inserindo com company_id:', surveyCompanyId, 'e created_by:', currentUser.id);
+                const surveyToInsert = {
+                    title: surveyData.title,
+                    company_id: surveyCompanyId,
+                    created_by: currentUser.id,
+                };
+                console.log('useSurveyMutations: handleSaveSurvey - Objeto de pesquisa para inserção:', surveyToInsert); // Log do objeto a ser inserido
+
                 const { data: newSurvey, error: surveyInsertError } = await supabase
                     .from('surveys')
-                    .insert({
-                        title: surveyData.title,
-                        company_id: surveyCompanyId,
-                        created_by: currentUser.id,
-                    })
+                    .insert(surveyToInsert)
                     .select()
                     .single();
 
                 if (surveyInsertError) {
-                    console.error('useSurveyMutations: handleSaveSurvey - Erro ao inserir nova pesquisa:', surveyInsertError);
+                    console.error('useSurveyMutations: handleSaveSurvey - Erro ao inserir nova pesquisa:', surveyInsertError); // Log de erro
                     throw surveyInsertError;
                 }
                 console.log('useSurveyMutations: handleSaveSurvey - Nova pesquisa inserida (data):', newSurvey);
@@ -114,7 +119,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
                         .insert(questionsToInsert);
 
                     if (questionsInsertError) {
-                        console.error('useSurveyMutations: handleSaveSurvey - Erro ao inserir perguntas para nova pesquisa:', questionsInsertError);
+                        console.error('useSurveyMutations: handleSaveSurvey - Erro ao inserir perguntas para nova pesquisa:', questionsInsertError); // Log de erro
                         throw questionsInsertError;
                     }
                     showSuccess('Pesquisa criada com sucesso!');
