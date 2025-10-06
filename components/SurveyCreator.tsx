@@ -24,7 +24,7 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
     useEffect(() => {
         if (surveyToEdit) {
             setTitle(surveyToEdit.title);
-            setQuestions(surveyToEdit.questions);
+            setQuestions(surveyToEdit.questions || []); // Ensure it's an array
             setSelectedTemplateId('');
         } else {
             setTitle('');
@@ -41,7 +41,7 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
             if (selectedTemplate) {
                 setTitle(selectedTemplate.title);
                 // Ensure new unique IDs for questions from template
-                setQuestions(selectedTemplate.questions.map((q, index) => ({ 
+                setQuestions((selectedTemplate.questions || []).map((q, index) => ({ 
                     ...q, 
                     id: `q${Date.now()}-${Math.random().toString(36).substring(7)}-${index}`,
                     position: index,

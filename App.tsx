@@ -50,7 +50,7 @@ const App: React.FC = () => {
         handleUpdateProfile,
         handleUpdateCompany,
         modulePermissions,
-        handleToggleCompanyStatus,
+        // handleToggleCompanyStatus, // Removed as it's not directly used in App.tsx
         handleResetUserPassword,
         handleCreateUserForCompany,
         handleUpdateUserPermissions,

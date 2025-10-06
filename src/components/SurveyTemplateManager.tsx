@@ -243,7 +243,7 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                                         {template.title}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-text-light">
-                                        {template.questions.length} perguntas
+                                        {(template.questions || []).length} perguntas
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex justify-end space-x-2">

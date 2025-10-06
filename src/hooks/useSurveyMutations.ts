@@ -62,7 +62,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
                     throw deleteQuestionsError;
                 }
 
-                const questionsToInsert = surveyData.questions.map((q, index) => ({
+                const questionsToInsert = (surveyData.questions || []).map((q, index) => ({
                     survey_id: editingSurveyId,
                     text: q.text,
                     type: q.type,
@@ -105,7 +105,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
                 console.log('useSurveyMutations: handleSaveSurvey - Nova pesquisa inserida (data):', newSurvey);
 
                 if (newSurvey) {
-                    const questionsToInsert = surveyData.questions.map((q, index) => ({
+                    const questionsToInsert = (surveyData.questions || []).map((q, index) => ({
                         survey_id: newSurvey.id,
                         text: q.text,
                         type: q.type,
@@ -168,7 +168,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
             return false;
         }
 
-        const missingAnswers = selectedSurvey.questions.filter(q => {
+        const missingAnswers = (selectedSurvey.questions || []).filter(q => {
             const answer = answers.find(a => a.questionId === q.id);
             if (!answer || answer.value === null || answer.value === undefined) {
                 return true;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Survey, User, Company } from '@/types';
+import { Survey, User, Company, Question } from '@/types'; // Import Question
 import { supabase } from '@/src/integrations/supabase/client';
 import { showSuccess, showError } from '@/src/utils/toast';
 import { logActivity } from '@/src/utils/logger';

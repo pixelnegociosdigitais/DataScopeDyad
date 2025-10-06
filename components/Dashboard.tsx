@@ -87,7 +87,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
     };
     
     const analysis = useMemo<QuestionAnalysis[]>(() => {
-        return survey.questions.map(q => {
+        return (survey.questions || []).map(q => {
             const questionResponses = responses.map(r => r.answers.find(a => a.questionId === q.id)).filter(Boolean) as Answer[];
             
             if ([QuestionType.MULTIPLE_CHOICE, QuestionType.CHECKBOX, QuestionType.RATING].includes(q.type)) {
@@ -118,11 +118,11 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
 
     const exportToCSV = () => {
         let csvContent = "data:text/csv;charset=utf-8,";
-        const headers = survey.questions.map(q => `"${q.text.replace(/"/g, '""')}"`).join(',');
+        const headers = (survey.questions || []).map(q => `"${q.text.replace(/"/g, '""')}"`).join(',');
         csvContent += headers + "\r\n";
 
         responses.forEach(res => {
-            const row = survey.questions.map(q => {
+            const row = (survey.questions || []).map(q => {
                 const answer = res.answers.find(a => a.questionId === q.id);
                 let value = '';
                 if (answer) {
@@ -169,7 +169,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
             </div>
 
             <div ref={dashboardRef} className="p-4 bg-gray-50 rounded-lg">
-                {analysis.map((q) => (
+                {(analysis || []).map((q) => (
                     <div key={q.id} className="bg-white p-6 rounded-lg shadow-md mb-6">
                         <h3 className="text-lg font-semibold text-text-main mb-4">{q.text} <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{q.type}</span></h3>
                         {([QuestionType.MULTIPLE_CHOICE, QuestionType.CHECKBOX, QuestionType.RATING].includes(q.type as QuestionType)) && Array.isArray(q.data) && q.data.length > 0 && (
