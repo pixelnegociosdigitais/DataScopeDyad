@@ -63,7 +63,7 @@ const App: React.FC = () => {
         surveyResponses,
         templates,
         loadingSurveys,
-        fetchSurveys,
+        // fetchSurveys, // Removed as it's not directly used in App.tsx
         handleSaveSurvey,
         handleDeleteSurvey,
         handleSaveResponse,
@@ -349,7 +349,7 @@ const App: React.FC = () => {
                 return (
                     <DeveloperCompanyUserManager 
                         onBack={handleBack} 
-                        setCurrentView={setCurrentView}
+                        setCurrentView={setCurrentView} // Pass setCurrentView as a prop
                     />
                 );
             case View.ADMIN_USER_MANAGER:

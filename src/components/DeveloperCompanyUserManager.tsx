@@ -4,31 +4,21 @@ import { BuildingIcon } from '../../components/icons/BuildingIcon';
 import { UserIcon } from '../../components/icons/UserIcon';
 import { TrashIcon } from '../../components/icons/TrashIcon';
 import { CreateIcon } from '../../components/icons/CreateIcon';
-import { Company, User, UserRole } from '@/types';
+import { Company, User, UserRole, View } from '@/types';
 import { supabase } from '../integrations/supabase/client';
 import { showSuccess, showError } from '../utils/toast';
-import ConfirmationDialog from './ConfirmationDialog';
-import CompanyEditModal from './CompanyEditModal';
-import UserEditModal from './UserEditModal';
-import { logActivity } from '../utils/logger';
+import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
+import CompanyEditModal from '../src/components/CompanyEditModal'; // Caminho corrigido
+import { useAuth } from '../src/hooks/useAuth';
+import { logActivity } from '../src/utils/logger';
+import UserEditModal from '../src/components/UserEditModal'; // Caminho corrigido
 
 interface DeveloperCompanyUserManagerProps {
     onBack: () => void;
-    currentUser: User | null;
-    handleToggleCompanyStatus: (companyId: string, newStatus: 'active' | 'inactive') => Promise<void>;
-    handleResetUserPassword: (userId: string, newPassword?: string) => Promise<void>;
-    handleCreateUserForCompany: (companyId: string, fullName: string, email: string, role: UserRole, temporaryPassword: string) => Promise<void>;
-    handleAdminUpdateUserProfile: (userId: string, updatedFields: Partial<User>) => Promise<void>;
+    setCurrentView: (view: View) => void; // Added setCurrentView prop
 }
 
-const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = ({ 
-    onBack, 
-    currentUser,
-    handleToggleCompanyStatus,
-    handleResetUserPassword,
-    handleCreateUserForCompany,
-    handleAdminUpdateUserProfile,
-}) => {
+const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = ({ onBack, setCurrentView }) => {
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -44,8 +34,16 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
     const [showEditCompanyModal, setShowEditCompanyModal] = useState(false);
     const [editingCompany, setEditingCompany] = useState<Company | null>(null);
     const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
-    const [showEditAdminModal, setShowEditAdminModal] = useState(false);
-    const [editingAdmin, setEditingAdmin] = useState<User | null>(null);
+    const [showEditAdminModal, setShowEditAdminModal] = useState(false); // Novo estado para o modal de edição do admin
+    const [editingAdmin, setEditingAdmin] = useState<User | null>(null); // Novo estado para o admin sendo editado
+
+    const { handleToggleCompanyStatus, handleResetUserPassword, handleCreateUserForCompany, currentUser, handleAdminUpdateUserProfile } = useAuth(setCurrentView);
+
+    const extractNameFromFullName = (fullName: string): string => {
+        // This regex removes any content within parentheses at the end of the string,
+        // including the parentheses themselves, and any leading whitespace.
+        return fullName.replace(/\s*\([^)]*\)$/, '').trim();
+    };
 
     const fetchCompanies = useCallback(async () => {
         setLoading(true);
@@ -78,7 +76,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                     .filter((p: any) => p.role === UserRole.ADMIN)
                     .map((adminProfile: any) => ({
                         id: adminProfile.id,
-                        fullName: adminProfile.full_name || '',
+                        fullName: extractNameFromFullName(adminProfile.full_name || ''),
                         role: adminProfile.role as UserRole,
                         email: adminProfile.email || '',
                         phone: adminProfile.phone || undefined,
@@ -98,7 +96,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                     if (creatorProfile) {
                         administrators.push({
                             id: creatorProfile.id,
-                            fullName: creatorProfile.full_name || '',
+                            fullName: extractNameFromFullName(creatorProfile.full_name || ''),
                             role: creatorProfile.role as UserRole,
                             email: creatorProfile.email || '',
                             phone: creatorProfile.phone || undefined,
@@ -214,12 +212,12 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         setCompanies(prevCompanies => 
             prevCompanies.map(company => ({
                 ...company,
-                administrators: company.administrators?.map((admin: User) =>
+                administrators: company.administrators?.map((admin: User) => // Explicitly type admin as User
                     admin.id === updatedUser.id ? updatedUser : admin
-                ) || [],
+                ) || [], // Ensure it's an array even if undefined
             }))
         );
-        fetchCompanies();
+        fetchCompanies(); // Re-fetch para garantir que todos os dados estejam atualizados
     };
 
     const confirmDeleteCompany = (company: Company) => {
@@ -296,6 +294,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
         }
     };
 
+
     if (loading) {
         return <div className="text-center py-8 text-text-light">Carregando gerenciamento de empresas...</div>;
     }
@@ -340,13 +339,13 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                 <td className="py-3 px-4 text-sm text-gray-800 font-medium">{company.name}</td>
                                 <td className="py-3 px-4 text-sm text-gray-700">
                                     {company.administrators && company.administrators.length > 0 ? (
-                                        company.administrators.map((admin: User) => (
+                                        company.administrators.map((admin: User) => ( // Explicitly type admin as User
                                             <div 
                                                 key={admin.id} 
                                                 className="cursor-pointer hover:text-primary hover:underline"
                                                 onClick={() => handleOpenEditAdminModal(admin)}
                                             >
-                                                {admin.fullName} ({admin.email})
+                                                {admin.fullName}
                                             </div>
                                         ))
                                     ) : (
@@ -375,7 +374,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                             className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
                                             aria-label="Editar empresa"
                                         >
-                                            <BuildingIcon className="h-5 w-5" />
+                                            <BuildingIcon className="h-5 w-5" /> {/* Ícone para editar a empresa */}
                                         </button>
                                         {company.administrators && company.administrators.length > 0 && (
                                             <button
@@ -383,7 +382,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                                 className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
                                                 aria-label="Editar administrador"
                                             >
-                                                <UserIcon className="h-5 w-5" />
+                                                <UserIcon className="h-5 w-5" /> {/* Ícone para editar o administrador */}
                                             </button>
                                         )}
                                         <button
@@ -501,10 +500,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                     confirmText="Confirmar"
                     onConfirm={dialogConfirmAction || (() => setShowConfirmationDialog(false))}
                     cancelText="Cancelar"
-                    onCancel={() => {
-                        setShowConfirmationDialog(false);
-                        setCompanyToDelete(null);
-                    }}
+                    onCancel={() => setShowConfirmationDialog(false)}
                 />
             )}
         </div>
