@@ -7,11 +7,11 @@ import { CreateIcon } from '../../components/icons/CreateIcon';
 import { Company, User, UserRole, View } from '@/types';
 import { supabase } from '../integrations/supabase/client';
 import { showSuccess, showError } from '../utils/toast';
-import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
-import CompanyEditModal from '../src/components/CompanyEditModal'; // Caminho corrigido
-import { useAuth } from '../src/hooks/useAuth';
-import { logActivity } from '../src/utils/logger';
-import UserEditModal from '../src/components/UserEditModal'; // Caminho corrigido
+import ConfirmationDialog from '../ConfirmationDialog'; // Corrected import path
+import CompanyEditModal from '../CompanyEditModal'; // Corrected import path
+import { useAuth } from '../hooks/useAuth';
+import { logActivity } from '../utils/logger';
+import UserEditModal from '../UserEditModal'; // Corrected import path
 
 interface DeveloperCompanyUserManagerProps {
     onBack: () => void;
