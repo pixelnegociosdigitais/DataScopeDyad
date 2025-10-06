@@ -47,8 +47,9 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
             profiles (full_name)
         `;
 
-        if (user?.role === UserRole.DEVELOPER) {
-            console.log('useSurveyData: fetchSurveys - Usuário é Desenvolvedor. Simplificando a consulta de seleção.');
+        // Simplificar a consulta para Desenvolvedores e Administradores para fins de depuração
+        if (user?.role === UserRole.DEVELOPER || user?.role === UserRole.ADMIN) {
+            console.log(`useSurveyData: fetchSurveys - Usuário é ${user.role}. Simplificando a consulta de seleção.`);
             selectString = `
                 id,
                 title,
@@ -88,8 +89,8 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
             console.log('useSurveyData: fetchSurveys - RAW data received from Supabase:', data);
             
             const fetchedSurveys: Survey[] = (data as any[]).map((s) => { // Cast to any[] for flexible mapping
-                if (user?.role === UserRole.DEVELOPER) {
-                    // Simplified mapping for DEVELOPER role
+                if (user?.role === UserRole.DEVELOPER || user?.role === UserRole.ADMIN) {
+                    // Simplified mapping for DEVELOPER and ADMIN roles
                     return {
                         id: s.id,
                         title: s.title,
@@ -98,11 +99,11 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
                         created_at: s.created_at,
                         questions: [], // No questions in simplified query
                         responseCount: 0, // No response count in simplified query
-                        companyName: 'N/A (Dev View)', // Placeholder
-                        createdByName: 'N/A (Dev View)' // Placeholder
+                        companyName: 'N/A (View Simplificada)', // Placeholder
+                        createdByName: 'N/A (View Simplificada)' // Placeholder
                     };
                 } else {
-                    // Original detailed mapping for other roles
+                    // Original detailed mapping for other roles (e.g., User)
                     return {
                         id: s.id,
                         title: s.title,
