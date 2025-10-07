@@ -29,7 +29,9 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
         console.log('useSurveyData: fetchSurveys - user.company_id (argumento):', user?.company_id);
         console.log('useSurveyData: fetchSurveys - company.id (argumento):', company?.id);
         
-        let selectString = `
+        // Always fetch all necessary fields for all roles.
+        // RLS policies will handle what data is actually returned based on user permissions.
+        const selectString = `
             id,
             title,
             company_id,
@@ -47,30 +49,20 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
             profiles (full_name)
         `;
 
-        // Simplificar a consulta para Desenvolvedores e Administradores para fins de depuração
-        if (user?.role === UserRole.DEVELOPER || user?.role === UserRole.ADMIN) {
-            console.log(`useSurveyData: fetchSurveys - Usuário é ${user.role}. Simplificando a consulta de seleção.`);
-            selectString = `
-                id,
-                title,
-                company_id,
-                created_by,
-                created_at
-            `;
-        }
+        console.log(`useSurveyData: fetchSurveys - Sempre buscando todos os detalhes da pesquisa para todas as roles.`);
 
         let query = supabase
             .from('surveys')
             .select(selectString)
             .order('created_at', { ascending: false });
 
-        // Para usuários regulares E ADMINISTRADORES, filtramos por company_id no lado do cliente.
-        // Para Desenvolvedores, a filtragem é feita pela política RLS no banco de dados (que lhes dá acesso a tudo).
+        // For regular users and administrators, filter by company_id on the client side.
+        // For Developers, filtering is handled by RLS policies in the database (which gives them access to everything).
         if ((user?.role === UserRole.USER || user?.role === UserRole.ADMIN) && companyId) {
             console.log('useSurveyData: fetchSurveys - Filtrando por companyId para usuário regular ou administrador:', companyId);
             query = query.eq('company_id', companyId);
         } else if (user?.role !== UserRole.DEVELOPER && !companyId) {
-            // Se não for desenvolvedor e não houver companyId (e, portanto, não há empresa para filtrar), retorna vazio.
+            // If not a developer and no companyId (and thus no company to filter by), return empty.
             console.log('useSurveyData: fetchSurveys - Sem companyId e não é desenvolvedor, retornando array vazio.');
             setSurveys([]);
             setLoadingSurveys(false);
@@ -88,40 +80,26 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
         } else if (data) {
             console.log('useSurveyData: fetchSurveys - RAW data received from Supabase:', data);
             
-            const fetchedSurveys: Survey[] = (data as any[]).map((s) => { // Cast to any[] for flexible mapping
-                if (user?.role === UserRole.DEVELOPER || user?.role === UserRole.ADMIN) {
-                    // Simplified mapping for DEVELOPER and ADMIN roles
-                    return {
-                        id: s.id,
-                        title: s.title,
-                        companyId: s.company_id,
-                        created_by: s.created_by,
-                        created_at: s.created_at,
-                        questions: [], // No questions in simplified query
-                        responseCount: 0, // No response count in simplified query
-                        companyName: 'N/A (View Simplificada)', // Placeholder
-                        createdByName: 'N/A (View Simplificada)' // Placeholder
-                    };
-                } else {
-                    // Original detailed mapping for other roles (e.g., User)
-                    return {
-                        id: s.id,
-                        title: s.title,
-                        companyId: s.company_id,
-                        created_by: s.created_by,
-                        created_at: s.created_at,
-                        questions: (s.questions || []).map((q: any) => ({
-                            id: q.id,
-                            text: q.text,
-                            type: q.type,
-                            options: q.options || undefined,
-                            position: q.position || 0,
-                        })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
-                        responseCount: s.survey_responses ? s.survey_responses.length : 0,
-                        companyName: s.companies && s.companies.length > 0 ? s.companies[0].name : 'N/A',
-                        createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
-                    };
-                }
+            const fetchedSurveys: Survey[] = (data as any[]).map((s) => {
+                // Unified mapping for all roles
+                return {
+                    id: s.id,
+                    title: s.title,
+                    companyId: s.company_id,
+                    created_by: s.created_by,
+                    created_at: s.created_at,
+                    questions: (s.questions || []).map((q: any) => ({
+                        id: q.id,
+                        text: q.text,
+                        type: q.type,
+                        options: q.options || undefined,
+                        position: q.position || 0,
+                    })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
+                    responseCount: s.survey_responses ? s.survey_responses.length : 0,
+                    // Handle cases where RLS might prevent fetching joined data by providing fallbacks
+                    companyName: s.companies && s.companies.length > 0 ? s.companies[0].name : 'N/A',
+                    createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
+                };
             });
 
             console.log('useSurveyData: fetchSurveys - Processed surveys:', fetchedSurveys);
