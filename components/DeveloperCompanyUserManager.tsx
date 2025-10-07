@@ -323,7 +323,8 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                 </button>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                     <thead>
                         <tr className="bg-gray-100 border-b border-gray-200">
@@ -406,6 +407,89 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+                {companies.map(company => (
+                    <div key={company.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <div className="flex justify-between items-start mb-3">
+                            <h3 className="text-lg font-semibold text-gray-800">{company.name}</h3>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    value=""
+                                    className="sr-only peer"
+                                    checked={company.status === 'active'}
+                                    onChange={() => confirmToggleStatus(company.id, company.status || 'active')}
+                                />
+                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-light rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                            </label>
+                        </div>
+                        
+                        <div className="mb-3">
+                            <p className="text-sm font-medium text-gray-600 mb-1">Administrador:</p>
+                            {company.administrators && company.administrators.length > 0 ? (
+                                company.administrators.map((admin: User) => (
+                                    <div 
+                                        key={admin.id} 
+                                        className="text-sm text-gray-700 cursor-pointer hover:text-primary hover:underline"
+                                        onClick={() => handleOpenEditAdminModal(admin)}
+                                    >
+                                        {admin.fullName}
+                                    </div>
+                                ))
+                            ) : (
+                                <span className="text-sm text-gray-500">Nenhum administrador</span>
+                            )}
+                        </div>
+
+                        <div className="mb-3">
+                            <p className="text-sm font-medium text-gray-600 mb-1">Status:</p>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                company.status === 'active' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-red-100 text-red-800'
+                            }`}>
+                                {company.status === 'active' ? 'Ativa' : 'Inativa'}
+                            </span>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                            <button
+                                onClick={() => handleOpenEditCompanyModal(company)}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10"
+                            >
+                                <BuildingIcon className="h-4 w-4" />
+                                Editar Empresa
+                            </button>
+                            {company.administrators && company.administrators.length > 0 && (
+                                <>
+                                    <button
+                                        onClick={() => handleOpenEditAdminModal(company.administrators[0])}
+                                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10"
+                                    >
+                                        <UserIcon className="h-4 w-4" />
+                                        Editar Admin
+                                    </button>
+                                    <button
+                                        onClick={() => confirmResetAdminPassword(company.administrators[0].id, company.administrators[0].fullName)}
+                                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-secondary border border-secondary rounded-md hover:bg-secondary/10"
+                                    >
+                                        Redefinir Senha
+                                    </button>
+                                </>
+                            )}
+                            <button
+                                onClick={() => confirmDeleteCompany(company)}
+                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 border border-red-600 rounded-md hover:bg-red-50"
+                            >
+                                <TrashIcon className="h-4 w-4" />
+                                Excluir
+                            </button>
+                        </div>
+                    </div>
+                ))}
             </div>
 
             {showCreateCompanyModal && (

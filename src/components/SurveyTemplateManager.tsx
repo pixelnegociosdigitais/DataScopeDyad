@@ -221,59 +221,96 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                     <p className="text-text-light">Nenhum modelo encontrado. Crie seu primeiro modelo!</p>
                 </div>
             ) : (
-                <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Título do Modelo
-                                </th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Perguntas
-                                </th>
-                                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Ações
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {templates.map((template) => (
-                                <tr key={template.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-main">
-                                        {template.title}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-text-light">
-                                        {(template.questions || []).length} perguntas
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div className="flex justify-end space-x-2">
-                                            <button
-                                                onClick={() => handleOpenTemplateForm(template)}
-                                                className="text-primary hover:text-primary-dark p-2 rounded-full hover:bg-primary/10"
-                                                title="Editar Modelo"
-                                            >
-                                                <PencilIcon className="h-5 w-5" />
-                                            </button>
-                                            <button
-                                                onClick={() => confirmDeleteTemplate(template)}
-                                                className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50"
-                                                title="Excluir Modelo"
-                                            >
-                                                <TrashIcon className="h-5 w-5" />
-                                            </button>
-                                        </div>
-                                    </td>
+                <>
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block bg-white shadow-md rounded-lg overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Título do Modelo
+                                    </th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Perguntas
+                                    </th>
+                                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Ações
+                                    </th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {templates.map((template) => (
+                                    <tr key={template.id}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-main">
+                                            {template.title}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-text-light">
+                                            {(template.questions || []).length} perguntas
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <div className="flex justify-end space-x-2">
+                                                <button
+                                                    onClick={() => handleOpenTemplateForm(template)}
+                                                    className="text-primary hover:text-primary-dark p-2 rounded-full hover:bg-primary/10"
+                                                    title="Editar Modelo"
+                                                >
+                                                    <PencilIcon className="h-5 w-5" />
+                                                </button>
+                                                <button
+                                                    onClick={() => confirmDeleteTemplate(template)}
+                                                    className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50"
+                                                    title="Excluir Modelo"
+                                                >
+                                                    <TrashIcon className="h-5 w-5" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden space-y-4">
+                        {templates.map((template) => (
+                            <div key={template.id} className="bg-white rounded-lg shadow-md p-4">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-sm font-medium text-text-main truncate">
+                                            {template.title}
+                                        </h3>
+                                        <p className="text-xs text-text-light mt-1">
+                                            {(template.questions || []).length} perguntas
+                                        </p>
+                                    </div>
+                                    <div className="flex space-x-2 ml-3">
+                                        <button
+                                            onClick={() => handleOpenTemplateForm(template)}
+                                            className="text-primary hover:text-primary-dark p-2 rounded-full hover:bg-primary/10"
+                                            title="Editar Modelo"
+                                        >
+                                            <PencilIcon className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => confirmDeleteTemplate(template)}
+                                            className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50"
+                                            title="Excluir Modelo"
+                                        >
+                                            <TrashIcon className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </>
             )}
 
             {showTemplateForm && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-xl font-bold text-text-main mb-4">{editingTemplate ? 'Editar Modelo' : 'Criar Novo Modelo'}</h3>
+                    <div className="bg-white p-4 sm:p-8 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+                        <h3 className="text-lg sm:text-xl font-bold text-text-main mb-4">{editingTemplate ? 'Editar Modelo' : 'Criar Novo Modelo'}</h3>
                         <div className="space-y-6">
                             <div>
                                 <label htmlFor="template-title" className="block text-sm font-medium text-gray-700">Título do Modelo</label>

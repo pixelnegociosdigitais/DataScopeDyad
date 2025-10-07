@@ -133,7 +133,8 @@ const ModulePermissionsManager: React.FC<ModulePermissionsManagerProps> = ({ onB
 
             {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
 
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden lg:block overflow-x-auto">
                 <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                     <thead>
                         <tr className="bg-gray-100 border-b border-gray-200">
@@ -168,6 +169,35 @@ const ModulePermissionsManager: React.FC<ModulePermissionsManagerProps> = ({ onB
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+                {ALL_MODULES.map(module => (
+                    <div key={module.name} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4">{module.label}</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            {ALL_ROLES.map(role => {
+                                const permission = permissions.find(p => p.role === role && p.module_name === module.name);
+                                const isEnabled = permission ? permission.enabled : true;
+                                return (
+                                    <div key={`${role}-${module.name}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                                        <span className="text-sm font-medium text-gray-700">{role}</span>
+                                        <label className="inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="form-checkbox h-5 w-5 text-primary rounded focus:ring-primary"
+                                                checked={isEnabled}
+                                                onChange={() => handleTogglePermission(role, module.name)}
+                                                disabled={saving}
+                                            />
+                                        </label>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
             </div>
 
             <div className="mt-6 flex justify-end">

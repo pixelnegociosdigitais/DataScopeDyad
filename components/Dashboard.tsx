@@ -148,39 +148,55 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            {/* Header Section - Responsive */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                 <div className="flex items-center gap-4">
                     <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Voltar">
                         <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
                     </button>
                     <div>
-                        <h2 className="text-2xl font-bold text-text-main">{survey.title}</h2>
+                        <h2 className="text-xl sm:text-2xl font-bold text-text-main">{survey.title}</h2>
                         <p className="text-text-light">{responses.length} respostas</p>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={() => dashboardRef.current && (window as any).handleDownloadReport(survey, dashboardRef.current)} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">
-                        <DownloadIcon className="h-4 w-4" /> Exportar PDF
+                <div className="flex flex-col sm:flex-row gap-2">
+                    <button onClick={() => dashboardRef.current && (window as any).handleDownloadReport(survey, dashboardRef.current)} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">
+                        <DownloadIcon className="h-4 w-4" /> 
+                        <span className="hidden sm:inline">Exportar PDF</span>
+                        <span className="sm:hidden">PDF</span>
                     </button>
-                    <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">
-                       <DownloadIcon className="h-4 w-4" /> Exportar CSV
+                    <button onClick={exportToCSV} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">
+                       <DownloadIcon className="h-4 w-4" /> 
+                       <span className="hidden sm:inline">Exportar CSV</span>
+                       <span className="sm:hidden">CSV</span>
                     </button>
                 </div>
             </div>
 
-            <div ref={dashboardRef} className="p-4 bg-gray-50 rounded-lg">
+            {/* Dashboard Content - Responsive */}
+            <div ref={dashboardRef} className="p-2 sm:p-4 bg-gray-50 rounded-lg">
                 {(analysis || []).map((q) => (
-                    <div key={q.id} className="bg-white p-6 rounded-lg shadow-md mb-6">
-                        <h3 className="text-lg font-semibold text-text-main mb-4">{q.text} <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{q.type}</span></h3>
+                    <div key={q.id} className="bg-white p-3 sm:p-6 rounded-lg shadow-md mb-4 sm:mb-6">
+                        <h3 className="text-base sm:text-lg font-semibold text-text-main mb-4 break-words">
+                            {q.text} 
+                            <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-2 inline-block">{q.type}</span>
+                        </h3>
                         {([QuestionType.MULTIPLE_CHOICE, QuestionType.CHECKBOX, QuestionType.RATING].includes(q.type as QuestionType)) && Array.isArray(q.data) && q.data.length > 0 && (
-                             <ResponsiveContainer width="100%" height={300}>
+                             <ResponsiveContainer width="100%" height={250} className="sm:!h-[300px]">
                                 {q.type === QuestionType.RATING ? (
                                     <BarChart data={q.data as ChartDataItem[]}>
                                         <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name" />
-                                        <YAxis allowDecimals={false} />
+                                        <XAxis 
+                                            dataKey="name" 
+                                            tick={{ fontSize: 12 }}
+                                            interval={0}
+                                            angle={-45}
+                                            textAnchor="end"
+                                            height={60}
+                                        />
+                                        <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                                         <Tooltip />
-                                        <Legend />
+                                        <Legend wrapperStyle={{ fontSize: '12px' }} />
                                         <Bar dataKey="value" fill={COLORS[0]} name="Respostas" />
                                     </BarChart>
                                 ) : (
@@ -193,6 +209,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
                                         />
                                         <Tooltip />
                                         <Legend 
+                                            wrapperStyle={{ fontSize: '12px' }}
                                             formatter={(_legendValue: string | number, legendEntry: any) => {
                                                 const dataItem = legendEntry.payload as ChartDataItem;
                                                 const total = (q.data as ChartDataItem[]).reduce((sum, item) => sum + item.value, 0);
@@ -209,7 +226,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
                             <div className="max-h-60 overflow-y-auto pr-2">
                                 <ul className="space-y-3">
                                     {(q.data as string[]).map((text: string, index: number) => (
-                                        <li key={index} className="bg-gray-50 p-3 rounded-md border-l-4 border-primary/50 text-sm text-gray-700">
+                                        <li key={index} className="bg-gray-50 p-3 rounded-md border-l-4 border-primary/50 text-sm text-gray-700 break-words">
                                             {text}
                                         </li>
                                     ))}

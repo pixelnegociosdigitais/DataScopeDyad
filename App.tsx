@@ -10,7 +10,7 @@ import SurveyForm from './components/SurveyForm';
 import Login from './components/Login';
 import CompanySettings from './components/CompanySettings';
 import CompanyCreationForm from './components/CompanyCreationForm';
-import Giveaways from './components/Giveaways';
+import Giveaways from './src/components/Giveaways';
 import SettingsPanel from './components/SettingsPanel';
 import ModulePermissionsManager from './components/ModulePermissionsManager';
 import DeveloperCompanyUserManager from './src/components/DeveloperCompanyUserManager';
