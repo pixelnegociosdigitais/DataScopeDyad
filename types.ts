@@ -154,6 +154,7 @@ export enum View {
     ADMIN_USER_MANAGER = 'ADMIN_USER_MANAGER',
     LOGS_AND_AUDIT = 'LOGS_AND_AUDIT',
     MANAGE_NOTICES = 'MANAGE_NOTICES',
+    NOTICES = 'NOTICES', // Added for viewing notices
     CHAT = 'CHAT',
     SURVEY_QUESTIONS = 'SURVEY_QUESTIONS', // Nova view para gerenciar perguntas
     SURVEY_TEMPLATES = 'SURVEY_TEMPLATES', // Nova view para gerenciar modelos

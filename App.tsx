@@ -37,6 +37,7 @@ const App: React.FC = () => {
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
     const [activeNotice, setActiveNotice] = useState<Notice | null>(null);
+    const [unreadNoticesCount, setUnreadNoticesCount] = useState<number>(0);
     const [showDeleteSurveyConfirm, setShowDeleteSurveyConfirm] = useState(false);
     const [surveyToDelete, setSurveyToDelete] = useState<Survey | null>(null);
 
@@ -469,6 +470,7 @@ const App: React.FC = () => {
                     onNoticeClick={handleNoticeClick}
                     onToggleSidebar={toggleSidebar}
                     isSidebarExpanded={isSidebarExpanded}
+                    unreadNoticesCount={unreadNoticesCount}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-8"> {/* Ajustar padding para mobile */}
                     {renderContent()}

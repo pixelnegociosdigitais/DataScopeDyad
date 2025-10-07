@@ -1,11 +1,10 @@
 import React from 'react';
-import { User, Company, View, ModuleName, Notice } from '../types';
+import { User, Company, View, ModuleName } from '../types';
 import { LogoutIcon } from './icons/LogoutIcon';
 import { BuildingIcon } from './icons/BuildingIcon';
 import { UserIcon } from './icons/UserIcon';
-import { MenuIcon } from './icons/MenuIcon'; // Importar MenuIcon
+import { MenuIcon } from './icons/MenuIcon';
 import { BellIcon } from './icons/BellIcon';
-import NotificationBell from '../src/components/NotificationBell';
 
 interface HeaderProps {
     user: User;
@@ -13,13 +12,12 @@ interface HeaderProps {
     onLogout: () => void;
     setView: (view: View) => void;
     modulePermissions: Record<ModuleName, boolean>;
-    onNoticeClick: (notice: Notice) => void;
-    onToggleSidebar: () => void; // Nova prop para alternar a barra lateral
-    isSidebarExpanded: boolean; // Nova prop para o estado da barra lateral
+    onToggleSidebar: () => void;
+    isSidebarExpanded: boolean;
     unreadNoticesCount: number;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modulePermissions, onNoticeClick, onToggleSidebar, isSidebarExpanded, unreadNoticesCount }) => {
+const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modulePermissions, onToggleSidebar, isSidebarExpanded, unreadNoticesCount }) => {
     const canManageCompany = modulePermissions[ModuleName.MANAGE_COMPANY_SETTINGS] && company !== null;
 
     const handleCompanyClick = () => {
