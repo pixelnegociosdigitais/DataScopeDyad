@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Survey, User, Company, UserRole } from '../../types';
 import { CreateIcon } from '../../components/icons/CreateIcon';
 import { PencilIcon } from '../../components/icons/PencilIcon';
@@ -9,6 +9,8 @@ import { DownloadIcon } from '../../components/icons/DownloadIcon';
 import { QuestionIcon } from '../../components/icons/QuestionIcon';
 import { GiftIcon } from '../../components/icons/GiftIcon';
 import { TemplateIcon } from '../../components/icons/TemplateIcon';
+import { SurveyIcon } from '../../components/icons/SurveyIcon';
+import SurveyApplyModal from './SurveyApplyModal';
 
 interface SurveyTableListProps {
     surveys: Survey[];
@@ -23,7 +25,7 @@ interface SurveyTableListProps {
     onManageGiveaway: (survey: Survey) => void;
     onManageQuestions: (survey: Survey) => void;
     onShareSurvey: (surveyId: string) => void;
-    onDownloadReport: (survey: Survey) => Promise<void>;
+    onDownloadReport: (survey: Survey) => void;
     onManageTemplates: () => void;
 }
 
@@ -43,6 +45,7 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
     onDownloadReport,
     onManageTemplates,
 }) => {
+    const [selectedSurveyForApply, setSelectedSurveyForApply] = useState<Survey | null>(null);
     console.log('SurveyTableList: Received surveys prop:', surveys);
 
     return (
@@ -129,6 +132,13 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <div className="flex justify-end space-x-2">
                                                         <button
+                                            onClick={() => setSelectedSurveyForApply(survey)}
+                                            className="text-green-600 hover:text-green-900 p-2 rounded-full hover:bg-green-50"
+                                            title="Aplicar Pesquisa"
+                                        >
+                                            <SurveyIcon className="h-5 w-5" />
+                                        </button>
+                                                        <button
                                                             onClick={() => onViewResponses(survey)}
                                                             className="text-blue-600 hover:text-blue-900 p-2 rounded-full hover:bg-blue-50"
                                                             title="Ver Respostas"
@@ -211,6 +221,13 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                                         {/* Mobile Actions */}
                                         <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
                                             <button
+                                                onClick={() => setSelectedSurveyForApply(survey)}
+                                                className="flex items-center px-3 py-1.5 text-xs bg-green-50 text-green-600 rounded-md hover:bg-green-100"
+                                            >
+                                                <SurveyIcon className="h-3 w-3 mr-1" />
+                                                Aplicar
+                                            </button>
+                                            <button
                                                 onClick={() => onViewResponses(survey)}
                                                 className="flex items-center px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
                                             >
@@ -272,6 +289,13 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                         </>
                     )}
                 </>
+            )}
+            
+            {selectedSurveyForApply && (
+                <SurveyApplyModal
+                    survey={selectedSurveyForApply}
+                    onClose={() => setSelectedSurveyForApply(null)}
+                />
             )}
         </div>
     );
