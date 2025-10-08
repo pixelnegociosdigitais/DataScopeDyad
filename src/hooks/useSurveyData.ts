@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Survey, SurveyResponse, Question, RawSurveyData, User, Company, UserRole } from '@/types';
+import { Survey, SurveyResponse, Question, User, Company, UserRole } from '@/types';
 import { supabase } from '@/src/integrations/supabase/client';
 import { logActivity } from '@/src/utils/logger';
 
@@ -47,17 +47,8 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
             profiles (full_name)
         `;
 
-        // Simplificar a consulta para Desenvolvedores e Administradores para fins de depuração
-        if (user?.role === UserRole.DEVELOPER || user?.role === UserRole.ADMIN) {
-            console.log(`useSurveyData: fetchSurveys - Usuário é ${user.role}. Simplificando a consulta de seleção.`);
-            selectString = `
-                id,
-                title,
-                company_id,
-                created_by,
-                created_at
-            `;
-        }
+        // Manter consulta completa para todos os usuários para garantir que as perguntas sejam carregadas
+        console.log(`useSurveyData: fetchSurveys - Usuário é ${user?.role}. Usando consulta completa.`);
 
         let query = supabase
             .from('surveys')
@@ -89,39 +80,24 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
             console.log('useSurveyData: fetchSurveys - RAW data received from Supabase:', data);
             
             const fetchedSurveys: Survey[] = (data as any[]).map((s) => { // Cast to any[] for flexible mapping
-                if (user?.role === UserRole.DEVELOPER || user?.role === UserRole.ADMIN) {
-                    // Simplified mapping for DEVELOPER and ADMIN roles
-                    return {
-                        id: s.id,
-                        title: s.title,
-                        companyId: s.company_id,
-                        created_by: s.created_by,
-                        created_at: s.created_at,
-                        questions: [], // No questions in simplified query
-                        responseCount: 0, // No response count in simplified query
-                        companyName: 'N/A (View Simplificada)', // Placeholder
-                        createdByName: 'N/A (View Simplificada)' // Placeholder
-                    };
-                } else {
-                    // Original detailed mapping for other roles (e.g., User)
-                    return {
-                        id: s.id,
-                        title: s.title,
-                        companyId: s.company_id,
-                        created_by: s.created_by,
-                        created_at: s.created_at,
-                        questions: (s.questions || []).map((q: any) => ({
-                            id: q.id,
-                            text: q.text,
-                            type: q.type,
-                            options: q.options || undefined,
-                            position: q.position || 0,
-                        })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
-                        responseCount: s.survey_responses ? s.survey_responses.length : 0,
-                        companyName: s.companies && s.companies.length > 0 ? s.companies[0].name : 'N/A',
-                        createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
-                    };
-                }
+                // Mapeamento completo para todos os usuários
+                return {
+                    id: s.id,
+                    title: s.title,
+                    companyId: s.company_id,
+                    created_by: s.created_by,
+                    created_at: s.created_at,
+                    questions: (s.questions || []).map((q: any) => ({
+                        id: q.id,
+                        text: q.text,
+                        type: q.type,
+                        options: q.options || undefined,
+                        position: q.position || 0,
+                    })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
+                    responseCount: s.survey_responses ? s.survey_responses.length : 0,
+                    companyName: s.companies && s.companies.length > 0 ? s.companies[0].name : 'N/A',
+                    createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
+                };
             });
 
             console.log('useSurveyData: fetchSurveys - Processed surveys:', fetchedSurveys);
