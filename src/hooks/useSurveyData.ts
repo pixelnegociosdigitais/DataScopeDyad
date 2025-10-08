@@ -21,6 +21,30 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
     const [surveyResponses, setSurveyResponses] = useState<SurveyResponse[]>([]);
     const [loadingSurveys, setLoadingSurveys] = useState(true);
 
+    // Função auxiliar para buscar nomes dos perfis
+    const fetchProfileNames = useCallback(async (userIds: string[]): Promise<Record<string, string>> => {
+        if (userIds.length === 0) return {};
+        
+        const { data: profilesData, error } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .in('id', userIds);
+
+        if (error) {
+            console.error('useSurveyData: fetchProfileNames - Erro ao buscar perfis:', error);
+            return {};
+        }
+
+        const profileMap: Record<string, string> = {};
+        profilesData?.forEach(profile => {
+            if (profile.id && profile.full_name) {
+                profileMap[profile.id] = profile.full_name;
+            }
+        });
+
+        return profileMap;
+    }, []);
+
     const fetchSurveys = useCallback(async (companyId: string | undefined, user: User | null, company: Company | null): Promise<Survey[]> => {
         setLoadingSurveys(true);
         console.log('useSurveyData: fetchSurveys - Iniciando busca de pesquisas.');
@@ -43,8 +67,7 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
                 position
             ),
             survey_responses(*),
-            companies (name),
-            profiles (full_name)
+            companies (name)
         `;
 
         // Manter consulta completa para todos os usuários para garantir que as perguntas sejam carregadas
@@ -79,6 +102,10 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
         } else if (data) {
             console.log('useSurveyData: fetchSurveys - RAW data received from Supabase:', data);
             
+            // Extrair IDs únicos dos criadores para buscar seus nomes
+            const creatorIds = [...new Set(data.map((s: any) => s.created_by).filter(Boolean))];
+            const profileNames = await fetchProfileNames(creatorIds);
+            
             const fetchedSurveys: Survey[] = (data as any[]).map((s) => { // Cast to any[] for flexible mapping
                 // Mapeamento completo para todos os usuários
                 return {
@@ -95,8 +122,8 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
                         position: q.position || 0,
                     })).sort((a: Question, b: Question) => (a.position || 0) - (b.position || 0)),
                     responseCount: s.survey_responses ? s.survey_responses.length : 0,
-                    companyName: s.companies && s.companies.length > 0 ? s.companies[0].name : 'N/A',
-                    createdByName: s.profiles && s.profiles.length > 0 ? s.profiles[0].full_name : 'Usuário Desconhecido'
+                    companyName: s.companies?.name || 'N/A',
+                    createdByName: profileNames[s.created_by] || 'Usuário'
                 };
             });
 
@@ -109,7 +136,7 @@ export const useSurveyData = ({ currentUser: hookCurrentUser, currentCompany: ho
         setLoadingSurveys(false);
         console.log('useSurveyData: fetchSurveys - Nenhuma pesquisa encontrada ou erro, loadingSurveys = false.');
         return [];
-    }, [setSurveys, setLoadingSurveys, logActivity]);
+    }, [setSurveys, setLoadingSurveys, logActivity, fetchProfileNames]);
 
     const fetchSurveyResponses = useCallback(async (surveyId: string) => {
         console.log('useSurveyData: fetchSurveyResponses - Iniciando busca de respostas para surveyId:', surveyId);
