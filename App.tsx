@@ -245,12 +245,6 @@ const App: React.FC = () => {
         setCurrentView(View.GIVEAWAYS);
     }, []);
 
-    const handleShareSurvey = useCallback((surveyId: string) => {
-        const surveyLink = `${window.location.origin}/responder-pesquisa/${surveyId}`;
-        navigator.clipboard.writeText(surveyLink);
-        showSuccess('Link da pesquisa copiado para a área de transferência!');
-    }, []);
-
     const handleDownloadReport = useCallback(async (survey: Survey) => {
         if (!dashboardRef.current) {
             showError('Não foi possível encontrar o conteúdo do dashboard para exportar.');
@@ -346,7 +340,6 @@ const App: React.FC = () => {
                         onViewResponses={handleSelectSurveyForDashboard}
                         onManageGiveaway={handleManageGiveaway}
                         onManageQuestions={handleManageQuestions}
-                        onShareSurvey={handleShareSurvey}
                         onDownloadReport={handleDownloadReport}
                         onManageTemplates={handleManageTemplates}
                     />
@@ -489,7 +482,6 @@ const App: React.FC = () => {
                         onViewResponses={handleSelectSurveyForDashboard}
                         onManageGiveaway={handleManageGiveaway}
                         onManageQuestions={handleManageQuestions}
-                        onShareSurvey={handleShareSurvey}
                         onDownloadReport={handleDownloadReport}
                         onManageTemplates={handleManageTemplates}
                     />

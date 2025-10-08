@@ -47,6 +47,7 @@ export interface Question {
     type: QuestionType;
     options?: string[];
     position?: number; // Adicionado para corrigir o erro de tipagem
+    required?: boolean; // Adicionado para indicar se a pergunta é obrigatória
 }
 
 export interface Survey {

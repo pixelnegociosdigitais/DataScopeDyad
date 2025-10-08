@@ -4,7 +4,6 @@ import { CreateIcon } from '../../components/icons/CreateIcon';
 import { PencilIcon } from '../../components/icons/PencilIcon';
 import { TrashIcon } from '../../components/icons/TrashIcon';
 import { EyeIcon } from '../../components/icons/EyeIcon';
-import { ShareIcon } from '../../components/icons/ShareIcon';
 import { DownloadIcon } from '../../components/icons/DownloadIcon';
 import { QuestionIcon } from '../../components/icons/QuestionIcon';
 import { GiftIcon } from '../../components/icons/GiftIcon';
@@ -24,7 +23,6 @@ interface SurveyTableListProps {
     onViewResponses: (survey: Survey) => void;
     onManageGiveaway: (survey: Survey) => void;
     onManageQuestions: (survey: Survey) => void;
-    onShareSurvey: (surveyId: string) => void;
     onDownloadReport: (survey: Survey) => void;
     onManageTemplates: () => void;
 }
@@ -41,7 +39,6 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
     onViewResponses,
     onManageGiveaway,
     onManageQuestions,
-    onShareSurvey,
     onDownloadReport,
     onManageTemplates,
 }) => {
@@ -155,26 +152,19 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                                                             </button>
                                                         )}
                                                         <button
-                                                            onClick={() => onManageGiveaway(survey)}
-                                                            className="text-purple-600 hover:text-purple-900 p-2 rounded-full hover:bg-purple-50"
-                                                            title="Gerenciar Sorteio"
-                                                        >
-                                                            <GiftIcon className="h-5 w-5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => onShareSurvey(survey.id)}
-                                                            className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-50"
-                                                            title="Compartilhar Pesquisa"
-                                                        >
-                                                            <ShareIcon className="h-5 w-5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => onDownloadReport(survey)}
-                                                            className="text-yellow-600 hover:text-yellow-900 p-2 rounded-full hover:bg-yellow-50"
-                                                            title="Baixar Relatório"
-                                                        >
-                                                            <DownloadIcon className="h-5 w-5" />
-                                                        </button>
+                                            onClick={() => onManageGiveaway(survey)}
+                                            className="text-purple-600 hover:text-purple-900 p-2 rounded-full hover:bg-purple-50"
+                                            title="Gerenciar Sorteio"
+                                        >
+                                            <GiftIcon className="h-5 w-5" />
+                                        </button>
+                                        <button
+                                            onClick={() => onDownloadReport(survey)}
+                                            className="text-yellow-600 hover:text-yellow-900 p-2 rounded-full hover:bg-yellow-50"
+                                            title="Baixar Relatório"
+                                        >
+                                            <DownloadIcon className="h-5 w-5" />
+                                        </button>
                                                         {canManageSurveys && (
                                                             <>
                                                                 <button
@@ -249,13 +239,6 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                                             >
                                                 <GiftIcon className="h-3 w-3 mr-1" />
                                                 Sorteio
-                                            </button>
-                                            <button
-                                                onClick={() => onShareSurvey(survey.id)}
-                                                className="flex items-center px-3 py-1.5 text-xs bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-100"
-                                            >
-                                                <ShareIcon className="h-3 w-3 mr-1" />
-                                                Compartilhar
                                             </button>
                                             <button
                                                 onClick={() => onDownloadReport(survey)}

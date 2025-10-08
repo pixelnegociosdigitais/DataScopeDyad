@@ -16,11 +16,11 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
         const fetchQuestions = async () => {
             try {
                 setLoading(true);
-                const { data, error } = await supabase
+                const { data: questions, error } = await supabase
                     .from('questions')
                     .select('*')
                     .eq('survey_id', survey.id)
-                    .order('order_index', { ascending: true });
+                    .order('position', { ascending: true });
 
                 if (error) {
                     console.error('Erro ao buscar perguntas:', error);
@@ -28,7 +28,7 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
                     return;
                 }
 
-                setQuestions(data || []);
+                setQuestions(questions || []);
             } catch (error) {
                 console.error('Erro ao buscar perguntas:', error);
                 showError('Erro ao carregar as perguntas da pesquisa.');
@@ -48,18 +48,14 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
                 return 'Texto Longo';
             case QuestionType.MULTIPLE_CHOICE:
                 return 'Múltipla Escolha';
-            case QuestionType.SINGLE_CHOICE:
-                return 'Escolha Única';
+            case QuestionType.CHECKBOX:
+                return 'Caixas de Seleção';
             case QuestionType.RATING:
                 return 'Avaliação';
             case QuestionType.EMAIL:
                 return 'E-mail';
             case QuestionType.PHONE:
                 return 'Telefone';
-            case QuestionType.DATE:
-                return 'Data';
-            case QuestionType.NUMBER:
-                return 'Número';
             default:
                 return 'Desconhecido';
         }
