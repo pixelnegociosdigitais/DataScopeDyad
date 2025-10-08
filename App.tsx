@@ -17,6 +17,7 @@ import DeveloperCompanyUserManager from './src/components/DeveloperCompanyUserMa
 import AdministratorUserManager from './src/components/AdministratorUserManager';
 import LogsAndAuditPanel from './components/LogsAndAuditPanel';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
+import NotificationBell from './src/components/NotificationBell';
 import NoticeCreator from './src/components/NoticeCreator';
 import ChatLayout from './src/components/chat/ChatLayout';
 import SurveyTemplateManager from './src/components/SurveyTemplateManager';
@@ -253,6 +254,10 @@ const App: React.FC = () => {
         setActiveNotice(notice);
     }, []);
 
+    const updateUnreadNoticesCount = useCallback((count: number) => {
+        setUnreadNoticesCount(count);
+    }, []);
+
     const loading = loadingSession || loadingAuth || loadingSurveys;
 
     if (loading) {
@@ -370,6 +375,18 @@ const App: React.FC = () => {
                 return <LogsAndAuditPanel onBack={() => setCurrentView(View.SETTINGS_PANEL)} />;
             case View.MANAGE_NOTICES:
                 return <NoticeCreator onBack={handleBack} />;
+            case View.NOTICES:
+                return (
+                    <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
+                        <div className="flex items-center gap-4 mb-6">
+                            <button onClick={handleBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Voltar">
+                                <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
+                            </button>
+                            <h2 className="text-2xl font-bold text-text-main">Avisos</h2>
+                        </div>
+                        <NotificationBell onNoticeClick={handleNoticeClick} onUnreadCountChange={updateUnreadNoticesCount} />
+                    </div>
+                );
             case View.CHAT:
                 if (!currentCompany?.id) {
                     return (
@@ -467,7 +484,6 @@ const App: React.FC = () => {
                     onLogout={() => supabase.auth.signOut()}
                     setView={setCurrentView}
                     modulePermissions={modulePermissions}
-                    onNoticeClick={handleNoticeClick}
                     onToggleSidebar={toggleSidebar}
                     isSidebarExpanded={isSidebarExpanded}
                     unreadNoticesCount={unreadNoticesCount}

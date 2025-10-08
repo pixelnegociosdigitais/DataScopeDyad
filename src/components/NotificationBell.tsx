@@ -7,9 +7,10 @@ import { showError } from '../utils/toast';
 
 interface NotificationBellProps {
     onNoticeClick: (notice: Notice) => void;
+    onUnreadCountChange?: (count: number) => void;
 }
 
-const NotificationBell: React.FC<NotificationBellProps> = ({ onNoticeClick }) => {
+const NotificationBell: React.FC<NotificationBellProps> = ({ onNoticeClick, onUnreadCountChange }) => {
     const { currentUser, currentCompany, loadingAuth } = useAuth(() => {});
     const [unreadNotices, setUnreadNotices] = useState<Notice[]>([]);
     const [showPanel, setShowPanel] = useState(false);
@@ -19,6 +20,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNoticeClick }) =>
     const fetchUnreadNotices = useCallback(async () => {
         if (loadingAuth || !currentUser) {
             setUnreadNotices([]);
+            onUnreadCountChange?.(0);
             return;
         }
 
@@ -42,6 +44,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNoticeClick }) =>
                 console.error('Erro ao buscar avisos não lidos:', error);
                 showError('Não foi possível carregar os avisos.');
                 setUnreadNotices([]);
+                onUnreadCountChange?.(0);
             } else {
                 const filteredNotices = (data || [])
                     .filter(notice => {
@@ -62,6 +65,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onNoticeClick }) =>
                         user_notices: undefined // Remove a propriedade user_notices para limpar o objeto
                     }));
                 setUnreadNotices(filteredNotices as Notice[]);
+                onUnreadCountChange?.(filteredNotices.length);
             }
         } catch (err) {
             console.error('Erro inesperado ao buscar avisos não lidos:', err);

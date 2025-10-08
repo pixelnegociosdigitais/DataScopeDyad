@@ -29,8 +29,8 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modul
             <div className="flex items-center gap-4">
                 <button
                     onClick={onToggleSidebar}
-                    className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors md:hidden"
-                    aria-label="Abrir menu"
+                    className={`p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors md:hidden ${isSidebarExpanded ? 'bg-gray-100' : ''}`}
+                    aria-label={isSidebarExpanded ? "Fechar menu" : "Abrir menu"}
                 >
                     <MenuIcon className="h-6 w-6" />
                 </button>
