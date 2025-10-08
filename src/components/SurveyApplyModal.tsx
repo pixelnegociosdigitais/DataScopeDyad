@@ -16,7 +16,7 @@ interface FormAnswer {
 const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) => {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showForm, setShowForm] = useState(false);
+    const [showForm, setShowForm] = useState(true);
     const [answers, setAnswers] = useState<FormAnswer[]>([]);
     const [submitting, setSubmitting] = useState(false);
 
@@ -31,7 +31,7 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
                 .from('questions')
                 .select('*')
                 .eq('survey_id', survey.id)
-                .order('created_at', { ascending: true });
+                .order('position', { ascending: true });
 
             if (error) throw error;
             setQuestions(data || []);
@@ -408,7 +408,7 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
                             Responder Pesquisa: {survey.title}
                         </h2>
                         <button
-                            onClick={() => setShowForm(false)}
+                            onClick={onClose}
                             className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
                         >
                             ×
@@ -428,9 +428,6 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
                                         <div className="flex items-center gap-2 mb-3">
                                             <span className="bg-primary text-white text-sm px-2 py-1 rounded-full font-medium">
                                                 {index + 1}
-                                            </span>
-                                            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
-                                                {getQuestionTypeLabel(question.type)}
                                             </span>
                                             {question.required && (
                                                 <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
@@ -456,7 +453,7 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
                         <div className="flex justify-between">
                             <button
                                 type="button"
-                                onClick={() => setShowForm(false)}
+                                onClick={onClose}
                                 className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium"
                             >
                                 ← Voltar
