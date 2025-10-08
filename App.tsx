@@ -74,6 +74,36 @@ const App: React.FC = () => {
         handleDeleteTemplate,
     } = useSurveys(currentCompany, currentUser);
 
+    // Função de logoff melhorada
+    const handleLogout = useCallback(async () => {
+        try {
+            console.log('App: Iniciando processo de logoff...');
+            
+            // Limpar estados locais antes do signOut
+            setCurrentView(View.SURVEY_LIST);
+            setSelectedSurvey(null);
+            setEditingSurvey(null);
+            setActiveNotice(null);
+            setUnreadNoticesCount(0);
+            setShowDeleteSurveyConfirm(false);
+            setSurveyToDelete(null);
+            
+            // Realizar o signOut do Supabase
+            const { error } = await supabase.auth.signOut();
+            
+            if (error) {
+                console.error('App: Erro durante o logoff:', error);
+                showError('Erro ao realizar logoff. Tente novamente.');
+            } else {
+                console.log('App: Logoff realizado com sucesso');
+                showSuccess('Logoff realizado com sucesso');
+            }
+        } catch (error) {
+            console.error('App: Erro inesperado durante o logoff:', error);
+            showError('Erro inesperado durante o logoff');
+        }
+    }, []);
+
     useEffect(() => {
         if (loadingSession || loadingAuth || loadingSurveys) {
             console.log('App: Global loading state active. loadingSession:', loadingSession, 'loadingAuth:', loadingAuth, 'loadingSurveys:', loadingSurveys);
@@ -295,7 +325,7 @@ const App: React.FC = () => {
         }
 
         if (!currentCompany && currentUser.role !== UserRole.DEVELOPER) {
-            return <JoinCompanyPrompt user={currentUser} onLogout={() => supabase.auth.signOut()} />;
+            return <JoinCompanyPrompt user={currentUser} onLogout={handleLogout} />;
         }
 
         // Adicionando log para verificar o conteúdo de 'surveys' antes de renderizar SurveyTableList
@@ -481,7 +511,7 @@ const App: React.FC = () => {
                 <Header
                     user={currentUser}
                     company={currentCompany}
-                    onLogout={() => supabase.auth.signOut()}
+                    onLogout={handleLogout}
                     setView={setCurrentView}
                     modulePermissions={modulePermissions}
                     onToggleSidebar={toggleSidebar}

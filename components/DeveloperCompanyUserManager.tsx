@@ -369,7 +369,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                     </label>
                                 </td>
                                 <td className="py-3 px-4 text-center">
-                                    <div className="flex justify-center gap-2">
+                                    <div className="flex flex-col lg:flex-row justify-center items-center gap-1 lg:gap-2">
                                         <button
                                             onClick={() => handleOpenEditCompanyModal(company)}
                                             className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
@@ -396,9 +396,10 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                         {company.administrators && company.administrators.length > 0 && (
                                             <button
                                                 onClick={() => confirmResetAdminPassword(company.administrators[0].id, company.administrators[0].fullName)}
-                                                className="px-3 py-1 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10"
+                                                className="px-2 lg:px-3 py-1 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10 whitespace-nowrap"
                                             >
-                                                Redefinir Senha Admin
+                                                <span className="hidden lg:inline">Redefinir Senha Admin</span>
+                                                <span className="lg:hidden">Reset</span>
                                             </button>
                                         )}
                                     </div>
@@ -458,34 +459,38 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                         <div className="flex flex-wrap gap-2">
                             <button
                                 onClick={() => handleOpenEditCompanyModal(company)}
-                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10"
+                                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10 flex-1 sm:flex-none justify-center"
                             >
                                 <BuildingIcon className="h-4 w-4" />
-                                Editar Empresa
+                                <span className="hidden sm:inline">Editar Empresa</span>
+                                <span className="sm:hidden">Editar</span>
                             </button>
                             {company.administrators && company.administrators.length > 0 && (
                                 <>
                                     <button
                                         onClick={() => handleOpenEditAdminModal(company.administrators[0])}
-                                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10"
+                                        className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10 flex-1 sm:flex-none justify-center"
                                     >
                                         <UserIcon className="h-4 w-4" />
-                                        Editar Admin
+                                        <span className="hidden sm:inline">Editar Admin</span>
+                                        <span className="sm:hidden">Admin</span>
                                     </button>
                                     <button
                                         onClick={() => confirmResetAdminPassword(company.administrators[0].id, company.administrators[0].fullName)}
-                                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-secondary border border-secondary rounded-md hover:bg-secondary/10"
+                                        className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-secondary border border-secondary rounded-md hover:bg-secondary/10 flex-1 sm:flex-none justify-center"
                                     >
-                                        Redefinir Senha
+                                        <span className="hidden sm:inline">Redefinir Senha</span>
+                                        <span className="sm:hidden">Reset</span>
                                     </button>
                                 </>
                             )}
                             <button
                                 onClick={() => confirmDeleteCompany(company)}
-                                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 border border-red-600 rounded-md hover:bg-red-50"
+                                className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-red-600 border border-red-600 rounded-md hover:bg-red-50 flex-1 sm:flex-none justify-center"
                             >
                                 <TrashIcon className="h-4 w-4" />
-                                Excluir
+                                <span className="hidden sm:inline">Excluir</span>
+                                <span className="sm:hidden">Del</span>
                             </button>
                         </div>
                     </div>
@@ -542,16 +547,16 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                 />
                             </div>
                         </div>
-                        <div className="mt-6 flex justify-end gap-3">
+                        <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
                             <button
                                 onClick={() => setShowCreateCompanyModal(false)}
-                                className="px-4 py-2 font-semibold text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                                className="w-full sm:w-auto px-4 py-2 font-semibold text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleCreateCompanyAndAdmin}
-                                className="px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                                className="w-full sm:w-auto px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
                             >
                                 Criar
                             </button>

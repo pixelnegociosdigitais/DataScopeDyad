@@ -278,7 +278,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({
                                     </label>
                                 </td>
                                 <td className="py-3 px-4 text-center">
-                                    <div className="flex justify-center gap-2">
+                                    <div className="flex flex-col sm:flex-row justify-center items-center gap-1 sm:gap-2">
                                         <button
                                             onClick={() => handleOpenEditUserModal(user)}
                                             className="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-primary/10 transition-colors"
@@ -288,16 +288,18 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({
                                         </button>
                                         <button
                                             onClick={() => confirmResetUserPassword(user.id, user.fullName)}
-                                            className="px-3 py-1 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10"
+                                            className="px-2 sm:px-3 py-1 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10 whitespace-nowrap"
                                         >
-                                            Redefinir Senha
+                                            <span className="hidden sm:inline">Redefinir Senha</span>
+                                            <span className="sm:hidden">Reset</span>
                                         </button>
                                         {user.role === UserRole.USER && (
                                             <button
                                                 onClick={() => handleOpenPermissionsModal(user)}
-                                                className="px-3 py-1 text-xs font-medium text-secondary border border-secondary rounded-md hover:bg-secondary/10"
+                                                className="px-2 sm:px-3 py-1 text-xs font-medium text-secondary border border-secondary rounded-md hover:bg-secondary/10 whitespace-nowrap"
                                             >
-                                                Permissões
+                                                <span className="hidden sm:inline">Permissões</span>
+                                                <span className="sm:hidden">Perm</span>
                                             </button>
                                         )}
                                         <button
@@ -355,16 +357,16 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({
                                 />
                             </div>
                         </div>
-                        <div className="mt-6 flex justify-end gap-3">
+                        <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
                             <button
                                 onClick={() => setShowCreateUserModal(false)}
-                                className="px-4 py-2 font-semibold text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                                className="w-full sm:w-auto px-4 py-2 font-semibold text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleCreateUser}
-                                className="px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                                className="w-full sm:w-auto px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
                             >
                                 Cadastrar
                             </button>
@@ -394,16 +396,16 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({
                                 );
                             })}
                         </div>
-                        <div className="mt-6 flex justify-end gap-3">
+                        <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
                             <button
                                 onClick={handleClosePermissionsModal}
-                                className="px-4 py-2 font-semibold text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                                className="w-full sm:w-auto px-4 py-2 font-semibold text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleSavePermissions}
-                                className="px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                                className="w-full sm:w-auto px-4 py-2 font-semibold text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
                             >
                                 Salvar Permissões
                             </button>
