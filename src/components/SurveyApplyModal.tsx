@@ -19,6 +19,7 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
     const [showForm, setShowForm] = useState(true);
     const [answers, setAnswers] = useState<FormAnswer[]>([]);
     const [submitting, setSubmitting] = useState(false);
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
     useEffect(() => {
         fetchQuestions();
@@ -112,8 +113,7 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
             const { data: responseData, error: responseError } = await supabase
                 .from('survey_responses')
                 .insert({
-                    survey_id: survey.id,
-                    submitted_at: new Date().toISOString()
+                    survey_id: survey.id
                 })
                 .select()
                 .single();
@@ -127,10 +127,10 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
                     (!Array.isArray(answer.answer) && answer.answer.trim())
                 )
                 .map(answer => ({
-                    survey_response_id: responseData.id,
+                    response_id: responseData.id,
                     question_id: answer.questionId,
-                    answer_text: Array.isArray(answer.answer) 
-                        ? answer.answer.join(', ') 
+                    value: Array.isArray(answer.answer)
+                        ? answer.answer.join(', ')
                         : answer.answer
                 }));
 
@@ -143,13 +143,31 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
             }
 
             showSuccess('Respostas enviadas com sucesso!');
-            onClose();
+            setShowConfirmation(true);
+            setShowForm(false);
         } catch (error) {
             console.error('Erro ao enviar respostas:', error);
             showError('Erro ao enviar respostas. Tente novamente.');
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleNewResponse = () => {
+        // Reset form state
+        setShowConfirmation(false);
+        setShowForm(true);
+        
+        // Reset answers
+        const initialAnswers: FormAnswer[] = questions.map(question => ({
+            questionId: question.id,
+            answer: question.type === QuestionType.CHECKBOX ? [] : ''
+        }));
+        setAnswers(initialAnswers);
+    };
+
+    const handleCloseForm = () => {
+        onClose();
     };
 
     const renderQuestionInput = (question: Question) => {
@@ -276,7 +294,8 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
         }
     };
 
-    if (!showForm) {
+    // Priorizar tela de confirmação sobre tela de visualização
+    if (!showForm && !showConfirmation) {
 
         return (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -402,79 +421,132 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
-                <div className="p-6 border-b border-gray-200">
-                    <div className="flex justify-between items-start">
-                        <h2 className="text-xl font-bold text-gray-900">
-                            Responder Pesquisa: {survey.title}
-                        </h2>
-                        <button
-                            onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-                        >
-                            ×
-                        </button>
-                    </div>
-                    <p className="text-gray-600 mt-2">
-                        Preencha as respostas para cada pergunta abaixo
-                    </p>
-                </div>
+                {showConfirmation ? (
+                    // Confirmation screen
+                    <>
+                        <div className="p-6 border-b border-gray-200">
+                            <div className="flex justify-between items-start">
+                                <h2 className="text-xl font-bold text-gray-900">
+                                    Respostas Enviadas com Sucesso!
+                                </h2>
+                                <button
+                                    onClick={handleCloseForm}
+                                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        </div>
 
-                <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="flex-1 flex flex-col">
-                    <div className="p-6 overflow-y-auto max-h-[60vh] flex-1">
-                        <div className="space-y-6">
-                            {questions.map((question, index) => (
-                                <div key={question.id} className="border border-gray-200 rounded-lg p-6 bg-white">
-                                    <div className="mb-4">
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <span className="bg-primary text-white text-sm px-2 py-1 rounded-full font-medium">
-                                                {index + 1}
-                                            </span>
-                                            <h4 className="text-lg font-medium text-gray-900 flex-1">
-                                                {question.text}
-                                                {question.required && <span className="text-red-500 ml-1">*</span>}
-                                            </h4>
-                                            {question.required && (
-                                                <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
-                                                    Obrigatória
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="mt-4">
-                                        {renderQuestionInput(question)}
-                                    </div>
+                        <div className="p-8 flex-1 flex flex-col items-center justify-center text-center">
+                            <div className="mb-6">
+                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                    Obrigado pela sua participação!
+                                </h3>
+                                <p className="text-gray-600">
+                                    Suas respostas foram registradas com sucesso. O que você gostaria de fazer agora?
+                                </p>
+                            </div>
 
-                    <div className="p-6 border-t border-gray-200 bg-gray-50">
-                        <div className="flex justify-between">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium"
-                            >
-                                ← Voltar
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={submitting}
-                                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                                {submitting ? (
-                                    <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                        Enviando...
-                                    </>
-                                ) : (
-                                    'Enviar Respostas'
-                                )}
-                            </button>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={handleNewResponse}
+                                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                                >
+                                    Enviar Nova Resposta
+                                </button>
+                                <button
+                                    onClick={handleCloseForm}
+                                    className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors"
+                                >
+                                    Fechar Formulário
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </form>
+                    </>
+                ) : (
+                    // Form screen
+                    <>
+                        <div className="p-6 border-b border-gray-200">
+                            <div className="flex justify-between items-start">
+                                <h2 className="text-xl font-bold text-gray-900">
+                                    Responder Pesquisa: {survey.title}
+                                </h2>
+                                <button
+                                    onClick={onClose}
+                                    className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <p className="text-gray-600 mt-2">
+                                Preencha as respostas para cada pergunta abaixo
+                            </p>
+                        </div>
+
+                        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="flex-1 flex flex-col">
+                            <div className="p-6 overflow-y-auto max-h-[60vh] flex-1">
+                                <div className="space-y-6">
+                                    {questions.map((question, index) => (
+                                        <div key={question.id} className="border border-gray-200 rounded-lg p-6 bg-white">
+                                            <div className="mb-4">
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <span className="bg-primary text-white text-sm px-2 py-1 rounded-full font-medium">
+                                                        {index + 1}
+                                                    </span>
+                                                    <h4 className="text-lg font-medium text-gray-900 flex-1">
+                                                        {question.text}
+                                                        {question.required && <span className="text-red-500 ml-1">*</span>}
+                                                    </h4>
+                                                    {question.required && (
+                                                        <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                                                            Obrigatória
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="mt-4">
+                                                {renderQuestionInput(question)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="p-6 border-t border-gray-200 bg-gray-50">
+                                <div className="flex justify-between">
+                                    <button
+                                        type="button"
+                                        onClick={onClose}
+                                        className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium"
+                                    >
+                                        ← Voltar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={submitting}
+                                        className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                                Enviando...
+                                            </>
+                                        ) : (
+                                            'Enviar Respostas'
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </>
+                )}
             </div>
         </div>
     );
