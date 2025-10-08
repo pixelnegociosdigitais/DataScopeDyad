@@ -425,20 +425,20 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
                             {questions.map((question, index) => (
                                 <div key={question.id} className="border border-gray-200 rounded-lg p-6 bg-white">
                                     <div className="mb-4">
-                                        <div className="flex items-center gap-2 mb-3">
+                                        <div className="flex items-center gap-3 mb-4">
                                             <span className="bg-primary text-white text-sm px-2 py-1 rounded-full font-medium">
                                                 {index + 1}
                                             </span>
+                                            <h4 className="text-lg font-medium text-gray-900 flex-1">
+                                                {question.text}
+                                                {question.required && <span className="text-red-500 ml-1">*</span>}
+                                            </h4>
                                             {question.required && (
                                                 <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
                                                     Obrigatória
                                                 </span>
                                             )}
                                         </div>
-                                        <h4 className="text-lg font-medium text-gray-900 mb-4">
-                                            {question.text}
-                                            {question.required && <span className="text-red-500 ml-1">*</span>}
-                                        </h4>
                                     </div>
                                     
                                     <div className="mt-4">
