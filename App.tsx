@@ -251,13 +251,13 @@ const App: React.FC = () => {
             return;
         }
         try {
-            await generatePdfReport(survey, dashboardRef.current);
+            await generatePdfReport(survey, dashboardRef.current, currentCompany);
             showSuccess('Relatório PDF gerado com sucesso!');
         } catch (error: any) {
             console.error('Erro ao gerar relatório PDF:', error.message);
             showError('Não foi possível gerar o relatório PDF.');
         }
-    }, []);
+    }, [currentCompany]);
 
     const handleManageTemplates = useCallback(() => {
         setCurrentView(View.SURVEY_TEMPLATES);
@@ -353,7 +353,7 @@ const App: React.FC = () => {
                 return null;
             case View.DASHBOARD:
                 if (selectedSurvey) {
-                    return <Dashboard survey={selectedSurvey} responses={surveyResponses} onBack={handleBack} dashboardRef={dashboardRef} />;
+                    return <Dashboard survey={selectedSurvey} responses={surveyResponses} onBack={handleBack} dashboardRef={dashboardRef} onDownloadReport={handleDownloadReport} />;
                 }
                 return null;
             case View.PROFILE:

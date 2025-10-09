@@ -9,6 +9,7 @@ interface DashboardProps {
     responses: SurveyResponse[];
     onBack: () => void;
     dashboardRef: React.RefObject<HTMLDivElement | null>; // Updated to allow null
+    onDownloadReport: (survey: Survey) => void;
 }
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#14B8A6', '#F97316'];
@@ -79,7 +80,7 @@ const InteractivePie: React.FC<InteractivePieChartProps> = ({
 );
 
 
-const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashboardRef }) => {
+const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashboardRef, onDownloadReport }) => {
     const [activeIndex, setActiveIndex] = React.useState(0);
 
     const onPieEnter = (_: any, index: number) => {
@@ -160,7 +161,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
-                    <button onClick={() => dashboardRef.current && (window as any).handleDownloadReport(survey, dashboardRef.current)} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">
+                    <button onClick={() => onDownloadReport(survey)} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">
                         <DownloadIcon className="h-4 w-4" /> 
                         <span className="hidden sm:inline">Exportar PDF</span>
                         <span className="sm:hidden">PDF</span>
@@ -175,6 +176,81 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
 
             {/* Dashboard Content - Responsive */}
             <div ref={dashboardRef} className="p-2 sm:p-4 bg-gray-50 rounded-lg">
+                {/* Tabela de Dados Brutos */}
+                <div className="bg-white p-3 sm:p-6 rounded-lg shadow-md mb-4 sm:mb-6">
+                    <h3 className="text-base sm:text-lg font-semibold text-text-main mb-4">
+                        Dados das Respostas
+                        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full ml-2 inline-block">TABELA</span>
+                    </h3>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full table-auto border-collapse border border-gray-300">
+                            <thead>
+                                <tr className="bg-gray-100">
+                                    <th className="border border-gray-300 px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700">
+                                        #
+                                    </th>
+                                    {(survey.questions || []).map((question) => (
+                                        <th key={question.id} className="border border-gray-300 px-2 sm:px-4 py-2 text-left text-xs sm:text-sm font-medium text-gray-700 min-w-[120px] max-w-[200px]">
+                                            <div className="truncate" title={question.text}>
+                                                {question.text}
+                                            </div>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {responses.filter(response => {
+                                    // Filtrar respostas que têm pelo menos uma resposta válida
+                                    return response.answers.some(answer => {
+                                        if (Array.isArray(answer.value)) {
+                                            return answer.value.length > 0;
+                                        }
+                                        return answer.value !== null && answer.value !== undefined && String(answer.value).trim() !== '';
+                                    });
+                                }).map((response, index) => (
+                                    <tr key={response.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                                        <td className="border border-gray-300 px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-600 font-medium">
+                                            {index + 1}
+                                        </td>
+                                        {(survey.questions || []).map((question) => {
+                                            const answer = response.answers.find(a => a.questionId === question.id);
+                                            let displayValue = '';
+                                            
+                                            if (answer) {
+                                                if (Array.isArray(answer.value)) {
+                                                    displayValue = answer.value.join(', ');
+                                                } else {
+                                                    displayValue = String(answer.value);
+                                                }
+                                            }
+                                            
+                                            return (
+                                                <td key={question.id} className="border border-gray-300 px-2 sm:px-4 py-2 text-xs sm:text-sm text-gray-700 max-w-[200px]">
+                                                    <div className="break-words" title={displayValue}>
+                                                        {displayValue || '-'}
+                                                    </div>
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {responses.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                                Ainda não há respostas para esta pesquisa.
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Análise por Pergunta */}
+                <div className="mb-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-text-main mb-4">
+                        Análise por Pergunta
+                    </h3>
+                </div>
+                
                 {(analysis || []).map((q) => (
                     <div key={q.id} className="bg-white p-3 sm:p-6 rounded-lg shadow-md mb-4 sm:mb-6">
                         <h3 className="text-base sm:text-lg font-semibold text-text-main mb-4 break-words">
