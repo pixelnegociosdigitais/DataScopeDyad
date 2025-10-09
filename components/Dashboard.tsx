@@ -143,15 +143,45 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
 
         // Cabeçalho da tabela de dados
         csvContent += `"DADOS DAS RESPOSTAS"\r\n`;
-        const headers = ['#'].concat((survey.questions || []).map(q => `"${q.text.replace(/"/g, '""')}"`));
-        csvContent += headers.join(',') + "\r\n";
+        
+        // Criar cabeçalhos específicos baseados no conteúdo das perguntas
+        const specificHeaders = ['#'];
+        
+        // Analisar as perguntas para criar cabeçalhos mais específicos
+        (survey.questions || []).forEach(question => {
+            const questionText = question.text.toLowerCase();
+            
+            // Mapear perguntas para cabeçalhos específicos
+            if (questionText.includes('nome') && questionText.includes('completo')) {
+                specificHeaders.push('Nome Completo');
+            } else if (questionText.includes('telefone')) {
+                specificHeaders.push('Telefone');
+            } else if (questionText.includes('sono')) {
+                specificHeaders.push('Como está o seu sono');
+            } else if (questionText.includes('marca') || questionText.includes('conhecia')) {
+                specificHeaders.push('Conhecia nossa marca');
+            } else {
+                // Para outras perguntas, usar o texto original mas limitar o tamanho
+                const cleanText = question.text.length > 30 
+                    ? question.text.substring(0, 30) + '...' 
+                    : question.text;
+                specificHeaders.push(cleanText);
+            }
+        });
+
+        // Adicionar cabeçalhos ao CSV
+        csvContent += specificHeaders.map(header => `"${header.replace(/"/g, '""')}"`).join(',') + "\r\n";
 
         // Dados das respostas
         responses.forEach((res, index) => {
             const rowNumber = index + 1;
-            const row = [rowNumber].concat((survey.questions || []).map(q => {
-                const answer = res.answers.find(a => a.questionId === q.id);
+            const row = [rowNumber];
+            
+            // Processar cada resposta de acordo com a pergunta
+            (survey.questions || []).forEach(question => {
+                const answer = res.answers.find(a => a.questionId === question.id);
                 let value = '';
+                
                 if (answer) {
                     if (Array.isArray(answer.value)) {
                         value = answer.value.join('; '); // Para arrays de checkbox
@@ -159,8 +189,20 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
                         value = String(answer.value);
                     }
                 }
-                return `"${value.replace(/"/g, '""')}"`;
-            }));
+                
+                // Formatação específica baseada no tipo de pergunta
+                const questionText = question.text.toLowerCase();
+                if (questionText.includes('telefone')) {
+                    // Formatar telefone se necessário
+                    value = value.replace(/\D/g, ''); // Remove caracteres não numéricos
+                    if (value.length === 11) {
+                        value = `(${value.substring(0,2)}) ${value.substring(2,7)}-${value.substring(7)}`;
+                    }
+                }
+                
+                row.push(`"${value.replace(/"/g, '""')}"`);
+            });
+            
             csvContent += row.join(',') + "\r\n";
         });
 
