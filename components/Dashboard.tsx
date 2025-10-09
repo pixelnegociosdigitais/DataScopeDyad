@@ -118,10 +118,22 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
     }, [survey, responses]);
 
     const exportToCSV = () => {
+        // Usar ponto e vírgula como delimitador (padrão Excel pt-BR)
+        const DELIM = ';';
+        // Função auxiliar para escapar valores CSV
+        const escapeCSVValue = (value: string): string => {
+            // Se o valor contém delimitador, quebra de linha ou aspas, deve ser envolvido em aspas
+            if (value.includes(DELIM) || value.includes('\n') || value.includes('\r') || value.includes('"')) {
+                // Escapar aspas duplas duplicando-as
+                const escapedValue = value.replace(/"/g, '""');
+                return `"${escapedValue}"`;
+            }
+            return value;
+        };
+
         // Adicionar BOM (Byte Order Mark) para garantir codificação UTF-8 correta
         const BOM = '\uFEFF';
-        let csvContent = '';
-
+        
         // Obter data e hora atual formatada
         const now = new Date();
         const dateTime = now.toLocaleString('pt-BR', {
@@ -133,92 +145,108 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
             second: '2-digit'
         });
 
-        // Cabeçalho com informações da empresa e pesquisa
-        csvContent += `"RELATÓRIO DE PESQUISA"\r\n`;
-        csvContent += `"Empresa:","${survey.companyName || 'N/A'}"\r\n`;
-        csvContent += `"Pesquisa:","${survey.title}"\r\n`;
-        csvContent += `"Total de Respostas:","${responses.length}"\r\n`;
-        csvContent += `"Data de Geração:","${dateTime}"\r\n`;
-        csvContent += `\r\n`; // Linha em branco para separar
+        // Criar array de linhas CSV
+        const csvLines: string[] = [];
 
-        // Cabeçalho da tabela de dados
-        csvContent += `"DADOS DAS RESPOSTAS"\r\n`;
+        // Cabeçalho do relatório (exatamente como na imagem)
+        // Linha especial para Excel reconhecer o delimitador
+        csvLines.push('sep=;');
+        csvLines.push('RELATÓRIO DE PESQUISA');
+        csvLines.push(`Empresa: ${survey.companyName || 'Pixel Negócios Digitais'}`);
+        csvLines.push(`Pesquisa: ${survey.title}`);
+        csvLines.push(`Total de Respostas: ${responses.length}`);
+        csvLines.push(`Data de Geração: ${dateTime}`);
+        csvLines.push(''); // Linha em branco
+        csvLines.push('DADOS DAS RESPOSTAS');
+
+        // Criar cabeçalhos das colunas
+        const headers: string[] = ['#', 'Nome Completo', 'Telefone'];
         
-        // Criar cabeçalhos específicos baseados no conteúdo das perguntas
-        const specificHeaders = ['#'];
-        
-        // Analisar as perguntas para criar cabeçalhos mais específicos
+        // Adicionar as perguntas como cabeçalhos (exceto nome e telefone que já estão)
         (survey.questions || []).forEach(question => {
             const questionText = question.text.toLowerCase();
-            
-            // Mapear perguntas para cabeçalhos específicos
-            if (questionText.includes('nome') && questionText.includes('completo')) {
-                specificHeaders.push('Nome Completo');
-            } else if (questionText.includes('telefone')) {
-                specificHeaders.push('Telefone');
-            } else if (questionText.includes('sono')) {
-                specificHeaders.push('Como está o seu sono');
-            } else if (questionText.includes('marca') || questionText.includes('conhecia')) {
-                specificHeaders.push('Conhecia nossa marca');
-            } else {
-                // Para outras perguntas, usar o texto original mas limitar o tamanho
-                const cleanText = question.text.length > 30 
-                    ? question.text.substring(0, 30) + '...' 
-                    : question.text;
-                specificHeaders.push(cleanText);
+            // Pular perguntas de nome e telefone pois já estão nos cabeçalhos fixos
+            if (!questionText.includes('nome') && !questionText.includes('telefone')) {
+                headers.push(question.text);
             }
         });
 
-        // Adicionar cabeçalhos ao CSV
-        csvContent += specificHeaders.map(header => `"${header.replace(/"/g, '""')}"`).join(',') + "\r\n";
+        // Adicionar linha de cabeçalhos com delimitador
+        csvLines.push(headers.map(header => escapeCSVValue(header)).join(DELIM));
 
-        // Dados das respostas
-        responses.forEach((res, index) => {
-            const rowNumber = index + 1;
-            const row = [rowNumber];
+        // Processar cada resposta
+        responses.forEach((response, responseIndex) => {
+            const row: string[] = [];
             
-            // Processar cada resposta de acordo com a pergunta
+            // Número sequencial
+            row.push((responseIndex + 1).toString());
+            
+            // Buscar nome e telefone
+            let nomeCompleto = '';
+            let telefone = '';
+            
+            // Encontrar respostas de nome e telefone
             (survey.questions || []).forEach(question => {
-                const answer = res.answers.find(a => a.questionId === question.id);
-                let value = '';
-                
-                if (answer) {
-                    if (Array.isArray(answer.value)) {
-                        value = answer.value.join('; '); // Para arrays de checkbox
-                    } else {
-                        value = String(answer.value);
+                const answer = response.answers.find(a => a.questionId === question.id);
+                if (answer && answer.value) {
+                    const questionText = question.text.toLowerCase();
+                    if (questionText.includes('nome')) {
+                        nomeCompleto = String(answer.value);
+                    } else if (questionText.includes('telefone')) {
+                        const phoneValue = String(answer.value);
+                        const cleanPhone = phoneValue.replace(/\D/g, '');
+                        if (cleanPhone.length === 11) {
+                            telefone = `(${cleanPhone.substring(0,2)}) ${cleanPhone.substring(2,7)}-${cleanPhone.substring(7)}`;
+                        } else if (cleanPhone.length === 10) {
+                            telefone = `(${cleanPhone.substring(0,2)}) ${cleanPhone.substring(2,6)}-${cleanPhone.substring(6)}`;
+                        } else {
+                            telefone = phoneValue;
+                        }
                     }
                 }
-                
-                // Formatação específica baseada no tipo de pergunta
-                const questionText = question.text.toLowerCase();
-                if (questionText.includes('telefone')) {
-                    // Formatar telefone se necessário
-                    value = value.replace(/\D/g, ''); // Remove caracteres não numéricos
-                    if (value.length === 11) {
-                        value = `(${value.substring(0,2)}) ${value.substring(2,7)}-${value.substring(7)}`;
-                    }
-                }
-                
-                row.push(`"${value.replace(/"/g, '""')}"`);
             });
             
-            csvContent += row.join(',') + "\r\n";
+            // Adicionar nome e telefone
+            row.push(nomeCompleto);
+            row.push(telefone);
+            
+            // Adicionar outras respostas (exceto nome e telefone)
+            (survey.questions || []).forEach(question => {
+                const questionText = question.text.toLowerCase();
+                // Pular perguntas de nome e telefone
+                if (!questionText.includes('nome') && !questionText.includes('telefone')) {
+                    const answer = response.answers.find(a => a.questionId === question.id);
+                    let cellValue = '';
+                    
+                    if (answer && answer.value !== null && answer.value !== undefined) {
+                        if (Array.isArray(answer.value)) {
+                            // Para checkboxes, juntar valores com ponto e vírgula
+                            cellValue = answer.value.filter(v => v !== null && v !== undefined).join('; ');
+                        } else {
+                            cellValue = String(answer.value);
+                        }
+                    }
+                    
+                    row.push(cellValue.trim());
+                }
+            });
+            
+            // Adicionar a linha ao CSV com delimitador
+            csvLines.push(row.map(cell => escapeCSVValue(cell)).join(DELIM));
         });
 
-        // Rodapé com informações adicionais
-        csvContent += `\r\n`; // Linha em branco
-        csvContent += `"INFORMAÇÕES ADICIONAIS"\r\n`;
-        csvContent += `"Arquivo gerado em:","${dateTime}"\r\n`;
-        csvContent += `"Sistema:","DataScope - Gestão de Pesquisas"\r\n`;
+        // Juntar todas as linhas
+        const csvContent = csvLines.join('\r\n');
 
-        // Criar blob com BOM para garantir codificação UTF-8
-        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+        // Criar e baixar o arquivo com BOM explícito em bytes para garantir acentuação correta
+        const BOM_BYTES = new Uint8Array([0xEF, 0xBB, 0xBF]);
+        const csvBuffer = new TextEncoder().encode(csvContent);
+        const blob = new Blob([BOM_BYTES, csvBuffer], { type: 'text/csv;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", `${survey.title.replace(/\s/g, '_')}_dados.csv`);
+        link.setAttribute("download", `${survey.title.replace(/[^a-zA-Z0-9]/g, '_')}_respostas.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
