@@ -42,7 +42,7 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modul
                     aria-label="Ver avisos"
                 >
                     <BellIcon className="h-5 w-5" />
-                    <span className="hidden sm:inline">Avisos</span>
+                    <span className="hidden sm:inline">AVISOS</span>
                     {unreadNoticesCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                             {unreadNoticesCount > 9 ? '9+' : unreadNoticesCount}
@@ -59,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modul
                         aria-label="Configurar empresa"
                     >
                         <BuildingIcon className="h-5 w-5" />
-                        <span className="hidden lg:inline">Nenhuma Empresa</span>
+                        <span className="hidden lg:inline">NENHUMA EMPRESA</span>
                     </button>
                 ) : canManageCompany ? (
                     <button
@@ -68,12 +68,12 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modul
                         aria-label="Configurações da empresa"
                     >
                         <BuildingIcon className="h-5 w-5" />
-                        <span className="hidden lg:inline">{company.name}</span>
+                        <span className="hidden lg:inline">{company.name.toUpperCase()}</span>
                     </button>
                 ) : (
                     <div className="flex items-center gap-2 text-sm text-text-light">
                         <BuildingIcon className="h-5 w-5" />
-                        <span className="hidden lg:inline">{company.name}</span>
+                        <span className="hidden lg:inline">{company.name.toUpperCase()}</span>
                     </div>
                 )}
                 
@@ -89,8 +89,8 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modul
                     )}
                    
                     <div className="text-left hidden sm:block">
-                        <span className="font-semibold text-text-main block text-sm sm:text-base">{user.fullName}</span>
-                        <span className="text-xs text-gray-500">{user.role}</span>
+                        <span className="font-semibold text-text-main block text-sm sm:text-base">{user.fullName.toUpperCase()}</span>
+                        <span className="text-xs text-gray-500">{user.role.toUpperCase()}</span>
                     </div>
                 </button>
                 
@@ -100,7 +100,7 @@ const Header: React.FC<HeaderProps> = ({ user, company, onLogout, setView, modul
                     aria-label="Sair da aplicação"
                 >
                     <LogoutIcon className="h-5 w-5" />
-                    <span className="hidden sm:inline">Sair</span>
+                    <span className="hidden sm:inline">SAIR</span>
                 </button>
             </div>
         </header>

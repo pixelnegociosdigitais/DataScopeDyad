@@ -27,7 +27,7 @@ export const generatePdfReport = async (survey: Survey, elementToCapture: HTMLEl
         });
 
         // Restaurar estilos originais
-        restoreOriginalStyles(elementToCapture, originalStyles);
+        restoreOriginalStyles(originalStyles);
 
         const imgWidth = pageWidth - 2 * margin; // Image width in PDF (mm)
         const imgHeight = (canvas.height * imgWidth) / canvas.width; // Image height in PDF (mm)
@@ -185,7 +185,7 @@ const applyStandardizedStyles = (element: HTMLElement): Map<HTMLElement, string>
 };
 
 // Função para restaurar estilos originais
-const restoreOriginalStyles = (element: HTMLElement, originalStyles: Map<HTMLElement, string>) => {
+const restoreOriginalStyles = (originalStyles: Map<HTMLElement, string>) => {
     originalStyles.forEach((style, elem) => {
         elem.style.cssText = style;
     });

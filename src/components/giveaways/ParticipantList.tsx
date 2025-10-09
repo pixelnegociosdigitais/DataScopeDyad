@@ -106,7 +106,7 @@ const ParticipantList: React.FC<ParticipantListProps> = ({ selectedSurveyId, onP
                     {participants.map(p => (
                         <li key={p.id} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-b-0">
                             <div className="h-8 w-8 p-1 bg-gray-200 rounded-full text-gray-500 flex items-center justify-center text-xs"><GiftIcon className="h-4 w-4" /></div>
-                            <span className="text-gray-700">{p.name} {p.phone && `(${p.phone})`}</span>
+                            <span className="text-gray-700">{p.name.toUpperCase()} {p.phone && `(${p.phone})`}</span>
                         </li>
                     ))}
                 </ul>

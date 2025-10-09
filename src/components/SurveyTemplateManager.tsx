@@ -344,7 +344,7 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                                             {renderQuestionInput(q, qIndex)}
                                             {(q.type === QuestionType.MULTIPLE_CHOICE || q.type === QuestionType.CHECKBOX) && (
                                                 <div className="mt-4 pl-4 border-l-2 border-primary/20">
-                                                    <h4 className="text-xs font-semibold text-gray-600 mb-2">Opções</h4>
+                                                    <h4 className="text-xs font-semibold text-gray-600 mb-2">OPÇÕES</h4>
                                                     {q.options?.map((opt, oIndex) => (
                                                         <div key={oIndex} className="flex items-center mb-2">
                                                             <input
@@ -359,7 +359,7 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                                                             </button>
                                                         </div>
                                                     ))}
-                                                    <button onClick={() => addOption(qIndex)} className="text-sm text-primary hover:text-primary-dark mt-1">+ Adicionar Opção</button>
+                                                    <button onClick={() => addOption(qIndex)} className="text-sm text-primary hover:text-primary-dark mt-1">+ ADICIONAR OPÇÃO</button>
                                                 </div>
                                             )}
                                         </div>
@@ -371,7 +371,7 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                             ))}
 
                             <div className="bg-white p-4 rounded-lg shadow-md">
-                                <span className="text-sm font-medium text-gray-600 mr-4">Adicionar Pergunta Rápida:</span>
+                                <span className="text-sm font-medium text-gray-700 mb-2">ADICIONAR PERGUNTA RÁPIDA:</span>
                                 <div className="flex flex-wrap gap-2 mt-2 mb-4 border-b pb-4">
                                     <button type="button" onClick={() => addQuestion(QuestionType.SHORT_TEXT, 'Nome Completo')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">Nome</button>
                                     <button type="button" onClick={() => addQuestion(QuestionType.PHONE, 'Telefone')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">Telefone</button>
@@ -379,7 +379,7 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                                     <button type="button" onClick={() => addQuestion(QuestionType.EMAIL, 'E-mail')} className="px-3 py-1.5 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">E-mail</button>
                                 </div>
 
-                                <span className="text-sm font-medium text-gray-600 mr-4">Adicionar Outro Tipo de Pergunta:</span>
+                                <span className="text-sm font-medium text-gray-700 mr-4">ADICIONAR OUTRO TIPO DE PERGUNTA:</span>
                                 <div className="flex flex-wrap gap-2 mt-2">
                                     {ALL_QUESTION_TYPES.map(qType => (
                                         <button key={qType.type} type="button" onClick={() => addQuestion(qType.type)} className="px-3 py-1.5 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">

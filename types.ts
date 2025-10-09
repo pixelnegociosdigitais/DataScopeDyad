@@ -141,6 +141,7 @@ export interface ChatMessage {
 }
 
 export enum View {
+    HOME = 'HOME',
     SURVEY_LIST = 'SURVEY_LIST',
     CREATE_SURVEY = 'CREATE_SURVEY',
     EDIT_SURVEY = 'EDIT_SURVEY',

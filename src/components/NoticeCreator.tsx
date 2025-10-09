@@ -97,7 +97,7 @@ const NoticeCreator: React.FC<NoticeCreatorProps> = ({ onBack }) => {
                 </div>
 
                 <div>
-                    <span className="block text-sm font-medium text-gray-700 mb-2">Destinatários:</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">DESTINATÁRIOS:</span>
                     <div className="flex flex-wrap gap-4">
                         {currentUser.role === UserRole.DEVELOPER && (
                             <label className="flex items-center space-x-2 cursor-pointer">
@@ -107,7 +107,7 @@ const NoticeCreator: React.FC<NoticeCreatorProps> = ({ onBack }) => {
                                     onChange={(e) => handleRoleChange(UserRole.ADMIN, e.target.checked)}
                                     className="form-checkbox h-5 w-5 text-primary rounded focus:ring-primary"
                                 />
-                                <span>Administradores</span>
+                                <span>ADMINISTRADORES</span>
                             </label>
                         )}
                         <label className="flex items-center space-x-2 cursor-pointer">
@@ -118,7 +118,7 @@ const NoticeCreator: React.FC<NoticeCreatorProps> = ({ onBack }) => {
                                 className="form-checkbox h-5 w-5 text-primary rounded focus:ring-primary"
                                 disabled={currentUser.role === UserRole.ADMIN} // Admin sempre envia para Usuário
                             />
-                            <span>Usuários</span>
+                            <span>USUÁRIOS</span>
                         </label>
                     </div>
                 </div>

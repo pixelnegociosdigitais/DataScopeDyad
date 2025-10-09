@@ -56,8 +56,8 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                             className="flex items-center justify-center px-4 py-2 bg-secondary text-white rounded-md hover:bg-secondary-dark transition-colors shadow-md"
                         >
                             <TemplateIcon className="h-5 w-5 mr-2" />
-                            <span className="hidden sm:inline">Modelos</span>
-                            <span className="sm:hidden">Modelos</span>
+                            <span className="hidden sm:inline">MODELOS</span>
+                            <span className="sm:hidden">MODELOS</span>
                         </button>
                     )}
                     {canManageSurveys && (
@@ -66,8 +66,8 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                             className="flex items-center justify-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors shadow-md"
                         >
                             <CreateIcon className="h-5 w-5 mr-2" />
-                            <span className="hidden sm:inline">Nova Pesquisa</span>
-                            <span className="sm:hidden">Nova</span>
+                            <span className="hidden sm:inline">NOVA PESQUISA</span>
+                            <span className="sm:hidden">NOVA</span>
                         </button>
                     )}
                 </div>
@@ -201,9 +201,9 @@ const SurveyTableList: React.FC<SurveyTableListProps> = ({
                                                     {survey.title}
                                                 </h3>
                                                 <div className="text-xs text-text-light space-y-1">
-                                                    <p><span className="font-medium">Empresa:</span> {survey.companyName || 'N/A'}</p>
-                                                    <p><span className="font-medium">Criado por:</span> {survey.createdByName || 'Usuário Desconhecido'}</p>
-                                                    <p><span className="font-medium">Data:</span> {new Date(survey.created_at!).toLocaleDateString('pt-BR')}</p>
+                                                    <p><span className="font-medium">EMPRESA:</span> {survey.companyName || 'N/A'}</p>
+                                                    <p><span className="font-medium">CRIADO POR:</span> {survey.createdByName || 'Usuário Desconhecido'}</p>
+                                                    <p><span className="font-medium">DATA:</span> {new Date(survey.created_at!).toLocaleDateString('pt-BR')}</p>
                                                 </div>
                                             </div>
                                         </div>

@@ -264,7 +264,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                                         />
                                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-light rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
                                         <span className="ml-3 text-sm font-medium text-gray-900">
-                                            {user.status === 'active' ? 'Ativo' : 'Inativo'}
+                                            {user.status === 'active' ? 'ATIVO' : 'INATIVO'}
                                         </span>
                                     </label>
                                 </td>
@@ -380,7 +380,7 @@ const AdministratorUserManager: React.FC<AdministratorUserManagerProps> = ({ onB
                                             onChange={(e) => handlePermissionChange(moduleName, e.target.checked)}
                                             className="form-checkbox h-5 w-5 text-primary rounded focus:ring-primary"
                                         />
-                                        <span>{moduleNameTranslations[moduleName]}</span>
+                                        <span>{moduleNameTranslations[moduleName].toUpperCase()}</span>
                                     </label>
                                 );
                             })}

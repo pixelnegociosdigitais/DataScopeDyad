@@ -452,7 +452,7 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                     ? 'bg-green-100 text-green-800' 
                                     : 'bg-red-100 text-red-800'
                             }`}>
-                                {company.status === 'active' ? 'Ativa' : 'Inativa'}
+                                {company.status === 'active' ? 'ATIVA' : 'INATIVA'}
                             </span>
                         </div>
 
@@ -462,8 +462,8 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                 className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10 flex-1 sm:flex-none justify-center"
                             >
                                 <BuildingIcon className="h-4 w-4" />
-                                <span className="hidden sm:inline">Editar Empresa</span>
-                                <span className="sm:hidden">Editar</span>
+                                <span className="hidden sm:inline">EDITAR EMPRESA</span>
+                                <span className="sm:hidden">EDITAR</span>
                             </button>
                             {company.administrators && company.administrators.length > 0 && (
                                 <>
@@ -472,15 +472,15 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                         className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-primary border border-primary rounded-md hover:bg-primary/10 flex-1 sm:flex-none justify-center"
                                     >
                                         <UserIcon className="h-4 w-4" />
-                                        <span className="hidden sm:inline">Editar Admin</span>
-                                        <span className="sm:hidden">Admin</span>
+                                        <span className="hidden sm:inline">EDITAR ADMIN</span>
+                                        <span className="sm:hidden">ADMIN</span>
                                     </button>
                                     <button
                                         onClick={() => confirmResetAdminPassword(company.administrators[0].id, company.administrators[0].fullName)}
                                         className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-secondary border border-secondary rounded-md hover:bg-secondary/10 flex-1 sm:flex-none justify-center"
                                     >
-                                        <span className="hidden sm:inline">Redefinir Senha</span>
-                                        <span className="sm:hidden">Reset</span>
+                                        <span className="hidden sm:inline">REDEFINIR SENHA</span>
+                                        <span className="sm:hidden">RESET</span>
                                     </button>
                                 </>
                             )}
@@ -489,8 +489,8 @@ const DeveloperCompanyUserManager: React.FC<DeveloperCompanyUserManagerProps> = 
                                 className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-red-600 border border-red-600 rounded-md hover:bg-red-50 flex-1 sm:flex-none justify-center"
                             >
                                 <TrashIcon className="h-4 w-4" />
-                                <span className="hidden sm:inline">Excluir</span>
-                                <span className="sm:hidden">Del</span>
+                                <span className="hidden sm:inline">EXCLUIR</span>
+                                <span className="sm:hidden">DEL</span>
                             </button>
                         </div>
                     </div>

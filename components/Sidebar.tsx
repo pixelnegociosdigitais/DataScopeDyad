@@ -27,8 +27,14 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, modulePermissio
         {
             label: 'Início',
             icon: HomeIcon,
+            view: View.HOME,
+            permission: true, // Home is always accessible
+        },
+        {
+            label: 'Pesquisas',
+            icon: HomeIcon,
             view: View.SURVEY_LIST,
-            permission: true, // Home/SurveyList is always accessible
+            permission: true, // SurveyList is always accessible
         },
         {
             label: 'Criar Pesquisa',

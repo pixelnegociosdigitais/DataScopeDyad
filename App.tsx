@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { UserRole, View, Survey, ModuleName, Notice } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
+import HomeScreen from './components/HomeScreen';
 import SurveyTableList from './src/components/SurveyTableList';
 import SurveyCreator from './components/SurveyCreator';
 import Dashboard from './components/Dashboard';
@@ -33,7 +34,7 @@ import { generatePdfReport } from './src/utils/pdfGenerator';
 
 const App: React.FC = () => {
     const { session, loadingSession } = useAuthSession();
-    const [currentView, setCurrentView] = useState<View>(View.SURVEY_LIST);
+    const [currentView, setCurrentView] = useState<View>(View.HOME);
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
     const [editingSurvey, setEditingSurvey] = useState<Survey | null>(null);
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
@@ -80,7 +81,7 @@ const App: React.FC = () => {
             console.log('App: Iniciando processo de logoff...');
             
             // Limpar estados locais antes do signOut
-            setCurrentView(View.SURVEY_LIST);
+            setCurrentView(View.HOME);
             setSelectedSurvey(null);
             setEditingSurvey(null);
             setActiveNotice(null);
@@ -264,7 +265,7 @@ const App: React.FC = () => {
     }, []);
 
     const handleBack = useCallback(() => {
-        setCurrentView(View.SURVEY_LIST);
+        setCurrentView(View.HOME);
         setSelectedSurvey(null);
         setEditingSurvey(null);
         setActiveNotice(null);
@@ -326,6 +327,15 @@ const App: React.FC = () => {
         console.log('App: Conteúdo de `surveys` passado para SurveyTableList:', surveys);
 
         switch (currentView) {
+            case View.HOME:
+                return (
+                    <HomeScreen
+                        setView={setCurrentView}
+                        modulePermissions={modulePermissions}
+                        currentUserRole={currentUser.role}
+                        onCreateSurvey={handleCreateSurvey}
+                    />
+                );
             case View.SURVEY_LIST:
                 return (
                     <SurveyTableList

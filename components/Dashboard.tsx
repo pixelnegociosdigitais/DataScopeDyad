@@ -131,8 +131,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
             return value;
         };
 
-        // Adicionar BOM (Byte Order Mark) para garantir codificação UTF-8 correta
-        const BOM = '\uFEFF';
+
         
         // Obter data e hora atual formatada
         const now = new Date();
@@ -271,12 +270,12 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
                 <div className="flex flex-col sm:flex-row gap-2">
                     <button onClick={() => onDownloadReport(survey)} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark">
                         <DownloadIcon className="h-4 w-4" /> 
-                        <span className="hidden sm:inline">Exportar PDF</span>
+                        <span className="hidden sm:inline">EXPORTAR PDF</span>
                         <span className="sm:hidden">PDF</span>
                     </button>
                     <button onClick={exportToCSV} className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-secondary rounded-md hover:bg-green-600">
                        <DownloadIcon className="h-4 w-4" /> 
-                       <span className="hidden sm:inline">Exportar CSV</span>
+                       <span className="hidden sm:inline">EXPORTAR CSV</span>
                        <span className="sm:hidden">CSV</span>
                     </button>
                 </div>
@@ -363,7 +362,7 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
                     <div key={q.id} className="bg-white p-3 sm:p-6 rounded-lg shadow-md mb-4 sm:mb-6">
                         <h3 className="text-base sm:text-lg font-semibold text-text-main mb-4 break-words">
                             {q.text} 
-                            <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-2 inline-block">{q.type}</span>
+                            <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-2 inline-block">{q.type.toUpperCase()}</span>
                         </h3>
                         {([QuestionType.MULTIPLE_CHOICE, QuestionType.CHECKBOX, QuestionType.RATING].includes(q.type as QuestionType)) && Array.isArray(q.data) && q.data.length > 0 && (
                              <ResponsiveContainer width="100%" height={250} className="sm:!h-[300px]">
