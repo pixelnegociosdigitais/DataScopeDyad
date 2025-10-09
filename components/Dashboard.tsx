@@ -118,33 +118,71 @@ const Dashboard: React.FC<DashboardProps> = ({ survey, responses, onBack, dashbo
     }, [survey, responses]);
 
     const exportToCSV = () => {
-        let csvContent = "data:text/csv;charset=utf-8,";
-        const headers = (survey.questions || []).map(q => `"${q.text.replace(/"/g, '""')}"`).join(',');
-        csvContent += headers + "\r\n";
+        // Adicionar BOM (Byte Order Mark) para garantir codificação UTF-8 correta
+        const BOM = '\uFEFF';
+        let csvContent = '';
 
-        responses.forEach(res => {
-            const row = (survey.questions || []).map(q => {
+        // Obter data e hora atual formatada
+        const now = new Date();
+        const dateTime = now.toLocaleString('pt-BR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+
+        // Cabeçalho com informações da empresa e pesquisa
+        csvContent += `"RELATÓRIO DE PESQUISA"\r\n`;
+        csvContent += `"Empresa:","${survey.companyName || 'N/A'}"\r\n`;
+        csvContent += `"Pesquisa:","${survey.title}"\r\n`;
+        csvContent += `"Total de Respostas:","${responses.length}"\r\n`;
+        csvContent += `"Data de Geração:","${dateTime}"\r\n`;
+        csvContent += `\r\n`; // Linha em branco para separar
+
+        // Cabeçalho da tabela de dados
+        csvContent += `"DADOS DAS RESPOSTAS"\r\n`;
+        const headers = ['#'].concat((survey.questions || []).map(q => `"${q.text.replace(/"/g, '""')}"`));
+        csvContent += headers.join(',') + "\r\n";
+
+        // Dados das respostas
+        responses.forEach((res, index) => {
+            const rowNumber = index + 1;
+            const row = [rowNumber].concat((survey.questions || []).map(q => {
                 const answer = res.answers.find(a => a.questionId === q.id);
                 let value = '';
                 if (answer) {
                     if (Array.isArray(answer.value)) {
-                        value = answer.value.join('; '); // For checkbox arrays
+                        value = answer.value.join('; '); // Para arrays de checkbox
                     } else {
                         value = String(answer.value);
                     }
                 }
                 return `"${value.replace(/"/g, '""')}"`;
-            }).join(',');
-            csvContent += row + "\r\n";
+            }));
+            csvContent += row.join(',') + "\r\n";
         });
 
-        const encodedUri = encodeURI(csvContent);
+        // Rodapé com informações adicionais
+        csvContent += `\r\n`; // Linha em branco
+        csvContent += `"INFORMAÇÕES ADICIONAIS"\r\n`;
+        csvContent += `"Arquivo gerado em:","${dateTime}"\r\n`;
+        csvContent += `"Sistema:","DataScope - Gestão de Pesquisas"\r\n`;
+
+        // Criar blob com BOM para garantir codificação UTF-8
+        const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
+        link.setAttribute("href", url);
         link.setAttribute("download", `${survey.title.replace(/\s/g, '_')}_dados.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        
+        // Limpar o URL do objeto para liberar memória
+        URL.revokeObjectURL(url);
     };
 
     return (
