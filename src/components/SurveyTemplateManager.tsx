@@ -326,7 +326,7 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                             </div>
 
                             {templateFormQuestions.map((q, qIndex) => (
-                                <div key={q.id} className="bg-gray-50 p-4 rounded-lg shadow-sm flex gap-4">
+                                <div key={q.id} className="bg-gray-50 p-4 rounded-lg shadow-sm flex flex-col sm:flex-row gap-4">
                                     <div className="flex flex-col items-center justify-center">
                                         <button onClick={() => moveQuestion(qIndex, 'up')} disabled={qIndex === 0} className="p-1 rounded-full text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed">
                                             <ArrowLeftIcon className="h-4 w-4 rotate-90" />
@@ -337,29 +337,29 @@ const SurveyTemplateManager: React.FC<SurveyTemplateManagerProps> = ({
                                         </button>
                                     </div>
                                     <div className="flex-1">
-                                        <div className="flex justify-between items-start">
+                                        <div className="flex flex-col sm:flex-row sm:justify-between items-start gap-3">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                                 Pergunta <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">{q.type}</span>
                                             </label>
                                             {renderQuestionInput(q, qIndex)}
                                             {(q.type === QuestionType.MULTIPLE_CHOICE || q.type === QuestionType.CHECKBOX) && (
-                                                <div className="mt-4 pl-4 border-l-2 border-primary/20">
+                                                <div className="mt-4 sm:mt-0 w-full sm:w-96 sm:ml-4 border-t-2 sm:border-t-0 sm:border-l-2 border-primary/20 pt-4 sm:pt-0 sm:pl-4">
                                                     <h4 className="text-xs font-semibold text-gray-600 mb-2">OPÇÕES</h4>
                                                     {q.options?.map((opt, oIndex) => (
-                                                        <div key={oIndex} className="flex items-center mb-2">
+                                                        <div key={oIndex} className="flex items-center gap-2 mb-2">
                                                             <input
                                                                 type="text"
                                                                 value={opt}
                                                                 onChange={(e) => updateOptionText(qIndex, oIndex, e.target.value)}
                                                                 placeholder={`Opção ${oIndex + 1}`}
-                                                                className="block w-full sm:w-1/2 px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700 placeholder-gray-400"
+                                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm text-base sm:text-sm focus:outline-none focus:ring-primary focus:border-primary text-gray-700 placeholder-gray-400"
                                                             />
-                                                            <button onClick={() => removeOption(qIndex, oIndex)} className="ml-2 p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors" disabled={q.options?.length === 1} aria-label="Remover opção">
-                                                                <TrashIcon className="h-4 w-4" />
+                                                            <button onClick={() => removeOption(qIndex, oIndex)} className="flex-shrink-0 p-2 sm:p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-500/10 transition-colors" disabled={q.options?.length === 1} aria-label="Remover opção">
+                                                                <TrashIcon className="h-5 w-5 sm:h-4 sm:w-4" />
                                                             </button>
                                                         </div>
                                                     ))}
-                                                    <button onClick={() => addOption(qIndex)} className="text-sm text-primary hover:text-primary-dark mt-1">+ ADICIONAR OPÇÃO</button>
+                                                    <button onClick={() => addOption(qIndex)} className="text-base sm:text-sm text-primary hover:text-primary-dark mt-1">+ ADICIONAR OPÇÃO</button>
                                                 </div>
                                             )}
                                         </div>
