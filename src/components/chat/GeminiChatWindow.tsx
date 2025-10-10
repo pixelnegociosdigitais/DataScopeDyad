@@ -118,7 +118,7 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
             <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
               <span className="text-lg font-bold">G</span>
             </div>
-            <h3 className="text-xl font-bold">Chat com Gemini</h3>
+            <h3 className="text-xl font-bold">Chat com IA</h3>
           </div>
         </div>
         
@@ -158,7 +158,7 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
               <span className="text-lg font-bold">G</span>
             </div>
             <div>
-              <h3 className="text-xl font-bold">Chat com Gemini</h3>
+              <h3 className="text-xl font-bold">Chat com IA</h3>
               <p className="text-sm opacity-90">Assistente de IA do Google</p>
             </div>
           </div>

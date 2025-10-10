@@ -224,7 +224,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                     <button
                         onClick={onOpenGeminiChat}
                         className="btn-icon-mobile bg-purple-600 text-white hover:bg-purple-700"
-                        title="Chat com Gemini"
+                        title="Chat com IA"
                     >
                         <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z"/>
