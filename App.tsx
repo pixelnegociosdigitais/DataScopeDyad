@@ -191,7 +191,7 @@ const App: React.FC = () => {
         setSurveyToDelete(null);
     }, [surveyToDelete, handleDeleteSurvey, selectedSurvey, editingSurvey]);
 
-    const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey, isEditing: boolean) => {
+    const handleSaveSurveyWrapper = useCallback(async (surveyData: Survey, isEditing: boolean, isFromTemplate?: boolean) => {
         console.log('App: handleSaveSurveyWrapper called. currentUser:', currentUser, 'currentCompany:', currentCompany);
         
         if (!currentUser?.company_id) {
@@ -213,7 +213,7 @@ const App: React.FC = () => {
             companyId: currentUser.company_id
         };
 
-        await handleSaveSurvey(surveyToSave, isEditing ? surveyData.id : undefined);
+        await handleSaveSurvey(surveyToSave, isEditing ? surveyData.id : undefined, isFromTemplate);
         setEditingSurvey(null);
         setCurrentView(View.SURVEY_LIST);
         // A chamada a fetchSurveys já é feita dentro de useSurveyMutations.handleSaveSurvey
@@ -355,10 +355,10 @@ const App: React.FC = () => {
                     />
                 );
             case View.CREATE_SURVEY:
-                return <SurveyCreator onSave={(surveyData) => handleSaveSurveyWrapper(surveyData, false)} onBack={handleBack} templates={templates} />;
+                return <SurveyCreator onSave={(surveyData, isFromTemplate) => handleSaveSurveyWrapper(surveyData, false, isFromTemplate)} onBack={handleBack} templates={templates} />;
             case View.EDIT_SURVEY:
                 if (editingSurvey) {
-                    return <SurveyCreator onSave={(surveyData) => handleSaveSurveyWrapper(surveyData, true)} onBack={handleBack} surveyToEdit={editingSurvey} templates={templates} />;
+                    return <SurveyCreator onSave={(surveyData, isFromTemplate) => handleSaveSurveyWrapper(surveyData, true, isFromTemplate)} onBack={handleBack} surveyToEdit={editingSurvey} templates={templates} />;
                 }
                 return null;
             case View.DASHBOARD:

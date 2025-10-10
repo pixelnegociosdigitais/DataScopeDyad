@@ -8,7 +8,7 @@ import { showError, showSuccess } from '../src/utils/toast'; // Importar showSuc
 import ConfirmationDialog from '../src/components/ConfirmationDialog'; // Caminho corrigido
 
 interface SurveyCreatorProps {
-    onSave: (survey: Survey) => void;
+    onSave: (survey: Survey, isFromTemplate?: boolean) => void;
     onBack: () => void;
     surveyToEdit?: Survey | null;
     templates: Survey[];
@@ -117,12 +117,13 @@ const SurveyCreator: React.FC<SurveyCreatorProps> = ({ onSave, onBack, surveyToE
             showError('Por favor, forneça um título e garanta que todas as perguntas tenham texto.');
             return;
         }
+        const isFromTemplate = !!selectedTemplateId;
         await onSave({ 
             id: surveyToEdit?.id || '',
             title, 
             companyId: surveyToEdit?.companyId || '', // companyId será validado e preenchido no useSurveys
             questions: questions.map((q, index) => ({ ...q, position: index })) // Ensure positions are set
-        });
+        }, isFromTemplate);
         showSuccess(isEditing ? 'Pesquisa atualizada com sucesso!' : 'Pesquisa criada com sucesso!');
         setShowConfirmationDialog(true);
     };

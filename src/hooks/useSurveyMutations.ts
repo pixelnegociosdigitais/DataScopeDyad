@@ -12,14 +12,14 @@ interface UseSurveyMutationsProps {
 }
 
 interface UseSurveyMutationsReturn {
-    handleSaveSurvey: (surveyData: Survey, editingSurveyId?: string) => Promise<void>;
+    handleSaveSurvey: (surveyData: Survey, editingSurveyId?: string, isFromTemplate?: boolean) => Promise<void>;
     handleDeleteSurvey: (surveyId: string) => Promise<boolean>;
     handleSaveResponse: (answers: Answer[], selectedSurvey: Survey, currentUser: User) => Promise<boolean>;
 }
 
 export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, fetchSurveyResponses }: UseSurveyMutationsProps): UseSurveyMutationsReturn => {
 
-    const handleSaveSurvey = useCallback(async (surveyData: Survey, editingSurveyId?: string) => {
+    const handleSaveSurvey = useCallback(async (surveyData: Survey, editingSurveyId?: string, isFromTemplate?: boolean) => {
         try {
             if (!currentUser) {
                 showError('Usuário não identificado para salvar a pesquisa.');
@@ -89,6 +89,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
                     title: surveyData.title,
                     company_id: surveyCompanyId,
                     created_by: currentUser.id,
+                    available_to_all_profiles: isFromTemplate || false,
                 };
                 console.log('useSurveyMutations: handleSaveSurvey - Objeto de pesquisa para inserção:', surveyToInsert); // Log do objeto a ser inserido
 
