@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Chat, User, UserRole } from '../../../types';
 import ChatList from './ChatList';
 import ChatWindow from './ChatWindow';
+import GeminiChatWindow from './GeminiChatWindow';
 import { supabase } from '../../integrations/supabase/client';
 import { showError, showSuccess } from '../../utils/toast';
 
@@ -26,13 +27,21 @@ interface ChatLayoutProps {
 
 const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }) => {
     const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+    const [showGeminiChat, setShowGeminiChat] = useState(false);
 
     const handleSelectChat = (chat: Chat | null) => {
         setSelectedChat(chat);
+        setShowGeminiChat(false);
     };
 
     const handleBackToChatList = () => {
         setSelectedChat(null);
+        setShowGeminiChat(false);
+    };
+
+    const handleOpenGeminiChat = () => {
+        setSelectedChat(null);
+        setShowGeminiChat(true);
     };
 
     const handleCreateChat = useCallback(async (companyId: string) => {
@@ -130,7 +139,9 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
 
     return (
         <div className="h-full flex flex-col">
-            {selectedChat ? (
+            {showGeminiChat ? (
+                <GeminiChatWindow currentUser={currentUser} onBack={handleBackToChatList} />
+            ) : selectedChat ? (
                 <ChatWindow chat={selectedChat} currentUser={currentUser} onBack={handleBackToChatList} />
             ) : (
                 <ChatList 
@@ -139,6 +150,7 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
                     onCreateChat={handleCreateChat} // Passar a função implementada
                     selectedChatId={currentSelectedChatId}
                     currentCompanyId={currentCompanyId} // Passar currentCompanyId
+                    onOpenGeminiChat={handleOpenGeminiChat} // Nova prop para abrir chat com Gemini
                 />
             )}
         </div>
