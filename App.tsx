@@ -26,6 +26,7 @@ import { ChatIcon } from './components/icons/ChatIcon';
 import { ArrowLeftIcon } from './components/icons/ArrowLeftIcon';
 import { supabase } from './src/integrations/supabase/client';
 import { useAuthSession } from './src/context/AuthSessionContext';
+import { AuthErrorHandler } from './src/utils/authErrorHandler';
 import { useAuth } from './src/hooks/useAuth';
 import { useSurveys } from './src/hooks/useSurveys';
 import { showError, showSuccess } from './src/utils/toast';
@@ -89,6 +90,9 @@ const App: React.FC = () => {
             setShowDeleteSurveyConfirm(false);
             setSurveyToDelete(null);
             
+            // Usar AuthErrorHandler para limpeza consistente
+            AuthErrorHandler.clearAuthData();
+            
             // Realizar o signOut do Supabase
             const { error } = await supabase.auth.signOut();
             
@@ -101,6 +105,8 @@ const App: React.FC = () => {
             }
         } catch (error) {
             console.error('App: Erro inesperado durante o logoff:', error);
+            // Em caso de erro, garantir limpeza dos dados
+            AuthErrorHandler.clearAuthData();
             showError('Erro inesperado durante o logoff');
         }
     }, []);

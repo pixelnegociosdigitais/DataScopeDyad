@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/src/integrations/supabase/client';
+import { AuthErrorHandler } from '@/src/utils/authErrorHandler';
 
 interface AuthSessionContextType {
     session: Session | null;
@@ -16,19 +17,50 @@ export const AuthSessionProvider: React.FC<{ children: ReactNode }> = ({ childre
     useEffect(() => {
         const getSession = async () => {
             console.log('AuthSessionContext: Iniciando busca da sessão...');
-            const { data: { session: initialSession } } = await supabase.auth.getSession();
-            // Atualiza a sessão diretamente, sem comparação profunda
-            setSession(initialSession);
-            setLoadingSession(false);
-            console.log('AuthSessionContext: Sessão buscada. loadingSession = false. Sessão:', initialSession);
+            try {
+                const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    console.error('AuthSessionContext: Erro ao buscar sessão:', error);
+                    
+                    // Usar o AuthErrorHandler para tratar erros de refresh token
+                    if (AuthErrorHandler.isRefreshTokenError(error)) {
+                        console.log('AuthSessionContext: Token de refresh inválido detectado. Usando AuthErrorHandler...');
+                        await AuthErrorHandler.handleRefreshTokenError(error);
+                        setSession(null);
+                    }
+                } else {
+                    // Atualiza a sessão diretamente, sem comparação profunda
+                    setSession(initialSession);
+                    console.log('AuthSessionContext: Sessão buscada. loadingSession = false. Sessão:', initialSession);
+                }
+            } catch (error) {
+                console.error('AuthSessionContext: Erro inesperado ao buscar sessão:', error);
+                setSession(null);
+            } finally {
+                setLoadingSession(false);
+            }
         };
 
         getSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
             console.log('AuthSessionContext: Evento onAuthStateChange. Evento:', _event, 'Sessão:', newSession);
-            // Atualiza a sessão diretamente, sem comparação profunda
-            setSession(newSession);
+            
+            // Tratar eventos específicos de erro de token
+            if (_event === 'TOKEN_REFRESHED' && !newSession) {
+                console.log('AuthSessionContext: Falha na renovação do token. Limpando sessão...');
+                setSession(null);
+            } else if (_event === 'SIGNED_OUT') {
+                console.log('AuthSessionContext: Usuário deslogado. Limpando dados...');
+                // Usar AuthErrorHandler para limpeza consistente
+                AuthErrorHandler.clearAuthData();
+                setSession(null);
+            } else {
+                // Atualiza a sessão diretamente, sem comparação profunda
+                setSession(newSession);
+            }
+            
             setLoadingSession(false);
             console.log('AuthSessionContext: onAuthStateChange concluído. loadingSession = false.');
         });
