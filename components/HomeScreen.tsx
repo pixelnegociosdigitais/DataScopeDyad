@@ -46,7 +46,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
             title: 'Dashboard',
             icon: DashboardIcon,
             color: 'bg-purple-500 hover:bg-purple-600',
-            action: () => setView(View.DASHBOARD),
+            action: () => setView(View.SURVEY_LIST),
             permission: modulePermissions[ModuleName.VIEW_DASHBOARD],
         },
         {
