@@ -98,7 +98,7 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
     setMessages([]);
     const welcomeMessage: GeminiMessage = {
       role: 'model',
-      content: `Olá ${currentUser.fullName}! Sou o Gemini, seu assistente de IA. Como posso ajudá-lo hoje?`,
+      content: `Olá! Sou o seu assistente de IA. Como posso ajudá-lo hoje?`,
       timestamp: new Date(),
     };
     setMessages([welcomeMessage]);

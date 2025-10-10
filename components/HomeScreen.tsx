@@ -59,7 +59,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
         },
         {
             id: 'chat',
-            title: 'Chat',
+            title: 'Chat com IA',
             icon: ChatIcon,
             color: 'bg-indigo-500 hover:bg-indigo-600',
             action: () => setView(View.CHAT),

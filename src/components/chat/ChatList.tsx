@@ -220,24 +220,15 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
         <div className="flex flex-col h-full bg-white border-r border-gray-200">
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <h2 className="text-xl font-bold text-text-main">Chats</h2>
-                <div className="flex gap-2">
-                    <button
-                        onClick={onOpenGeminiChat}
-                        className="btn-icon-mobile bg-purple-600 text-white hover:bg-purple-700"
-                        title="Chat com IA"
-                    >
-                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z"/>
-                        </svg>
-                    </button>
-                    <button
-                        onClick={() => onCreateChat(currentCompanyId)}
-                        className="btn-icon-mobile bg-primary text-white hover:bg-primary-dark"
-                        title="Iniciar Novo Chat"
-                    >
-                        <PlusIcon className="h-5 w-5" />
-                    </button>
-                </div>
+                <button
+                    onClick={onOpenGeminiChat}
+                    className="btn-icon-mobile bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-lg"
+                    title="Chat com IA"
+                >
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z"/>
+                    </svg>
+                </button>
             </div>
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
