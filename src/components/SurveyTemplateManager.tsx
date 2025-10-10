@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ArrowLeftIcon } from '@/components/icons/ArrowLeftIcon';
 import { TemplateIcon } from '@/components/icons/TemplateIcon';
 import { CreateIcon } from '@/components/icons/CreateIcon';

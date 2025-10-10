@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Survey, User, Company, ModuleName } from '../../types';
+import React, { useState } from 'react';
+import { Survey, User, Company, UserRole } from '../../types';
 import { CreateIcon } from '@/components/icons/CreateIcon';
 import { PencilIcon } from '@/components/icons/PencilIcon';
 import { TrashIcon } from '@/components/icons/TrashIcon';

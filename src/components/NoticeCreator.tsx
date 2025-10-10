@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeftIcon } from '@/components/icons/ArrowLeftIcon';
 import { BellIcon } from '@/components/icons/BellIcon';
 import { UserRole, ModuleName } from '../../types';

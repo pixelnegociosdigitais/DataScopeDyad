@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, Company, Survey, Prize, GiveawayWinner, ModuleName, View } from '../../types';
 import { supabase } from '../integrations/supabase/client';
 import { GiftIcon } from '@/components/icons/GiftIcon';
