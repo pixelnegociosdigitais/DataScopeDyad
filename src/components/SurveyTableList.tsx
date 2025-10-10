@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { Survey, User, Company, UserRole } from '../../types';
-import { CreateIcon } from '../../components/icons/CreateIcon';
-import { PencilIcon } from '../../components/icons/PencilIcon';
-import { TrashIcon } from '../../components/icons/TrashIcon';
-import { EyeIcon } from '../../components/icons/EyeIcon';
-import { DownloadIcon } from '../../components/icons/DownloadIcon';
-import { QuestionIcon } from '../../components/icons/QuestionIcon';
-import { GiftIcon } from '../../components/icons/GiftIcon';
-import { TemplateIcon } from '../../components/icons/TemplateIcon';
-import { SurveyIcon } from '../../components/icons/SurveyIcon';
+import React, { useState, useEffect } from 'react';
+import { Survey, User, Company, ModuleName } from '../../types';
+import { CreateIcon } from '@/components/icons/CreateIcon';
+import { PencilIcon } from '@/components/icons/PencilIcon';
+import { TrashIcon } from '@/components/icons/TrashIcon';
+import { EyeIcon } from '@/components/icons/EyeIcon';
+import { DownloadIcon } from '@/components/icons/DownloadIcon';
+import { QuestionIcon } from '@/components/icons/QuestionIcon';
+import { GiftIcon } from '@/components/icons/GiftIcon';
+import { TemplateIcon } from '@/components/icons/TemplateIcon';
+import { SurveyIcon } from '@/components/icons/SurveyIcon';
 import SurveyApplyModal from './SurveyApplyModal';
 
 interface SurveyTableListProps {

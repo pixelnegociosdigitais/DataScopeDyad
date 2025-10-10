@@ -112,7 +112,25 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Erro na API do Gemini:', errorData);
+        console.error('Erro na API do Gemini:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData: errorData,
+          url: `${API_URL}?key=${API_KEY?.substring(0, 10)}...`,
+          hasApiKey: !!API_KEY
+        });
+        
+        // Mensagens de erro mais específicas
+        if (response.status === 400) {
+          throw new Error('Erro na requisição: Verifique se a chave da API está correta.');
+        } else if (response.status === 403) {
+          throw new Error('Acesso negado: Chave da API inválida ou sem permissões.');
+        } else if (response.status === 429) {
+          throw new Error('Limite de requisições excedido. Tente novamente em alguns minutos.');
+        } else if (response.status >= 500) {
+          throw new Error('Erro interno do servidor Gemini. Tente novamente mais tarde.');
+        }
+        
         throw new Error(`Erro na API do Gemini: ${response.status} ${response.statusText}`);
       }
 

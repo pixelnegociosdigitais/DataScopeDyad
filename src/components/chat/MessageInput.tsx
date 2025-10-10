@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { SendIcon } from '../../../components/icons/SendIcon';
+import React, { useState, KeyboardEvent } from 'react';
+import { SendIcon } from '@/components/icons/SendIcon';
 import { supabase } from '../../integrations/supabase/client'; // Importar supabase
 
 interface MessageInputProps {

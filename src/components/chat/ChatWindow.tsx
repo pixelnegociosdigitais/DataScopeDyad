@@ -5,7 +5,7 @@ import { showError } from '../../utils/toast';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
-import { ArrowLeftIcon } from '../../../components/icons/ArrowLeftIcon';
+import { ArrowLeftIcon } from '@/components/icons/ArrowLeftIcon';
 
 interface ChatWindowProps {
     chat: Chat;

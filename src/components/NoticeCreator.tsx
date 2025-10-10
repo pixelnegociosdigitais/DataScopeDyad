@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeftIcon } from '../../components/icons/ArrowLeftIcon';
-import { BellIcon } from '../../components/icons/BellIcon';
+import React, { useState } from 'react';
+import { ArrowLeftIcon } from '@/components/icons/ArrowLeftIcon';
+import { BellIcon } from '@/components/icons/BellIcon';
 import { UserRole, ModuleName } from '../../types';
 import { useAuth } from '../hooks/useAuth';
 import { showError } from '../utils/toast'; // Removido showSuccess

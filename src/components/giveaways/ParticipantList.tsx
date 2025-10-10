@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { QuestionType } from '../../../types';
-import { GiftIcon } from '../../../components/icons/GiftIcon';
+import { GiftIcon } from '@/components/icons/GiftIcon';
 import { logActivity } from '../../utils/logger';
 
 interface GiveawayParticipant {

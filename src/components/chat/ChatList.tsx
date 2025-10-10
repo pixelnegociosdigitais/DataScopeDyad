@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../integrations/supabase/client';
 import { Chat, User, ChatParticipant, UserRole } from '../../../types';
 import { showError, showSuccess } from '../../utils/toast';
-import { PlusIcon } from '../../../components/icons/PlusIcon'; 
-import { TrashIcon } from '../../../components/icons/TrashIcon'; // Usando TrashIcon em vez de DeleteIcon
+import { PlusIcon } from '@/components/icons/PlusIcon'; 
+import { TrashIcon } from '@/components/icons/TrashIcon'; // Usando TrashIcon em vez de DeleteIcon
 import ConfirmationDialog from '../ConfirmationDialog'; // Importar ConfirmationDialog
 
 // Interface para a estrutura de dados retornada pelo Supabase para chat_participants com profiles

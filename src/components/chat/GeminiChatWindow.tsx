@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User } from '../../../types';
 import { geminiService, GeminiMessage } from '../../services/geminiService';
 import { showError } from '../../utils/toast';
-import { ArrowLeftIcon } from '../../../components/icons/ArrowLeftIcon';
-import { SendIcon } from '../../../components/icons/SendIcon';
+import { ArrowLeftIcon } from '@/components/icons/ArrowLeftIcon';
+import { SendIcon } from '@/components/icons/SendIcon';
 
 interface GeminiChatWindowProps {
   currentUser: User;

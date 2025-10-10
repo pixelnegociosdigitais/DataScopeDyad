@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { BellIcon } from '../../components/icons/BellIcon';
+import { BellIcon } from '@/components/icons/BellIcon';
 import { Notice, UserRole } from '../../types';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../integrations/supabase/client';

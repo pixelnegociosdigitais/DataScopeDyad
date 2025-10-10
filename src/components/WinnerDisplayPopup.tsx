@@ -1,7 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { GiveawayWinner } from '../../types'; // Importar GiveawayWinner
-import { TrophyIcon } from '../../components/icons/TrophyIcon'; // Caminho corrigido para o ícone de troféu
+import { TrophyIcon } from '@/components/icons/TrophyIcon';
 
 interface WinnerDisplayPopupProps {
     winners: GiveawayWinner[]; // Agora aceita um array de vencedores

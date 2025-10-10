@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeftIcon } from '../../components/icons/ArrowLeftIcon';
-import { BuildingIcon } from '../../components/icons/BuildingIcon';
-import { UserIcon } from '../../components/icons/UserIcon';
-import { TrashIcon } from '../../components/icons/TrashIcon';
-import { CreateIcon } from '../../components/icons/CreateIcon';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeftIcon } from '@/components/icons/ArrowLeftIcon';
+import { BuildingIcon } from '@/components/icons/BuildingIcon';
+import { UserIcon } from '@/components/icons/UserIcon';
+import { TrashIcon } from '@/components/icons/TrashIcon';
+import { CreateIcon } from '@/components/icons/CreateIcon';
 import { Company, User, UserRole, View } from '@/types';
 import { supabase } from '../integrations/supabase/client';
 import { showSuccess, showError } from '../utils/toast';
