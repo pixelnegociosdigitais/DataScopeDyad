@@ -130,7 +130,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
                             <button
                                 key={shortcut.id}
                                 onClick={shortcut.action}
-                                className={`${shortcut.color} text-white rounded-2xl p-6 shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-opacity-50`}
+                                className={`${shortcut.color} text-white rounded-2xl p-6 shadow-lg transform transition-all duration-200 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-opacity-50 mobile-touch-target high-contrast-text`}
                             >
                                 <div className="flex flex-col items-center space-y-3">
                                     <div className="bg-white bg-opacity-20 rounded-full p-4">

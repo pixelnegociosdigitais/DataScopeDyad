@@ -1,0 +1,234 @@
+/* Estilos otimizados para botões em dispositivos móveis */
+
+/* Botões primários com melhor contraste */
+.btn-primary-mobile {
+  background-color: #1E40AF !important; /* Azul mais escuro para melhor contraste */
+  color: #FFFFFF !important;
+  border: 2px solid #1E40AF !important;
+  padding: 12px 20px !important; /* Padding maior para toque em mobile */
+  font-size: 16px !important; /* Tamanho mínimo recomendado para mobile */
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  min-height: 44px !important; /* Altura mínima recomendada para toque */
+  min-width: 44px !important; /* Largura mínima recomendada para toque */
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2) !important;
+}
+
+.btn-primary-mobile:hover {
+  background-color: #1D4ED8 !important;
+  border-color: #1D4ED8 !important;
+  box-shadow: 0 4px 8px rgba(30, 64, 175, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-primary-mobile:active {
+  background-color: #1E3A8A !important;
+  border-color: #1E3A8A !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2) !important;
+}
+
+/* Botões secundários com melhor contraste */
+.btn-secondary-mobile {
+  background-color: #047857 !important; /* Verde mais escuro para melhor contraste */
+  color: #FFFFFF !important;
+  border: 2px solid #047857 !important;
+  padding: 12px 20px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  min-height: 44px !important;
+  min-width: 44px !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: 0 2px 4px rgba(4, 120, 87, 0.2) !important;
+}
+
+.btn-secondary-mobile:hover {
+  background-color: #059669 !important;
+  border-color: #059669 !important;
+  box-shadow: 0 4px 8px rgba(4, 120, 87, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-secondary-mobile:active {
+  background-color: #065F46 !important;
+  border-color: #065F46 !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(4, 120, 87, 0.2) !important;
+}
+
+/* Botões de perigo com melhor contraste */
+.btn-danger-mobile {
+  background-color: #DC2626 !important; /* Vermelho com bom contraste */
+  color: #FFFFFF !important;
+  border: 2px solid #DC2626 !important;
+  padding: 12px 20px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  min-height: 44px !important;
+  min-width: 44px !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2) !important;
+}
+
+.btn-danger-mobile:hover {
+  background-color: #EF4444 !important;
+  border-color: #EF4444 !important;
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-danger-mobile:active {
+  background-color: #B91C1C !important;
+  border-color: #B91C1C !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2) !important;
+}
+
+/* Botões outline com melhor contraste */
+.btn-outline-mobile {
+  background-color: #FFFFFF !important;
+  color: #1E40AF !important;
+  border: 2px solid #1E40AF !important;
+  padding: 12px 20px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  min-height: 44px !important;
+  min-width: 44px !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.1) !important;
+}
+
+.btn-outline-mobile:hover {
+  background-color: #1E40AF !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 8px rgba(30, 64, 175, 0.2) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-outline-mobile:active {
+  background-color: #1E3A8A !important;
+  color: #FFFFFF !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2) !important;
+}
+
+/* Botões pequenos (ícones) com melhor área de toque */
+.btn-icon-mobile {
+  background-color: #F3F4F6 !important;
+  color: #374151 !important;
+  border: 2px solid #D1D5DB !important;
+  padding: 12px !important; /* Padding uniforme para área de toque adequada */
+  font-size: 16px !important;
+  border-radius: 50% !important;
+  min-height: 44px !important;
+  min-width: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.btn-icon-mobile:hover {
+  background-color: #E5E7EB !important;
+  border-color: #9CA3AF !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-icon-mobile:active {
+  background-color: #D1D5DB !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Botões desabilitados */
+.btn-disabled-mobile {
+  background-color: #9CA3AF !important;
+  color: #FFFFFF !important;
+  border: 2px solid #9CA3AF !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+.btn-disabled-mobile:hover,
+.btn-disabled-mobile:active {
+  background-color: #9CA3AF !important;
+  border-color: #9CA3AF !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Media queries para dispositivos móveis */
+@media (max-width: 768px) {
+  /* Aumentar padding e tamanho da fonte em telas pequenas */
+  .btn-primary-mobile,
+  .btn-secondary-mobile,
+  .btn-danger-mobile,
+  .btn-outline-mobile {
+    padding: 14px 24px !important;
+    font-size: 17px !important; /* Ligeiramente maior para melhor legibilidade */
+    min-height: 48px !important; /* Altura maior para toque mais fácil */
+  }
+  
+  /* Botões de largura total em mobile quando necessário */
+  .btn-full-width-mobile {
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+  
+  /* Espaçamento entre botões em mobile */
+  .btn-group-mobile > * {
+    margin-bottom: 8px !important;
+  }
+  
+  .btn-group-mobile > *:last-child {
+    margin-bottom: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Ajustes para telas muito pequenas */
+  .btn-primary-mobile,
+  .btn-secondary-mobile,
+  .btn-danger-mobile,
+  .btn-outline-mobile {
+    padding: 16px 28px !important;
+    font-size: 18px !important;
+    min-height: 52px !important; /* Altura ainda maior para telas muito pequenas */
+  }
+}
+
+/* Classes utilitárias para aplicação rápida */
+.mobile-touch-target {
+  min-height: 44px !important;
+  min-width: 44px !important;
+}
+
+.mobile-font-size {
+  font-size: 16px !important;
+}
+
+.mobile-padding {
+  padding: 12px 20px !important;
+}
+
+/* Melhorar contraste para texto em botões */
+.high-contrast-text {
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Focus states para acessibilidade */
+.btn-primary-mobile:focus,
+.btn-secondary-mobile:focus,
+.btn-danger-mobile:focus,
+.btn-outline-mobile:focus,
+.btn-icon-mobile:focus {
+  outline: 3px solid #93C5FD !important;
+  outline-offset: 2px !important;
+}

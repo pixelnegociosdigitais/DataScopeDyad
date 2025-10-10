@@ -38,7 +38,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
     return (
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
             <div className="flex items-center gap-4 mb-6">
-                <button onClick={onBack} className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Voltar">
+                <button onClick={onBack} className="btn-icon-mobile hover:bg-gray-200" aria-label="Voltar">
                     <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
                 </button>
                 <SettingsIcon className="h-8 w-8 text-primary" />
@@ -58,7 +58,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
                         </p>
                         <button 
                             onClick={handleManageCompanies}
-                            className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                            className="btn-primary-mobile mt-4"
                         >
                             <BuildingIcon className="h-4 w-4 inline-block mr-2" /> Gerenciar Empresas
                         </button>
@@ -72,7 +72,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
                     </p>
                     <button 
                         onClick={handleManagePermissions}
-                        className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                        className="btn-primary-mobile mt-4"
                     >
                         Gerenciar Permissões
                     </button>
@@ -85,7 +85,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
                     </p>
                     <button 
                         onClick={handleViewLogs}
-                        className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                        className="btn-primary-mobile mt-4"
                     >
                         Ver Logs
                     </button>
@@ -98,7 +98,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
                     </p>
                     <button 
                         onClick={handleManageNotices}
-                        className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                        className="btn-primary-mobile mt-4"
                     >
                         <BellIcon className="h-4 w-4 inline-block mr-2" /> Gerenciar Avisos
                     </button>
@@ -112,7 +112,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onBack, setView }) => {
                         </p>
                         <button 
                             onClick={handleManageTemplates}
-                            className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors"
+                            className="btn-primary-mobile mt-4"
                         >
                             <TemplateIcon className="h-4 w-4 inline-block mr-2" /> Gerenciar Modelos
                         </button>

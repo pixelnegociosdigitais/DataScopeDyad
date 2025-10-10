@@ -221,7 +221,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                 <h2 className="text-xl font-bold text-text-main">Chats</h2>
                 <button
                     onClick={() => onCreateChat(currentCompanyId)}
-                    className="p-2 rounded-full bg-primary text-white hover:bg-primary-dark transition-colors"
+                    className="btn-icon-mobile bg-primary text-white hover:bg-primary-dark"
                     title="Iniciar Novo Chat"
                 >
                     <PlusIcon className="h-5 w-5" />
@@ -253,7 +253,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreate
                                         e.stopPropagation();
                                         handleDeleteChat(chat);
                                     }}
-                                    className="p-1 rounded-full text-red-600 hover:bg-red-100 transition-colors"
+                                    className="btn-icon-mobile text-red-600 hover:bg-red-100 border-red-300"
                                     title="Excluir Conversa"
                                 >
                                     <TrashIcon className="h-5 w-5" />

@@ -396,17 +396,17 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
                     </div>
 
                     <div className="p-6 border-t border-gray-200 bg-gray-50">
-                        <div className="flex justify-end gap-3">
+                        <div className="flex flex-col sm:flex-row gap-4 justify-end">
                             <button
                                 onClick={onClose}
-                                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium"
+                                className="btn-outline-mobile order-2 sm:order-1"
                             >
                                 Fechar
                             </button>
                             {questions.length > 0 && (
                                 <button
                                     onClick={() => setShowForm(true)}
-                                    className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium"
+                                    className="btn-danger-mobile order-1 sm:order-2"
                                 >
                                     Aplicar
                                 </button>
@@ -453,16 +453,16 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
                                 </p>
                             </div>
 
-                            <div className="flex gap-4">
+                            <div className="flex flex-col sm:flex-row gap-4">
                                 <button
                                     onClick={handleNewResponse}
-                                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                                    className="btn-primary-mobile flex-1 sm:flex-none"
                                 >
                                     Enviar Nova Resposta
                                 </button>
                                 <button
                                     onClick={handleCloseForm}
-                                    className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors"
+                                    className="btn-outline-mobile flex-1 sm:flex-none"
                                 >
                                     Fechar Formulário
                                 </button>
@@ -520,18 +520,18 @@ const SurveyApplyModal: React.FC<SurveyApplyModalProps> = ({ survey, onClose }) 
                             </div>
 
                             <div className="p-6 border-t border-gray-200 bg-gray-50">
-                                <div className="flex justify-between">
+                                <div className="flex flex-col sm:flex-row justify-between gap-4">
                                     <button
                                         type="button"
                                         onClick={onClose}
-                                        className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 font-medium"
+                                        className="btn-outline-mobile order-2 sm:order-1"
                                     >
                                         ← Voltar
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={submitting}
-                                        className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                        className={`btn-secondary-mobile order-1 sm:order-2 flex items-center justify-center gap-2 ${submitting ? 'btn-disabled-mobile' : ''}`}
                                     >
                                         {submitting ? (
                                             <>
