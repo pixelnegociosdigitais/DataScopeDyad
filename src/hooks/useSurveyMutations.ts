@@ -89,7 +89,7 @@ export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, 
                     title: surveyData.title,
                     company_id: surveyCompanyId,
                     created_by: currentUser.id,
-                    available_to_all_profiles: isFromTemplate || false,
+                    // available_to_all_profiles: isFromTemplate || false, // Temporariamente comentado até a migração ser aplicada
                 };
                 console.log('useSurveyMutations: handleSaveSurvey - Objeto de pesquisa para inserção:', surveyToInsert); // Log do objeto a ser inserido
 
