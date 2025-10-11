@@ -23,13 +23,12 @@ interface RawChatParticipantData {
 interface ChatListProps {
     currentUser: User;
     onSelectChat: (chat: Chat | null) => void;
-    onCreateChat: (companyId: string) => void; // Atualizado para aceitar companyId
     selectedChatId: string | null;
     currentCompanyId: string; // Adicionado currentCompanyId
     onOpenGeminiChat: () => void; // Nova prop para abrir chat com Gemini
 }
 
-const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, onCreateChat, selectedChatId, currentCompanyId, onOpenGeminiChat }) => {
+const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, selectedChatId, currentCompanyId, onOpenGeminiChat }) => {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
     const [showDeleteChatConfirm, setShowDeleteChatConfirm] = useState(false); // Estado para o diálogo de confirmação

@@ -12,14 +12,14 @@ interface UseSurveyMutationsProps {
 }
 
 interface UseSurveyMutationsReturn {
-    handleSaveSurvey: (surveyData: Survey, editingSurveyId?: string, isFromTemplate?: boolean) => Promise<void>;
+    handleSaveSurvey: (surveyData: Survey, editingSurveyId?: string) => Promise<void>;
     handleDeleteSurvey: (surveyId: string) => Promise<boolean>;
     handleSaveResponse: (answers: Answer[], selectedSurvey: Survey, currentUser: User) => Promise<boolean>;
 }
 
 export const useSurveyMutations = ({ currentUser, currentCompany, fetchSurveys, fetchSurveyResponses }: UseSurveyMutationsProps): UseSurveyMutationsReturn => {
 
-    const handleSaveSurvey = useCallback(async (surveyData: Survey, editingSurveyId?: string, isFromTemplate?: boolean) => {
+    const handleSaveSurvey = useCallback(async (surveyData: Survey, editingSurveyId?: string) => {
         try {
             if (!currentUser) {
                 showError('Usuário não identificado para salvar a pesquisa.');
