@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import './src/styles/mobile-buttons.css';
 import { UserRole, View, Survey, ModuleName, Notice } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';

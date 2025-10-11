@@ -122,6 +122,10 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
         
         // Mensagens de erro mais específicas
         if (response.status === 400) {
+          // Verificar se é erro de API key inválida
+          if (errorData.error && errorData.error.message && errorData.error.message.includes('API key not valid')) {
+            throw new Error('Chave da API do Gemini inválida. Verifique se a chave está correta no arquivo .env.local');
+          }
           throw new Error('Erro na requisição: Verifique se a chave da API está correta.');
         } else if (response.status === 403) {
           throw new Error('Acesso negado: Chave da API inválida ou sem permissões.');
