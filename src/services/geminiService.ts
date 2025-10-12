@@ -1,12 +1,15 @@
-// Serviço simplificado para integração com a API do Google Gemini
-// Usando fetch nativo para evitar problemas de dependências
+// Serviço para integração com a API do Google Gemini via rota serverless segura
+// A chave da API fica protegida no servidor, não exposta no cliente
 
-// Configuração da API do Gemini
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+// URL da nossa API interna (serverless)
+const API_URL = '/api/gemini';
 
-if (!API_KEY) {
-  console.warn('Chave da API do Gemini não encontrada. Verifique se GEMINI_API_KEY está configurada no arquivo .env.local');
+// Para desenvolvimento local, verificar se existe chave local
+const LOCAL_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+const IS_DEVELOPMENT = import.meta.env.DEV;
+
+if (IS_DEVELOPMENT && !LOCAL_API_KEY) {
+  console.warn('Chave da API do Gemini não encontrada para desenvolvimento local. Verifique se VITE_GEMINI_API_KEY está configurada no arquivo .env.local');
 }
 
 export interface GeminiMessage {
@@ -66,11 +69,11 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
   }
 
   /**
-   * Envia uma mensagem para o Gemini e retorna a resposta
+   * Envia uma mensagem para o Gemini via API serverless segura
    */
   async sendMessage(message: string, sessionId: string = 'default'): Promise<string> {
     if (!this.isConfigured()) {
-      throw new Error('API do Gemini não configurada. Verifique se a chave GEMINI_API_KEY está definida.');
+      throw new Error('API do Gemini não configurada. Verifique a configuração do servidor.');
     }
 
     try {
@@ -81,82 +84,51 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
         timestamp: new Date(),
       });
 
-      // Combina o prompt do sistema com a mensagem do usuário
-      const fullMessage = `${this.getSystemPrompt()}\n\nUsuário: ${message}`;
+      // Em desenvolvimento local, usar API direta se disponível
+      if (IS_DEVELOPMENT && LOCAL_API_KEY) {
+        return await this.sendMessageDirect(message, sessionId);
+      }
 
-      const requestBody = {
-        contents: [
-          {
-            parts: [
-              {
-                text: fullMessage
-              }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        }
-      };
-
-      const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+      // Em produção ou desenvolvimento sem chave local, usar API serverless
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ message }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Erro na API do Gemini:', {
+        console.error('Erro na API serverless:', {
           status: response.status,
           statusText: response.statusText,
-          errorData: errorData,
-          url: `${API_URL}?key=${API_KEY?.substring(0, 10)}...`,
-          hasApiKey: !!API_KEY
+          errorData: errorData
         });
         
-        // Mensagens de erro mais específicas
-        if (response.status === 400) {
-          // Verificar se é erro de API key inválida
-          if (errorData.error && errorData.error.message && errorData.error.message.includes('API key not valid')) {
-            throw new Error('Chave da API do Gemini inválida. Verifique se a chave está correta no arquivo .env.local');
-          }
-          throw new Error('Erro na requisição: Verifique se a chave da API está correta.');
-        } else if (response.status === 403) {
-          throw new Error('Acesso negado: Chave da API inválida ou sem permissões.');
-        } else if (response.status === 429) {
+        if (response.status === 429) {
           throw new Error('Limite de requisições excedido. Tente novamente em alguns minutos.');
         } else if (response.status >= 500) {
-          throw new Error('Erro interno do servidor Gemini. Tente novamente mais tarde.');
+          throw new Error('Erro interno do servidor. Tente novamente mais tarde.');
         }
         
-        throw new Error(`Erro na API do Gemini: ${response.status} ${response.statusText}`);
+        throw new Error(errorData.error || `Erro na API: ${response.status} ${response.statusText}`);
       }
 
-      const data: GeminiResponse = await response.json();
+      const data = await response.json();
       
-      if (!data.candidates || data.candidates.length === 0) {
+      if (!data.response) {
         throw new Error('Nenhuma resposta foi gerada pelo Gemini.');
       }
-
-      const geminiResponse = data.candidates[0].content.parts[0].text;
-
-      // Filtro adicional: verifica se a resposta está relacionada à Expomarau 2025
-      const filteredResponse = this.filterResponse(geminiResponse, message);
 
       // Adiciona a resposta do Gemini ao histórico
       this.addMessageToHistory(sessionId, {
         role: 'model',
-        content: filteredResponse,
+        content: data.response,
         timestamp: new Date(),
       });
 
-      return filteredResponse;
+      return data.response;
 
     } catch (error) {
       console.error('Erro ao enviar mensagem para o Gemini:', error);
@@ -165,6 +137,66 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
       }
       throw new Error('Não foi possível processar sua mensagem. Tente novamente.');
     }
+  }
+
+  /**
+   * Método para desenvolvimento local - chama API direta do Gemini
+   */
+  private async sendMessageDirect(message: string, sessionId: string): Promise<string> {
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+    
+    // Combina o prompt do sistema com a mensagem do usuário
+    const fullMessage = `${this.getSystemPrompt()}\n\nUsuário: ${message}`;
+
+    const requestBody = {
+      contents: [
+        {
+          parts: [
+            {
+              text: fullMessage
+            }
+          ]
+        }
+      ],
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 1024,
+      }
+    };
+
+    const response = await fetch(`${GEMINI_API_URL}?key=${LOCAL_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Erro na API do Gemini:', errorData);
+      throw new Error(`Erro na API do Gemini: ${response.status} ${response.statusText}`);
+    }
+
+    const data: GeminiResponse = await response.json();
+    
+    if (!data.candidates || data.candidates.length === 0) {
+      throw new Error('Nenhuma resposta foi gerada pelo Gemini.');
+    }
+
+    const geminiResponse = data.candidates[0].content.parts[0].text;
+    const filteredResponse = this.filterResponse(geminiResponse, message);
+
+    // Adiciona a resposta do Gemini ao histórico
+    this.addMessageToHistory(sessionId, {
+      role: 'model',
+      content: filteredResponse,
+      timestamp: new Date(),
+    });
+
+    return filteredResponse;
   }
 
   /**

@@ -134,7 +134,7 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
               Para usar o chat com Gemini, é necessário configurar a chave da API no arquivo .env.local
             </p>
             <p className="text-sm text-gray-500">
-              Adicione: GEMINI_API_KEY=sua_chave_aqui
+              Adicione: VITE_GEMINI_API_KEY=sua_chave_aqui
             </p>
           </div>
         </div>
