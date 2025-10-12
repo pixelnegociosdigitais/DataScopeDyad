@@ -5,7 +5,7 @@
 const API_URL = '/api/gemini';
 
 // Para desenvolvimento local, verificar se existe chave local
-const LOCAL_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+const LOCAL_API_KEY = import.meta.env.DEV ? (import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY) : null;
 const IS_DEVELOPMENT = import.meta.env.DEV;
 
 if (IS_DEVELOPMENT && !LOCAL_API_KEY) {
