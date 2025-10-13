@@ -84,6 +84,42 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
         timestamp: new Date(),
       });
 
+      // Em desenvolvimento, tenta primeiro a API serverless, se falhar usa API direta
+      if (IS_DEVELOPMENT && LOCAL_API_KEY) {
+        try {
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message }),
+          });
+
+          if (!response.ok) {
+            console.warn('API serverless não disponível em desenvolvimento, usando API direta do DeepSeek');
+            return await this.sendMessageDirect(message, sessionId);
+          }
+
+          const data = await response.json();
+          if (!data.response) {
+            throw new Error('Nenhuma resposta foi gerada pelo DeepSeek.');
+          }
+
+          // Adiciona a resposta ao histórico
+          this.addMessageToHistory(sessionId, {
+            role: 'model',
+            content: data.response,
+            timestamp: new Date(),
+          });
+
+          return data.response;
+        } catch (error) {
+          console.warn('Erro na API serverless, tentando API direta:', error);
+          return await this.sendMessageDirect(message, sessionId);
+        }
+      }
+
+      // Em produção, usa apenas a API serverless
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
