@@ -30,6 +30,7 @@ export interface GeminiResponse {
 
 class GeminiService {
   private chatHistory: Map<string, GeminiMessage[]> = new Map();
+  private apiKey: string | null = LOCAL_API_KEY;
 
   /**
    * Prompt especializado para Expomarau 2025
@@ -252,7 +253,7 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
    * Verifica se a API está configurada corretamente
    */
   isConfigured(): boolean {
-    return !!API_KEY && API_KEY !== 'PLACEHOLDER_API_KEY';
+    return !!this.apiKey && this.apiKey !== 'PLACEHOLDER_API_KEY';
   }
 
   /**
@@ -261,7 +262,7 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
   getConfigInfo(): { configured: boolean; hasKey: boolean } {
     return {
       configured: this.isConfigured(),
-      hasKey: !!API_KEY,
+      hasKey: !!this.apiKey,
     };
   }
 }
