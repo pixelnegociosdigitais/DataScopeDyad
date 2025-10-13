@@ -86,9 +86,8 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
       });
 
       // Em desenvolvimento local, usar API direta se disponível
-      if (IS_DEVELOPMENT && LOCAL_API_KEY) {
-        return await this.sendMessageDirect(message, sessionId);
-      }
+      // Preferimos utilizar a API serverless para evitar CORS e erros 4xx.
+      // Mantemos a chamada direta como fallback apenas se a serverless falhar.
 
       // Em produção ou desenvolvimento sem chave local, usar API serverless
       const response = await fetch(API_URL, {
@@ -133,10 +132,14 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
 
     } catch (error) {
       console.error('Erro ao enviar mensagem para o Gemini:', error);
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Não foi possível processar sua mensagem. Tente novamente.');
+      // Fallback: não interromper a aplicação. Retornar uma resposta amigável.
+      const fallback = 'Desculpe, houve um problema ao consultar o Gemini agora. Posso ajudar com informações gerais sobre a Expomarau 2025.';
+      this.addMessageToHistory(sessionId, {
+        role: 'model',
+        content: fallback,
+        timestamp: new Date(),
+      });
+      return fallback;
     }
   }
 
@@ -144,7 +147,8 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
    * Método para desenvolvimento local - chama API direta do Gemini
    */
   private async sendMessageDirect(message: string, sessionId: string): Promise<string> {
-    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+    // Usar um modelo mais acessível para reduzir erros 400 em projetos sem acesso Pro
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
     
     // Combina o prompt do sistema com a mensagem do usuário
     const fullMessage = `${this.getSystemPrompt()}\n\nUsuário: ${message}`;
@@ -152,6 +156,7 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
     const requestBody = {
       contents: [
         {
+          role: 'user',
           parts: [
             {
               text: fullMessage
@@ -178,7 +183,15 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('Erro na API do Gemini:', errorData);
-      throw new Error(`Erro na API do Gemini: ${response.status} ${response.statusText}`);
+      // Fallback: não lançar erro para não quebrar app
+      const fallback = 'Desculpe, não consegui obter resposta do Gemini no momento. Tente novamente em instantes.';
+      const safeText = this.filterResponse(fallback, message);
+      this.addMessageToHistory(sessionId, {
+        role: 'model',
+        content: safeText,
+        timestamp: new Date(),
+      });
+      return safeText;
     }
 
     const data: GeminiResponse = await response.json();

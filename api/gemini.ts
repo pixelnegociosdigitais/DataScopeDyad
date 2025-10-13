@@ -2,7 +2,7 @@ import { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Configuração da API do Gemini (apenas no servidor)
 const API_KEY = process.env.GEMINI_API_KEY;
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 interface GeminiResponse {
   candidates: Array<{
@@ -113,6 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const requestBody = {
       contents: [
         {
+          role: 'user',
           parts: [
             {
               text: fullMessage
