@@ -79,24 +79,35 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, selected
 
             if (allParticipantsError) throw allParticipantsError;
 
-            const chatsWithDetails: Chat[] = chatParticipantsData.map((cp: {
-                chat_id: string;
-                unread_count: number;
-                chats: Array<{
-                    id: string;
-                    name: string | null;
-                    is_group_chat: boolean | null;
-                    last_message_at: string | null;
-                    company_id: string | null;
-                    created_at: string;
-                }>;
-            }) => {
-                const rawChatData = cp.chats[0]; 
-
-                if (!rawChatData) {
-                    console.warn(`Dados do chat ausentes para o participante ${cp.chat_id}`);
-                    return null;
-                }
+            const chatsWithDetails: Chat[] = chatParticipantsData
+                .filter((cp: {
+                    chat_id: string;
+                    unread_count: number;
+                    chats: Array<{
+                        id: string;
+                        name: string | null;
+                        is_group_chat: boolean | null;
+                        last_message_at: string | null;
+                        company_id: string | null;
+                        created_at: string;
+                    }> | null;
+                }) => {
+                    // Filtrar participantes que não têm dados de chat válidos
+                    return cp.chats && cp.chats.length > 0 && cp.chats[0];
+                })
+                .map((cp: {
+                    chat_id: string;
+                    unread_count: number;
+                    chats: Array<{
+                        id: string;
+                        name: string | null;
+                        is_group_chat: boolean | null;
+                        last_message_at: string | null;
+                        company_id: string | null;
+                        created_at: string;
+                    }>;
+                }) => {
+                    const rawChatData = cp.chats[0];
 
                 const unreadCount: number = cp.unread_count;
                 
@@ -139,7 +150,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, selected
                     unread_count: unreadCount,
                     participants: participantsInChat,
                 };
-            }).filter(Boolean) as Chat[];
+            }) as Chat[];
 
             setChats(chatsWithDetails);
         } catch (error: any) {
