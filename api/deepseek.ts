@@ -1,24 +1,14 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Configuração da API do Gemini (apenas no servidor)
-const API_KEY = process.env.GEMINI_API_KEY;
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-
-interface GeminiResponse {
-  candidates: Array<{
-    content: {
-      parts: Array<{
-        text: string;
-      }>;
-    };
-  }>;
-}
+// Configuração da API do DeepSeek (apenas no servidor)
+const API_KEY = process.env.DEEPSEEK_API_KEY;
+const API_URL = 'https://api.deepseek.com/chat/completions';
 
 /**
  * Prompt especializado para Expomarau 2025
  */
 function getSystemPrompt(): string {
-  return `Você é um assistente especializado em Expomarau 2025. Você deve responder APENAS sobre tópicos relacionados à Expomarau 2025, que é uma feira de exposições e eventos em Marabá, Pará.
+  return `Você é um assistente especializado em Expomarau 2025. Você deve responder APENAS sobre tópicos relacionados à Expomarau 2025, que é uma feira de exposições e eventos em Marau, Rio Grande do Sul, Brasil.
 
 INSTRUÇÕES IMPORTANTES:
 1. Responda SOMENTE sobre Expomarau 2025
@@ -43,10 +33,10 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
  */
 function isExpomarauRelated(message: string): boolean {
   const keywords = [
-    'expomarau', 'expo marau', 'marabá', 'pará', 'feira', 'exposição', 
+    'expomarau', 'expo marau', 'marau', 'rio grande do sul', 'feira', 'exposição',
     'evento', 'expositores', 'programação', 'visitação', '2025'
   ];
-  
+
   const messageLower = message.toLowerCase();
   return keywords.some(keyword => messageLower.includes(keyword));
 }
@@ -55,20 +45,17 @@ function isExpomarauRelated(message: string): boolean {
  * Filtra a resposta para garantir que seja sobre Expomarau 2025
  */
 function filterResponse(response: string, originalMessage: string): string {
-  // Se a mensagem original não é sobre Expomarau, retorna resposta padrão
   if (!isExpomarauRelated(originalMessage)) {
     return 'Desculpe, eu sou especializado apenas em informações sobre a Expomarau 2025. Posso ajudá-lo com informações sobre datas, expositores, programação, localização e tudo relacionado à feira. Como posso ajudá-lo com a Expomarau 2025?';
   }
 
-  // Verifica se a resposta contém informações relevantes sobre Expomarau
   const responseLower = response.toLowerCase();
-  const expomarauKeywords = ['expomarau', 'feira', 'exposição', 'marabá', 'evento', 'expositores'];
-  
-  const hasRelevantContent = expomarauKeywords.some(keyword => 
+  const expomarauKeywords = ['expomarau', 'feira', 'exposição', 'marau', 'evento', 'expositores'];
+
+  const hasRelevantContent = expomarauKeywords.some(keyword =>
     responseLower.includes(keyword)
   );
 
-  // Se a resposta não parece ser sobre Expomarau, adiciona contexto
   if (!hasRelevantContent) {
     return `Sobre a Expomarau 2025: ${response}\n\nSe você tiver mais dúvidas específicas sobre a Expomarau 2025, ficarei feliz em ajudar!`;
   }
@@ -82,103 +69,81 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Responder a requisições OPTIONS (preflight)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Apenas aceitar POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  // Verificar se a API está configurada
   if (!API_KEY) {
-    console.error('GEMINI_API_KEY não configurada');
-    return res.status(500).json({ 
-      error: 'API do Gemini não configurada no servidor' 
+    console.error('DEEPSEEK_API_KEY não configurada');
+    return res.status(500).json({
+      error: 'API do DeepSeek não configurada no servidor'
     });
   }
 
   try {
-    const { message } = req.body;
+    const { message } = req.body as { message?: string };
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'Mensagem é obrigatória' });
     }
 
-    // Combina o prompt do sistema com a mensagem do usuário
-    const fullMessage = `${getSystemPrompt()}\n\nUsuário: ${message}`;
-
     const requestBody = {
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              text: fullMessage
-            }
-          ]
-        }
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: getSystemPrompt() },
+        { role: 'user', content: message }
       ],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
-      }
+      temperature: 0.7,
+      max_tokens: 1024
     };
 
-    const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+    const response = await fetch(API_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json; charset=utf-8',
+        'Authorization': `Bearer ${API_KEY}`,
       },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Erro na API do Gemini:', {
+      console.error('Erro na API do DeepSeek:', {
         status: response.status,
         statusText: response.statusText,
-        errorData: errorData
+        errorData
       });
-      
-      // Mensagens de erro mais específicas
+
       if (response.status === 400) {
-        if (errorData.error && errorData.error.message && errorData.error.message.includes('API key not valid')) {
-          return res.status(500).json({ error: 'Chave da API do Gemini inválida' });
-        }
-        return res.status(400).json({ error: 'Erro na requisição para o Gemini' });
-      } else if (response.status === 403) {
+        return res.status(400).json({ error: 'Erro na requisição para o DeepSeek' });
+      } else if (response.status === 401 || response.status === 403) {
         return res.status(500).json({ error: 'Acesso negado: Chave da API inválida ou sem permissões' });
       } else if (response.status === 429) {
         return res.status(429).json({ error: 'Limite de requisições excedido. Tente novamente em alguns minutos' });
       } else if (response.status >= 500) {
-        return res.status(500).json({ error: 'Erro interno do servidor Gemini. Tente novamente mais tarde' });
+        return res.status(500).json({ error: 'Erro interno do servidor DeepSeek. Tente novamente mais tarde' });
       }
-      
-      return res.status(500).json({ error: `Erro na API do Gemini: ${response.status}` });
+
+      return res.status(500).json({ error: `Erro na API do DeepSeek: ${response.status}` });
     }
 
-    const data: GeminiResponse = await response.json();
-    
-    if (!data.candidates || data.candidates.length === 0) {
-      return res.status(500).json({ error: 'Nenhuma resposta foi gerada pelo Gemini' });
+    const data = await response.json();
+    const content: string | undefined = data?.choices?.[0]?.message?.content;
+    if (!content) {
+      return res.status(500).json({ error: 'Nenhuma resposta foi gerada pelo DeepSeek' });
     }
 
-    const geminiResponse = data.candidates[0].content.parts[0].text;
-
-    // Filtro adicional: verifica se a resposta está relacionada à Expomarau 2025
-    const filteredResponse = filterResponse(geminiResponse, message);
-
+    const filteredResponse = filterResponse(content, message);
     return res.status(200).json({ response: filteredResponse });
 
   } catch (error) {
     console.error('Erro ao processar mensagem:', error);
-    return res.status(500).json({ 
-      error: 'Não foi possível processar sua mensagem. Tente novamente.' 
+    return res.status(500).json({
+      error: 'Não foi possível processar sua mensagem. Tente novamente.'
     });
   }
 }

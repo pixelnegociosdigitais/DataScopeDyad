@@ -1,42 +1,41 @@
-// Serviço para integração com a API do Google Gemini via rota serverless segura
+// Serviço para integração com a API do DeepSeek via rota serverless segura
 // A chave da API fica protegida no servidor, não exposta no cliente
 
 // URL da nossa API interna (serverless)
-const API_URL = '/api/gemini';
+const API_URL = '/api/deepseek';
 
 // Para desenvolvimento local, verificar se existe chave local
-const LOCAL_API_KEY = import.meta.env.DEV ? (import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY) : null;
+const LOCAL_API_KEY = import.meta.env.DEV ? (import.meta.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY) : null;
 const IS_DEVELOPMENT = import.meta.env.DEV;
 
 if (IS_DEVELOPMENT && !LOCAL_API_KEY) {
-  console.warn('Chave da API do Gemini não encontrada para desenvolvimento local. Verifique se VITE_GEMINI_API_KEY está configurada no arquivo .env.local');
+  console.warn('Chave da API do DeepSeek não encontrada para desenvolvimento local. Verifique se VITE_DEEPSEEK_API_KEY está configurada no arquivo .env.local');
 }
 
-export interface GeminiMessage {
+export interface DeepseekMessage {
   role: 'user' | 'model';
   content: string;
   timestamp: Date;
 }
 
-export interface GeminiResponse {
-  candidates: Array<{
-    content: {
-      parts: Array<{
-        text: string;
-      }>;
+interface DeepseekChatResponse {
+  choices: Array<{
+    message: {
+      role: string;
+      content: string;
     };
   }>;
 }
 
-class GeminiService {
-  private chatHistory: Map<string, GeminiMessage[]> = new Map();
+class DeepseekService {
+  private chatHistory: Map<string, DeepseekMessage[]> = new Map();
   private apiKey: string | null = LOCAL_API_KEY;
 
   /**
    * Prompt especializado para Expomarau 2025
    */
   private getSystemPrompt(): string {
-    return `Você é um assistente especializado em Expomarau 2025. Você deve responder APENAS sobre tópicos relacionados à Expomarau 2025, que é uma feira de exposições e eventos em Marabá, Pará.
+    return `Você é um assistente especializado em Expomarau 2025. Você deve responder APENAS sobre tópicos relacionados à Expomarau 2025, que é uma feira de exposições e eventos em Marau, Rio Grande do Sul, Brasil.
 
 INSTRUÇÕES IMPORTANTES:
 1. Responda SOMENTE sobre Expomarau 2025
@@ -61,20 +60,20 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
    */
   private isExpomarauRelated(message: string): boolean {
     const keywords = [
-      'expomarau', 'expo marau', 'marabá', 'pará', 'feira', 'exposição', 
+      'expomarau', 'expo marau', 'marau', 'rio grande do sul', 'feira', 'exposição',
       'evento', 'expositores', 'programação', 'visitação', '2025'
     ];
-    
+
     const messageLower = message.toLowerCase();
     return keywords.some(keyword => messageLower.includes(keyword));
   }
 
   /**
-   * Envia uma mensagem para o Gemini via API serverless segura
+   * Envia uma mensagem para o DeepSeek via API serverless segura
    */
   async sendMessage(message: string, sessionId: string = 'default'): Promise<string> {
     if (!this.isConfigured()) {
-      throw new Error('API do Gemini não configurada. Verifique a configuração do servidor.');
+      throw new Error('API do DeepSeek não configurada. Verifique a configuração do servidor.');
     }
 
     try {
@@ -85,11 +84,6 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
         timestamp: new Date(),
       });
 
-      // Em desenvolvimento local, usar API direta se disponível
-      // Preferimos utilizar a API serverless para evitar CORS e erros 4xx.
-      // Mantemos a chamada direta como fallback apenas se a serverless falhar.
-
-      // Em produção ou desenvolvimento sem chave local, usar API serverless
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -100,28 +94,28 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Erro na API serverless:', {
+        console.error('Erro na API serverless DeepSeek:', {
           status: response.status,
           statusText: response.statusText,
           errorData: errorData
         });
-        
+
         if (response.status === 429) {
           throw new Error('Limite de requisições excedido. Tente novamente em alguns minutos.');
         } else if (response.status >= 500) {
           throw new Error('Erro interno do servidor. Tente novamente mais tarde.');
         }
-        
+
         throw new Error(errorData.error || `Erro na API: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      
+
       if (!data.response) {
-        throw new Error('Nenhuma resposta foi gerada pelo Gemini.');
+        throw new Error('Nenhuma resposta foi gerada pelo DeepSeek.');
       }
 
-      // Adiciona a resposta do Gemini ao histórico
+      // Adiciona a resposta ao histórico
       this.addMessageToHistory(sessionId, {
         role: 'model',
         content: data.response,
@@ -131,9 +125,8 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
       return data.response;
 
     } catch (error) {
-      console.error('Erro ao enviar mensagem para o Gemini:', error);
-      // Fallback: não interromper a aplicação. Retornar uma resposta amigável.
-      const fallback = 'Desculpe, houve um problema ao consultar o Gemini agora. Posso ajudar com informações gerais sobre a Expomarau 2025.';
+      console.error('Erro ao enviar mensagem para o DeepSeek:', error);
+      const fallback = 'Desculpe, houve um problema ao consultar o DeepSeek agora. Posso ajudar com informações gerais sobre a Expomarau 2025.';
       this.addMessageToHistory(sessionId, {
         role: 'model',
         content: fallback,
@@ -144,47 +137,34 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
   }
 
   /**
-   * Método para desenvolvimento local - chama API direta do Gemini
+   * Método para desenvolvimento local - chama API direta do DeepSeek
    */
   private async sendMessageDirect(message: string, sessionId: string): Promise<string> {
-    // Usar um modelo mais acessível para reduzir erros 400 em projetos sem acesso Pro
-    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
-    
-    // Combina o prompt do sistema com a mensagem do usuário
-    const fullMessage = `${this.getSystemPrompt()}\n\nUsuário: ${message}`;
+    const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
 
     const requestBody = {
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            {
-              text: fullMessage
-            }
-          ]
-        }
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: this.getSystemPrompt() },
+        { role: 'user', content: message }
       ],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
-      }
+      temperature: 0.7,
+      max_tokens: 1024
     };
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${LOCAL_API_KEY}`, {
+    const response = await fetch(DEEPSEEK_API_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json; charset=utf-8',
+        'Authorization': `Bearer ${LOCAL_API_KEY}`,
       },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Erro na API do Gemini:', errorData);
-      // Fallback: não lançar erro para não quebrar app
-      const fallback = 'Desculpe, não consegui obter resposta do Gemini no momento. Tente novamente em instantes.';
+      console.error('Erro na API do DeepSeek:', errorData);
+      const fallback = 'Desculpe, não consegui obter resposta do DeepSeek no momento. Tente novamente em instantes.';
       const safeText = this.filterResponse(fallback, message);
       this.addMessageToHistory(sessionId, {
         role: 'model',
@@ -194,16 +174,14 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
       return safeText;
     }
 
-    const data: GeminiResponse = await response.json();
-    
-    if (!data.candidates || data.candidates.length === 0) {
-      throw new Error('Nenhuma resposta foi gerada pelo Gemini.');
+    const data: DeepseekChatResponse = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    if (!content) {
+      throw new Error('Nenhuma resposta foi gerada pelo DeepSeek.');
     }
 
-    const geminiResponse = data.candidates[0].content.parts[0].text;
-    const filteredResponse = this.filterResponse(geminiResponse, message);
+    const filteredResponse = this.filterResponse(content, message);
 
-    // Adiciona a resposta do Gemini ao histórico
     this.addMessageToHistory(sessionId, {
       role: 'model',
       content: filteredResponse,
@@ -217,20 +195,17 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
    * Filtra a resposta para garantir que seja sobre Expomarau 2025
    */
   private filterResponse(response: string, originalMessage: string): string {
-    // Se a mensagem original não é sobre Expomarau, retorna resposta padrão
     if (!this.isExpomarauRelated(originalMessage)) {
       return 'Desculpe, eu sou especializado apenas em informações sobre a Expomarau 2025. Posso ajudá-lo com informações sobre datas, expositores, programação, localização e tudo relacionado à feira. Como posso ajudá-lo com a Expomarau 2025?';
     }
 
-    // Verifica se a resposta contém informações relevantes sobre Expomarau
     const responseLower = response.toLowerCase();
-    const expomarauKeywords = ['expomarau', 'feira', 'exposição', 'marabá', 'evento', 'expositores'];
-    
-    const hasRelevantContent = expomarauKeywords.some(keyword => 
+    const expomarauKeywords = ['expomarau', 'feira', 'exposição', 'marau', 'evento', 'expositores'];
+
+    const hasRelevantContent = expomarauKeywords.some(keyword =>
       responseLower.includes(keyword)
     );
 
-    // Se a resposta não parece ser sobre Expomarau, adiciona contexto
     if (!hasRelevantContent) {
       return `Sobre a Expomarau 2025: ${response}\n\nSe você tiver mais dúvidas específicas sobre a Expomarau 2025, ficarei feliz em ajudar!`;
     }
@@ -241,7 +216,7 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
   /**
    * Adiciona uma mensagem ao histórico da sessão
    */
-  private addMessageToHistory(sessionId: string, message: GeminiMessage): void {
+  private addMessageToHistory(sessionId: string, message: DeepseekMessage): void {
     if (!this.chatHistory.has(sessionId)) {
       this.chatHistory.set(sessionId, []);
     }
@@ -251,7 +226,7 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
   /**
    * Obtém o histórico de uma sessão
    */
-  getChatHistory(sessionId: string = 'default'): GeminiMessage[] {
+  getChatHistory(sessionId: string = 'default'): DeepseekMessage[] {
     return this.chatHistory.get(sessionId) || [];
   }
 
@@ -280,5 +255,5 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
   }
 }
 
-export const geminiService = new GeminiService();
-export default geminiService;
+export const deepseekService = new DeepseekService();
+export default deepseekService;

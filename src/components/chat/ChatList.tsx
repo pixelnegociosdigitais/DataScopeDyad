@@ -25,10 +25,10 @@ interface ChatListProps {
     onSelectChat: (chat: Chat | null) => void;
     selectedChatId: string | null;
     currentCompanyId: string; // Adicionado currentCompanyId
-    onOpenGeminiChat: () => void; // Nova prop para abrir chat com Gemini
+    onOpenDeepseekChat: () => void; // Nova prop para abrir chat com DeepSeek
 }
 
-const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, selectedChatId, currentCompanyId, onOpenGeminiChat }) => {
+const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, selectedChatId, currentCompanyId, onOpenDeepseekChat }) => {
     const [chats, setChats] = useState<Chat[]>([]);
     const [loading, setLoading] = useState(true);
     const [showDeleteChatConfirm, setShowDeleteChatConfirm] = useState(false); // Estado para o diálogo de confirmação
@@ -219,7 +219,7 @@ const ChatList: React.FC<ChatListProps> = ({ currentUser, onSelectChat, selected
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <h2 className="text-xl font-bold text-text-main">Chats</h2>
                 <button
-                    onClick={onOpenGeminiChat}
+                    onClick={onOpenDeepseekChat}
                     className="btn-icon-mobile bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-lg"
                     title="Chat com IA"
                 >
