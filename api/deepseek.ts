@@ -1,4 +1,18 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+// Tipos para a API Vercel (definidos localmente para evitar dependência)
+interface VercelRequest {
+  method?: string;
+  body?: any;
+  query?: { [key: string]: string | string[] };
+  headers?: { [key: string]: string };
+}
+
+interface VercelResponse {
+  status: (code: number) => VercelResponse;
+  json: (object: any) => VercelResponse;
+  send: (body: any) => VercelResponse;
+  setHeader: (name: string, value: string) => VercelResponse;
+  end: () => VercelResponse;
+}
 
 // Configuração da API do DeepSeek (apenas no servidor)
 const API_KEY = process.env.DEEPSEEK_API_KEY;
