@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import './src/styles/mobile-buttons.css';
 import { UserRole, View, Survey, ModuleName, Notice } from './types';
 import Header from './components/Header';
@@ -545,6 +546,7 @@ const App: React.FC = () => {
                     }}
                 />
             )}
+            <SpeedInsights />
         </div>
     );
 };
