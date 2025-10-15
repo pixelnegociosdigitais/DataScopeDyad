@@ -19,15 +19,6 @@ export interface DeepseekMessage {
   timestamp: Date;
 }
 
-interface DeepseekChatResponse {
-  choices: Array<{
-    message: {
-      role: string;
-      content: string;
-    };
-  }>;
-}
-
 class DeepseekService {
   private chatHistory: Map<string, DeepseekMessage[]> = new Map();
   private apiKey: string | null = LOCAL_API_KEY;
@@ -63,19 +54,6 @@ FONTES DE INFORMAÇÃO PRIORITÁRIAS:
 Sempre que possível, busque informações atualizadas nos sites oficiais mencionados acima para fornecer as informações mais precisas e recentes sobre a Expomarau 2025.
 
 Responda sempre em português brasileiro de forma clara e objetiva.`;
-  }
-
-  /**
-   * Verifica se a mensagem é relacionada à Expomarau 2025
-   */
-  private isExpomarauRelated(message: string): boolean {
-    const keywords = [
-      'expomarau', 'expo marau', 'marau', 'rio grande do sul', 'feira', 'exposição',
-      'evento', 'expositores', 'programação', 'visitação', '2025'
-    ];
-
-    const messageLower = message.toLowerCase();
-    return keywords.some(keyword => messageLower.includes(keyword));
   }
 
   /**
@@ -195,35 +173,13 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
   }
 
   /**
-   * Adiciona uma mensagem ao histórico da sessão
+   * Adiciona mensagem ao histórico do chat
    */
-  private addToHistory(sessionId: string, message: DeepseekMessage): void {
-    if (!this.chatHistory.has(sessionId)) {
-      this.chatHistory.set(sessionId, []);
+  private addToHistory(chatId: string, message: DeepseekMessage): void {
+    if (!this.chatHistory.has(chatId)) {
+      this.chatHistory.set(chatId, []);
     }
-    this.chatHistory.get(sessionId)!.push(message);
-  }
-
-  /**
-   * Filtra a resposta para garantir que seja sobre Expomarau 2025
-   */
-  private filterResponse(response: string, originalMessage: string): string {
-    if (!this.isExpomarauRelated(originalMessage)) {
-      return 'Desculpe, eu sou especializado apenas em informações sobre a Expomarau 2025. Posso ajudá-lo com informações sobre datas, expositores, programação, localização e tudo relacionado à feira. Como posso ajudá-lo com a Expomarau 2025?';
-    }
-
-    const responseLower = response.toLowerCase();
-    const expomarauKeywords = ['expomarau', 'feira', 'exposição', 'marau', 'evento', 'expositores'];
-
-    const hasRelevantContent = expomarauKeywords.some(keyword =>
-      responseLower.includes(keyword)
-    );
-
-    if (!hasRelevantContent) {
-      return `Sobre a Expomarau 2025: ${response}\n\nSe você tiver mais dúvidas específicas sobre a Expomarau 2025, ficarei feliz em ajudar!`;
-    }
-
-    return response;
+    this.chatHistory.get(chatId)!.push(message);
   }
 
   /**
