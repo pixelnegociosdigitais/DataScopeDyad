@@ -7,6 +7,7 @@ const API_URL = '/api/deepseek';
 // Para desenvolvimento local, verificar se existe chave local
 const LOCAL_API_KEY = import.meta.env.DEV ? (import.meta.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY) : null;
 const IS_DEVELOPMENT = import.meta.env.DEV;
+const IS_PRODUCTION = import.meta.env.PROD;
 
 if (IS_DEVELOPMENT && !LOCAL_API_KEY) {
   console.warn('Chave da API do DeepSeek não encontrada para desenvolvimento local. Verifique se VITE_DEEPSEEK_API_KEY está configurada no arquivo .env.local');
@@ -78,162 +79,129 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
   }
 
   /**
-   * Envia uma mensagem para o DeepSeek via API serverless segura
+   * Envia mensagem para o DeepSeek
    */
   async sendMessage(message: string, sessionId: string = 'default'): Promise<string> {
-    if (!this.isConfigured()) {
-      throw new Error('API do DeepSeek não configurada. Verifique a configuração do servidor.');
-    }
-
     try {
-      // Adiciona a mensagem do usuário ao histórico
-      this.addMessageToHistory(sessionId, {
-        role: 'user',
-        content: message,
-        timestamp: new Date(),
-      });
+      // Em produção, sempre usar a API serverless
+      if (IS_PRODUCTION || !LOCAL_API_KEY) {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message }),
+        });
 
-      // Em desenvolvimento, tenta primeiro a API serverless, se falhar usa API direta
-      if (IS_DEVELOPMENT && LOCAL_API_KEY) {
-        try {
-          const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ message }),
-          });
-
-          if (!response.ok) {
-            console.warn('API serverless não disponível em desenvolvimento, usando API direta do DeepSeek');
-            return await this.sendMessageDirect(message, sessionId);
-          }
-
-          const data = await response.json();
-          if (!data.response) {
-            throw new Error('Nenhuma resposta foi gerada pelo DeepSeek.');
-          }
-
-          // Adiciona a resposta ao histórico
-          this.addMessageToHistory(sessionId, {
-            role: 'model',
-            content: data.response,
-            timestamp: new Date(),
-          });
-
-          return data.response;
-        } catch (error) {
-          console.warn('Erro na API serverless, tentando API direta:', error);
-          return await this.sendMessageDirect(message, sessionId);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Erro na API: ${response.status}`);
         }
+
+        const data = await response.json();
+        const responseText = data.response;
+
+        // Adicionar mensagens ao histórico
+        const userMessage: DeepseekMessage = {
+          role: 'user',
+          content: message,
+          timestamp: new Date(),
+        };
+
+        const modelMessage: DeepseekMessage = {
+          role: 'model',
+          content: responseText,
+          timestamp: new Date(),
+        };
+
+        this.addToHistory(sessionId, userMessage);
+        this.addToHistory(sessionId, modelMessage);
+
+        return responseText;
       }
 
-      // Em produção, usa apenas a API serverless
-      const response = await fetch(API_URL, {
+      // Código para desenvolvimento local (quando há chave local)
+      if (!this.apiKey || this.apiKey === 'PLACEHOLDER_API_KEY') {
+        throw new Error('Chave da API do DeepSeek não configurada');
+      }
+
+      const requestBody = {
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: this.getSystemPrompt() },
+          { role: 'user', content: message }
+        ],
+        temperature: 0.7,
+        max_tokens: 1024
+      };
+
+      const response = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json; charset=utf-8',
+          'Authorization': `Bearer ${this.apiKey}`,
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Erro na API serverless DeepSeek:', {
+        console.error('Erro na API do DeepSeek:', {
           status: response.status,
           statusText: response.statusText,
-          errorData: errorData
+          errorData
         });
 
-        if (response.status === 429) {
-          throw new Error('Limite de requisições excedido. Tente novamente em alguns minutos.');
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Acesso negado: Chave da API inválida ou sem permissões');
+        } else if (response.status === 429) {
+          throw new Error('Limite de requisições excedido. Tente novamente em alguns minutos');
         } else if (response.status >= 500) {
-          throw new Error('Erro interno do servidor. Tente novamente mais tarde.');
+          throw new Error('Erro interno do servidor DeepSeek. Tente novamente mais tarde');
         }
 
-        throw new Error(errorData.error || `Erro na API: ${response.status} ${response.statusText}`);
+        throw new Error(`Erro na API do DeepSeek: ${response.status}`);
       }
 
       const data = await response.json();
+      const responseText = data?.choices?.[0]?.message?.content;
 
-      if (!data.response) {
-        throw new Error('Nenhuma resposta foi gerada pelo DeepSeek.');
+      if (!responseText) {
+        throw new Error('Nenhuma resposta foi gerada pelo DeepSeek');
       }
 
-      // Adiciona a resposta ao histórico
-      this.addMessageToHistory(sessionId, {
-        role: 'model',
-        content: data.response,
+      // Adicionar mensagens ao histórico
+      const userMessage: DeepseekMessage = {
+        role: 'user',
+        content: message,
         timestamp: new Date(),
-      });
+      };
 
-      return data.response;
+      const modelMessage: DeepseekMessage = {
+        role: 'model',
+        content: responseText,
+        timestamp: new Date(),
+      };
+
+      this.addToHistory(sessionId, userMessage);
+      this.addToHistory(sessionId, modelMessage);
+
+      return responseText;
 
     } catch (error) {
-      console.error('Erro ao enviar mensagem para o DeepSeek:', error);
-      const fallback = 'Desculpe, houve um problema ao consultar o DeepSeek agora. Posso ajudar com informações gerais sobre a Expomarau 2025.';
-      this.addMessageToHistory(sessionId, {
-        role: 'model',
-        content: fallback,
-        timestamp: new Date(),
-      });
-      return fallback;
+      console.error('Erro ao enviar mensagem para DeepSeek:', error);
+      throw error;
     }
   }
 
   /**
-   * Método para desenvolvimento local - chama API direta do DeepSeek
+   * Adiciona uma mensagem ao histórico da sessão
    */
-  private async sendMessageDirect(message: string, sessionId: string): Promise<string> {
-    const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
-
-    const requestBody = {
-      model: 'deepseek-chat',
-      messages: [
-        { role: 'system', content: this.getSystemPrompt() },
-        { role: 'user', content: message }
-      ],
-      temperature: 0.7,
-      max_tokens: 1024
-    };
-
-    const response = await fetch(DEEPSEEK_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Authorization': `Bearer ${LOCAL_API_KEY}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Erro na API do DeepSeek:', errorData);
-      const fallback = 'Desculpe, não consegui obter resposta do DeepSeek no momento. Tente novamente em instantes.';
-      const safeText = this.filterResponse(fallback, message);
-      this.addMessageToHistory(sessionId, {
-        role: 'model',
-        content: safeText,
-        timestamp: new Date(),
-      });
-      return safeText;
+  private addToHistory(sessionId: string, message: DeepseekMessage): void {
+    if (!this.chatHistory.has(sessionId)) {
+      this.chatHistory.set(sessionId, []);
     }
-
-    const data: DeepseekChatResponse = await response.json();
-    const content = data.choices?.[0]?.message?.content || '';
-    if (!content) {
-      throw new Error('Nenhuma resposta foi gerada pelo DeepSeek.');
-    }
-
-    const filteredResponse = this.filterResponse(content, message);
-
-    this.addMessageToHistory(sessionId, {
-      role: 'model',
-      content: filteredResponse,
-      timestamp: new Date(),
-    });
-
-    return filteredResponse;
+    this.chatHistory.get(sessionId)!.push(message);
   }
 
   /**
@@ -259,16 +227,6 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
   }
 
   /**
-   * Adiciona uma mensagem ao histórico da sessão
-   */
-  private addMessageToHistory(sessionId: string, message: DeepseekMessage): void {
-    if (!this.chatHistory.has(sessionId)) {
-      this.chatHistory.set(sessionId, []);
-    }
-    this.chatHistory.get(sessionId)!.push(message);
-  }
-
-  /**
    * Obtém o histórico de uma sessão
    */
   getChatHistory(sessionId: string = 'default'): DeepseekMessage[] {
@@ -286,6 +244,12 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
    * Verifica se a API está configurada corretamente
    */
   isConfigured(): boolean {
+    // Em produção, sempre consideramos configurado pois a chave está no servidor
+    if (IS_PRODUCTION) {
+      return true;
+    }
+    
+    // Em desenvolvimento, verificamos se há chave local
     return !!this.apiKey && this.apiKey !== 'PLACEHOLDER_API_KEY';
   }
 
@@ -295,7 +259,7 @@ Responda sempre em português brasileiro de forma clara e objetiva.`;
   getConfigInfo(): { configured: boolean; hasKey: boolean } {
     return {
       configured: this.isConfigured(),
-      hasKey: !!this.apiKey,
+      hasKey: IS_PRODUCTION || !!this.apiKey,
     };
   }
 }
