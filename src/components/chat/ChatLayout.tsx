@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Chat, User } from '../../../types';
 import ChatList from './ChatList';
 import ChatWindow from './ChatWindow';
-import GeminiChatWindow from './GeminiChatWindow';
+import DeepseekChatWindow from './DeepseekChatWindow';
 
 interface ChatLayoutProps {
     currentUser: User;
@@ -11,29 +11,29 @@ interface ChatLayoutProps {
 
 const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }) => {
     const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
-    const [showGeminiChat, setShowGeminiChat] = useState(false);
+    const [showDeepseekChat, setShowDeepseekChat] = useState(false);
 
     const handleSelectChat = (chat: Chat | null) => {
         setSelectedChat(chat);
-        setShowGeminiChat(false);
+        setShowDeepseekChat(false);
     };
 
     const handleBackToChatList = () => {
         setSelectedChat(null);
-        setShowGeminiChat(false);
+        setShowDeepseekChat(false);
     };
 
-    const handleOpenGeminiChat = () => {
+    const handleOpenDeepseekChat = () => {
         setSelectedChat(null);
-        setShowGeminiChat(true);
+        setShowDeepseekChat(true);
     };
 
     const currentSelectedChatId = selectedChat?.id || null;
 
     return (
         <div className="h-full flex flex-col">
-            {showGeminiChat ? (
-                <GeminiChatWindow currentUser={currentUser} onBack={handleBackToChatList} />
+            {showDeepseekChat ? (
+                <DeepseekChatWindow currentUser={currentUser} onBack={handleBackToChatList} />
             ) : selectedChat ? (
                 <ChatWindow chat={selectedChat} currentUser={currentUser} onBack={handleBackToChatList} />
             ) : (
@@ -42,7 +42,7 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
                     onSelectChat={handleSelectChat}
                     selectedChatId={currentSelectedChatId}
                     currentCompanyId={currentCompanyId} // Passar currentCompanyId
-                    onOpenGeminiChat={handleOpenGeminiChat} // Nova prop para abrir chat com Gemini
+                    onOpenDeepseekChat={handleOpenDeepseekChat} // Nova prop para abrir chat com DeepSeek
                 />
             )}
         </div>

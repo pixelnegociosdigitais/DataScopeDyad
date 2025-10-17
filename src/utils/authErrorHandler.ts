@@ -1,5 +1,4 @@
 import { supabase } from '@/src/integrations/supabase/client';
-import { showError } from './toast';
 
 /**
  * Utilitário para tratar erros de autenticação e limpeza de tokens inválidos

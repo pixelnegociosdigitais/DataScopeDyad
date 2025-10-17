@@ -1,0 +1,74 @@
+name: 🌐 Auto Deploy
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente para deploy'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+jobs:
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📋 Instalar dependências
+      run: npm ci
+      
+    - name: 🔨 Build para produção
+      run: npm run build
+      env:
+        NODE_ENV: production
+        
+    - name: 📊 Análise de bundle
+      run: |
+        echo "📦 Tamanho do build:"
+        du -sh dist/
+        echo "📁 Arquivos principais:"
+        find dist/ -name "*.js" -o -name "*.css" | head -10
+        
+    # Exemplo de deploy para Vercel (descomente se usar)
+    # - name: 🌐 Deploy para Vercel
+    #   uses: amondnet/vercel-action@v25
+    #   with:
+    #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
+    #     vercel-org-id: ${{ secrets.ORG_ID }}
+    #     vercel-project-id: ${{ secrets.PROJECT_ID }}
+    #     working-directory: ./
+        
+    # Exemplo de deploy para Netlify (descomente se usar)
+    # - name: 🌐 Deploy para Netlify
+    #   uses: nwtgck/actions-netlify@v2.0
+    #   with:
+    #     publish-dir: './dist'
+    #     production-branch: main
+    #     github-token: ${{ secrets.GITHUB_TOKEN }}
+    #     deploy-message: "Deploy from GitHub Actions"
+    #   env:
+    #     NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+    #     NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        
+    - name: ✅ Deploy concluído
+      run: |
+        echo "🎉 Deploy realizado com sucesso!"
+        echo "🌐 Ambiente: ${{ github.event.inputs.environment || 'staging' }}"
+        echo "📝 Commit: ${{ github.sha }}"

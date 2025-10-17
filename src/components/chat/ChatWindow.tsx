@@ -42,21 +42,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             showError('Não foi possível carregar as mensagens.');
         } else {
             // Mapear os dados para corresponder às interfaces ChatMessage e User
-            const mappedMessages: ChatMessage[] = (data || []).map((msg: any) => ({
-                ...msg,
-                sender: msg.sender ? {
-                    id: msg.sender.id,
-                    fullName: msg.sender.full_name || '', // Mapear full_name para fullName e garantir string
-                    avatar_url: msg.sender.avatar_url || undefined,
-                    role: msg.sender.role as UserRole || UserRole.USER, // Garantir role
-                    email: msg.sender.email || '', // Garantir email
-                    phone: msg.sender.phone || undefined,
-                    address: msg.address || undefined,
-                    permissions: msg.permissions || {},
-                    status: msg.status || 'active',
-                    company_id: msg.company_id || undefined,
-                } as User : undefined,
-            }));
+            const mappedMessages: ChatMessage[] = (data || [])
+                .filter((msg: any) => msg.sender) // Filtrar mensagens sem sender válido
+                .map((msg: any) => ({
+                    ...msg,
+                    sender: {
+                        id: msg.sender.id,
+                        fullName: msg.sender.full_name || '', // Mapear full_name para fullName e garantir string
+                        avatar_url: msg.sender.avatar_url || undefined,
+                        role: msg.sender.role as UserRole || UserRole.USER, // Garantir role
+                        email: msg.sender.email || '', // Garantir email
+                        phone: msg.sender.phone || undefined,
+                        address: msg.sender.address || undefined,
+                        permissions: msg.sender.permissions || {},
+                        status: msg.sender.status || 'active',
+                        company_id: msg.sender.company_id || undefined,
+                    } as User,
+                }));
             setMessages(mappedMessages);
         }
         setLoadingMessages(false);
@@ -75,21 +77,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chat, currentUser, onBack }) =>
             console.error('Erro ao buscar participantes:', error);
         } else {
             // Mapear os dados para corresponder à interface ChatParticipant e User
-            const mappedParticipants: ChatParticipant[] = (data || []).map((p: any) => ({
-                ...p,
-                profiles: p.profiles ? {
-                    id: p.profiles.id,
-                    fullName: p.profiles.full_name || '', // Mapear full_name para fullName e garantir string
-                    avatar_url: p.profiles.avatar_url || undefined,
-                    role: p.profiles.role as UserRole || UserRole.USER, // Garantir role
-                    email: p.profiles.email || '', // Garantir email
-                    phone: p.profiles.phone || undefined,
-                    address: p.address || undefined,
-                    permissions: p.permissions || {},
-                    status: p.status || 'active',
-                    company_id: p.company_id || undefined,
-                } as User : undefined,
-            }));
+            const mappedParticipants: ChatParticipant[] = (data || [])
+                .filter((p: any) => p.profiles) // Filtrar participantes sem profiles
+                .map((p: any) => ({
+                    ...p,
+                    profiles: {
+                        id: p.profiles.id,
+                        fullName: p.profiles.full_name || '', // Mapear full_name para fullName e garantir string
+                        avatar_url: p.profiles.avatar_url || undefined,
+                        role: p.profiles.role as UserRole || UserRole.USER, // Garantir role
+                        email: p.profiles.email || '', // Garantir email
+                        phone: p.profiles.phone || undefined,
+                        address: p.profiles.address || undefined,
+                        permissions: p.profiles.permissions || {},
+                        status: p.profiles.status || 'active',
+                        company_id: p.profiles.company_id || undefined,
+                    } as User,
+                }));
             setParticipants(mappedParticipants);
         }
     }, [chat.id]);

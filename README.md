@@ -15,6 +15,6 @@ View your app in AI Studio: https://ai.studio/apps/temp/4
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Set the `DEEPSEEK_API_KEY` in your environment and optionally `VITE_DEEPSEEK_API_KEY` in [.env.local](.env.local)
 3. Run the app:
    `npm run dev`

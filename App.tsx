@@ -1,28 +1,13 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, Suspense, lazy } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import './src/styles/mobile-buttons.css';
 import { UserRole, View, Survey, ModuleName, Notice } from './types';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import HomeScreen from './components/HomeScreen';
-import SurveyTableList from './src/components/SurveyTableList';
-import SurveyCreator from './components/SurveyCreator';
-import Dashboard from './components/Dashboard';
-import Profile from './components/Profile';
-import SurveyForm from './components/SurveyForm';
 import Login from './components/Login';
-import CompanySettings from './components/CompanySettings';
-import CompanyCreationForm from './components/CompanyCreationForm';
-import Giveaways from './src/components/Giveaways';
-import SettingsPanel from './components/SettingsPanel';
-import ModulePermissionsManager from './components/ModulePermissionsManager';
-import DeveloperCompanyUserManager from './src/components/DeveloperCompanyUserManager';
-import AdministratorUserManager from './src/components/AdministratorUserManager';
-import LogsAndAuditPanel from './components/LogsAndAuditPanel';
 import JoinCompanyPrompt from './components/JoinCompanyPrompt';
 import NotificationBell from './src/components/NotificationBell';
-import NoticeCreator from './src/components/NoticeCreator';
-import ChatLayout from './src/components/chat/ChatLayout';
-import SurveyTemplateManager from './src/components/SurveyTemplateManager';
 import { ChatIcon } from './components/icons/ChatIcon';
 import { ArrowLeftIcon } from './components/icons/ArrowLeftIcon';
 import { supabase } from './src/integrations/supabase/client';
@@ -33,6 +18,24 @@ import { useSurveys } from './src/hooks/useSurveys';
 import { showError, showSuccess } from './src/utils/toast';
 import ConfirmationDialog from './src/components/ConfirmationDialog';
 import { generatePdfReport } from './src/utils/pdfGenerator';
+
+// Lazy loading dos componentes pesados
+const SurveyTableList = lazy(() => import('./src/components/SurveyTableList'));
+const SurveyCreator = lazy(() => import('./components/SurveyCreator'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const Profile = lazy(() => import('./components/Profile'));
+const SurveyForm = lazy(() => import('./components/SurveyForm'));
+const CompanySettings = lazy(() => import('./components/CompanySettings'));
+const CompanyCreationForm = lazy(() => import('./components/CompanyCreationForm'));
+const Giveaways = lazy(() => import('./src/components/Giveaways'));
+const SettingsPanel = lazy(() => import('./components/SettingsPanel'));
+const ModulePermissionsManager = lazy(() => import('./components/ModulePermissionsManager'));
+const DeveloperCompanyUserManager = lazy(() => import('./src/components/DeveloperCompanyUserManager'));
+const AdministratorUserManager = lazy(() => import('./src/components/AdministratorUserManager'));
+const LogsAndAuditPanel = lazy(() => import('./components/LogsAndAuditPanel'));
+const NoticeCreator = lazy(() => import('./src/components/NoticeCreator'));
+const ChatLayout = lazy(() => import('./src/components/chat/ChatLayout'));
+const SurveyTemplateManager = lazy(() => import('./src/components/SurveyTemplateManager'));
 
 const App: React.FC = () => {
     const { session, loadingSession } = useAuthSession();
@@ -528,7 +531,13 @@ const App: React.FC = () => {
                     unreadNoticesCount={unreadNoticesCount}
                 />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-8"> {/* Ajustar padding para mobile */}
-                    {renderContent()}
+                    <Suspense fallback={
+                        <div className="flex items-center justify-center h-64">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                        </div>
+                    }>
+                        {renderContent()}
+                    </Suspense>
                 </main>
             </div>
 
@@ -545,6 +554,7 @@ const App: React.FC = () => {
                     }}
                 />
             )}
+            <SpeedInsights />
         </div>
     );
 };
