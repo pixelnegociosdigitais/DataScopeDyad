@@ -1,36 +1,36 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User } from '../../../types';
-import { geminiService, GeminiMessage } from '../../services/geminiService';
+import { deepseekService, DeepseekMessage } from '../../services/deepseekService';
 import { showError } from '../../utils/toast';
 import { ArrowLeftIcon } from '@/components/icons/ArrowLeftIcon';
 import { SendIcon } from '@/components/icons/SendIcon';
 
-interface GeminiChatWindowProps {
+interface DeepseekChatWindowProps {
   currentUser: User;
   onBack: () => void;
 }
 
-const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack }) => {
-  const [messages, setMessages] = useState<GeminiMessage[]>([]);
+const DeepseekChatWindow: React.FC<DeepseekChatWindowProps> = ({ currentUser, onBack }) => {
+  const [messages, setMessages] = useState<DeepseekMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isConfigured, setIsConfigured] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const sessionId = `gemini-${currentUser.id}`;
+  const sessionId = `deepseek-${currentUser.id}`;
 
   useEffect(() => {
-    // Verificar se o Gemini está configurado
-    const configInfo = geminiService.getConfigInfo();
+    // Verificar se o Deepseek está configurado
+    const configInfo = deepseekService.getConfigInfo();
     setIsConfigured(configInfo.configured);
 
     // Carregar histórico existente
-    const history = geminiService.getChatHistory(sessionId);
+    const history = deepseekService.getChatHistory(sessionId);
     setMessages(history);
 
     // Adicionar mensagem de boas-vindas se não houver histórico
     if (history.length === 0 && configInfo.configured) {
-      const welcomeMessage: GeminiMessage = {
-        role: 'model',
+      const welcomeMessage: DeepseekMessage = {
+        role: 'assistant',
         content: `Olá! Sou seu assistente especializado em Expomarau 2025. Como posso ajudá-lo com informações sobre a feira?`,
         timestamp: new Date(),
       };
@@ -50,7 +50,7 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
     if (!inputMessage.trim() || isLoading) return;
 
     if (!isConfigured) {
-      showError('Gemini não está configurado. Verifique se a chave da API está definida.');
+      showError('Deepseek não está configurado. Verifique se a chave da API está definida.');
       return;
     }
 
@@ -60,27 +60,27 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
 
     try {
       // Adicionar mensagem do usuário imediatamente
-      const newUserMessage: GeminiMessage = {
+      const newUserMessage: DeepseekMessage = {
         role: 'user',
         content: userMessage,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, newUserMessage]);
 
-      // Enviar para o Gemini
-      const response = await geminiService.sendMessage(userMessage, sessionId);
+      // Enviar para o Deepseek
+      const response = await deepseekService.sendMessage(userMessage, sessionId);
 
-      // Adicionar resposta do Gemini
-      const geminiMessage: GeminiMessage = {
-        role: 'model',
+      // Adicionar resposta do Deepseek
+      const deepseekMessage: DeepseekMessage = {
+        role: 'assistant',
         content: response,
         timestamp: new Date(),
       };
-      setMessages(prev => [...prev, geminiMessage]);
+      setMessages(prev => [...prev, deepseekMessage]);
 
     } catch (error) {
-      console.error('Erro ao enviar mensagem para o Gemini:', error);
-      showError(error instanceof Error ? error.message : 'Erro ao comunicar com o Gemini');
+      console.error('Erro ao enviar mensagem para o Deepseek:', error);
+      showError(error instanceof Error ? error.message : 'Erro ao comunicar com o Deepseek');
     } finally {
       setIsLoading(false);
     }
@@ -94,10 +94,10 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
   };
 
   const clearChat = () => {
-    geminiService.clearChatHistory(sessionId);
+    deepseekService.clearChatHistory(sessionId);
     setMessages([]);
-    const welcomeMessage: GeminiMessage = {
-      role: 'model',
+    const welcomeMessage: DeepseekMessage = {
+      role: 'assistant',
       content: `Olá! Sou o seu assistente de IA. Como posso ajudá-lo hoje?`,
       timestamp: new Date(),
     };
@@ -128,13 +128,13 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
               <span className="text-red-600 text-2xl">⚠️</span>
             </div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              Gemini não configurado
+              Deepseek não configurado
             </h3>
             <p className="text-gray-600 mb-4">
-              Para usar o chat com Gemini, é necessário configurar a chave da API no arquivo .env.local
+              Para usar o chat com Deepseek, é necessário configurar a chave da API no arquivo .env
             </p>
             <p className="text-sm text-gray-500">
-              Adicione: GEMINI_API_KEY=sua_chave_aqui
+              Adicione: DEEPSEEK_API_KEY=sua_chave_aqui
             </p>
           </div>
         </div>
@@ -155,11 +155,11 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
           </button>
           <div className="flex items-center">
             <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
-              <span className="text-lg font-bold">G</span>
+              <span className="text-lg font-bold">D</span>
             </div>
             <div>
               <h3 className="text-xl font-bold">Chat com IA</h3>
-              <p className="text-sm opacity-90">Assistente de IA do Google</p>
+              <p className="text-sm opacity-90">Assistente de IA Deepseek</p>
             </div>
           </div>
         </div>
@@ -205,7 +205,7 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                   <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
-                <span className="text-sm text-gray-600">Gemini está digitando...</span>
+                <span className="text-sm text-gray-600">Deepseek está digitando...</span>
               </div>
             </div>
           </div>
@@ -222,7 +222,7 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Digite sua mensagem para o Gemini..."
+              placeholder="Digite sua mensagem para o Deepseek..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               rows={1}
               disabled={isLoading}
@@ -241,4 +241,4 @@ const GeminiChatWindow: React.FC<GeminiChatWindowProps> = ({ currentUser, onBack
   );
 };
 
-export default GeminiChatWindow;
+export default DeepseekChatWindow;
