@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Chat, User } from '../../../types';
 import ChatList from './ChatList';
 import ChatWindow from './ChatWindow';
-import DeepseekChatWindow from './DeepseekChatWindow';
+import PerplexityChatWindow from './PerplexityChatWindow';
 
 interface ChatLayoutProps {
     currentUser: User;
@@ -33,7 +33,7 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ currentUser, currentCompanyId }
     return (
         <div className="h-full flex flex-col">
             {showGeminiChat ? (
-                <DeepseekChatWindow currentUser={currentUser} onBack={handleBackToChatList} />
+                <PerplexityChatWindow currentUser={currentUser} onBack={handleBackToChatList} />
             ) : selectedChat ? (
                 <ChatWindow chat={selectedChat} currentUser={currentUser} onBack={handleBackToChatList} />
             ) : (
