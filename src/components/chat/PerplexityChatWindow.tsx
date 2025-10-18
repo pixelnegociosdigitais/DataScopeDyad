@@ -129,7 +129,7 @@ const PerplexityChatWindow: React.FC<PerplexityChatWindowProps> = ({ currentUser
               Para usar o chat com Perplexity, é necessário configurar a chave da API no código
             </p>
             <p className="text-sm text-gray-500">
-              A chave já foi configurada no código
+              A chave da API já foi configurada no código
             </p>
           </div>
         </div>
