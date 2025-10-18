@@ -15,6 +15,17 @@ View your app in AI Studio: https://ai.studio/apps/temp/4
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Set the API keys in [.env.local](.env.local):
+   - `GEMINI_API_KEY` - Your Gemini API key
+   - `REACT_APP_PERPLEXITY_API_KEY` - Your Perplexity API key
 3. Run the app:
    `npm run dev`
+
+## API Configuration
+
+This app uses two AI services:
+
+- **Gemini**: For general AI functionality
+- **Perplexity**: For enhanced search and analysis capabilities
+
+Make sure to obtain API keys from both services and add them to your `.env.local` file.
