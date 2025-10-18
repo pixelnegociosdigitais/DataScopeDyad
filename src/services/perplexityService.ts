@@ -2,11 +2,11 @@
 // Baseado na estrutura do serviço Gemini existente
 
 // Configuração da API da Perplexity
-const API_KEY = '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';
+const API_KEY = process.env.REACT_APP_PERPLEXITY_API_KEY || '';
 const API_URL = 'https://api.perplexity.ai/chat/completions';
 
 if (!API_KEY) {
-  console.warn('Chave da API da Perplexity não encontrada.');
+  console.warn('Chave da API da Perplexity não encontrada. Configure REACT_APP_PERPLEXITY_API_KEY no arquivo .env.local');
 }
 
 export interface PerplexityMessage {
