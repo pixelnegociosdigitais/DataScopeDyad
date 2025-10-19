@@ -1,21 +1,21 @@
-// Serviço para integração com a API do Deepseek
+// Serviço para integração com a API da Perplexity
 // Baseado na estrutura do serviço Gemini existente
 
-// Configuração da API do Deepseek
-const API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY;
-const API_URL = 'https://api.deepseek.com/v1/chat/completions';
+// Configuração da API da Perplexity
+const API_KEY = process.env.REACT_APP_PERPLEXITY_API_KEY || '';
+const API_URL = 'https://api.perplexity.ai/chat/completions';
 
 if (!API_KEY) {
-  console.warn('Chave da API do Deepseek não encontrada. Verifique se DEEPSEEK_API_KEY está configurada no arquivo .env');
+  console.warn('Chave da API da Perplexity não encontrada. Configure REACT_APP_PERPLEXITY_API_KEY no arquivo .env.local');
 }
 
-export interface DeepseekMessage {
+export interface PerplexityMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
 }
 
-export interface DeepseekResponse {
+export interface PerplexityResponse {
   choices: Array<{
     message: {
       content: string;
@@ -24,8 +24,8 @@ export interface DeepseekResponse {
   }>;
 }
 
-class DeepseekService {
-  private chatHistory: Map<string, DeepseekMessage[]> = new Map();
+class PerplexityService {
+  private chatHistory: Map<string, PerplexityMessage[]> = new Map();
 
   /**
    * Prompt especializado para Expomarau 2025 e assuntos gerais
@@ -94,11 +94,11 @@ Responda sempre em português brasileiro de forma clara, objetiva, natural e PRE
   }
 
   /**
-   * Envia uma mensagem para o Deepseek e retorna a resposta
+   * Envia uma mensagem para a Perplexity e retorna a resposta
    */
   async sendMessage(message: string, sessionId: string = 'default'): Promise<string> {
     if (!this.isConfigured()) {
-      throw new Error('API do Deepseek não configurada. Verifique se a chave DEEPSEEK_API_KEY está definida.');
+      throw new Error('API da Perplexity não configurada. Verifique se a chave está definida.');
     }
 
     try {
@@ -109,7 +109,7 @@ Responda sempre em português brasileiro de forma clara, objetiva, natural e PRE
         timestamp: new Date(),
       });
 
-      // Prepara as mensagens para o Deepseek (incluindo histórico da sessão)
+      // Prepara as mensagens para a Perplexity (incluindo histórico da sessão)
       const messages = [
         {
           role: 'system',
@@ -122,7 +122,7 @@ Responda sempre em português brasileiro de forma clara, objetiva, natural e PRE
       ];
 
       const requestBody = {
-        model: 'deepseek-chat',
+        model: 'llama-3.1-sonar-small-128k-online',
         messages: messages,
         temperature: 0.7,
         max_tokens: 1024,
@@ -141,7 +141,7 @@ Responda sempre em português brasileiro de forma clara, objetiva, natural e PRE
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Erro na API do Deepseek:', {
+        console.error('Erro na API da Perplexity:', {
           status: response.status,
           statusText: response.statusText,
           errorData: errorData,
@@ -156,24 +156,24 @@ Responda sempre em português brasileiro de forma clara, objetiva, natural e PRE
         } else if (response.status === 429) {
           throw new Error('Limite de requisições excedido. Tente novamente em alguns minutos.');
         } else if (response.status >= 500) {
-          throw new Error('Erro interno do servidor Deepseek. Tente novamente mais tarde.');
+          throw new Error('Erro interno do servidor Perplexity. Tente novamente mais tarde.');
         }
         
-        throw new Error(`Erro na API do Deepseek: ${response.status} ${response.statusText}`);
+        throw new Error(`Erro na API da Perplexity: ${response.status} ${response.statusText}`);
       }
 
-      const data: DeepseekResponse = await response.json();
+      const data: PerplexityResponse = await response.json();
       
       if (!data.choices || data.choices.length === 0) {
-        throw new Error('Nenhuma resposta foi gerada pelo Deepseek.');
+        throw new Error('Nenhuma resposta foi gerada pela Perplexity.');
       }
 
-      const deepseekResponse = data.choices[0].message.content;
+      const perplexityResponse = data.choices[0].message.content;
 
       // Filtro adicional: verifica se a resposta está relacionada à Expomarau 2025
-      const filteredResponse = this.filterResponse(deepseekResponse, message);
+      const filteredResponse = this.filterResponse(perplexityResponse, message);
 
-      // Adiciona a resposta do Deepseek ao histórico
+      // Adiciona a resposta da Perplexity ao histórico
       this.addMessageToHistory(sessionId, {
         role: 'assistant',
         content: filteredResponse,
@@ -183,7 +183,7 @@ Responda sempre em português brasileiro de forma clara, objetiva, natural e PRE
       return filteredResponse;
 
     } catch (error) {
-      console.error('Erro ao enviar mensagem para o Deepseek:', error);
+      console.error('Erro ao enviar mensagem para a Perplexity:', error);
       if (error instanceof Error) {
         throw error;
       }
@@ -203,7 +203,7 @@ Responda sempre em português brasileiro de forma clara, objetiva, natural e PRE
   /**
    * Adiciona uma mensagem ao histórico da sessão
    */
-  private addMessageToHistory(sessionId: string, message: DeepseekMessage): void {
+  private addMessageToHistory(sessionId: string, message: PerplexityMessage): void {
     if (!this.chatHistory.has(sessionId)) {
       this.chatHistory.set(sessionId, []);
     }
@@ -213,7 +213,7 @@ Responda sempre em português brasileiro de forma clara, objetiva, natural e PRE
   /**
    * Obtém o histórico de uma sessão
    */
-  getChatHistory(sessionId: string = 'default'): DeepseekMessage[] {
+  getChatHistory(sessionId: string = 'default'): PerplexityMessage[] {
     return this.chatHistory.get(sessionId) || [];
   }
 
@@ -242,5 +242,5 @@ Responda sempre em português brasileiro de forma clara, objetiva, natural e PRE
   }
 }
 
-export const deepseekService = new DeepseekService();
-export default deepseekService;
+export const perplexityService = new PerplexityService();
+export default perplexityService;
