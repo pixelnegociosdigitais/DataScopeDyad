@@ -13,7 +13,8 @@ export default defineConfig(({ mode }) => {
       plugins: [dyadComponentTagger(), react()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'process.env.REACT_APP_PERPLEXITY_API_KEY': JSON.stringify(env.REACT_APP_PERPLEXITY_API_KEY)
       },
       resolve: {
         alias: {
